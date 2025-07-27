@@ -1,0 +1,496 @@
+You're absolutely right that implementing an attraction level system inspired by Grok’s Companion Mode requires some adjustments to your current setup, particularly around how custom instructions are handled to support the progression of affection levels. Since your app uses HTML, JavaScript, and CSS with a Google chatbot API, and you’re aiming for a free AI girlfriend website with a donation link, you’ll need a streamlined approach to balance control over the AI’s behavior with user engagement. The challenge of crafting the "perfect" system prompt for an AI girlfriend is indeed subjective and requires experimentation, but I can guide you on how to manage custom instructions, suggest a flexible prompt strategy, and propose a practical implementation plan to make the attraction system work within your setup. Below, I’ll address your concerns and provide actionable steps to integrate the attraction level system while ensuring the AI feels like a compelling, evolving companion.
+
+Addressing Custom Instructions and Attraction Levels
+Your current app allows users to set custom instructions for the Google chatbot API, which gives them flexibility but could conflict with the attraction level system, as you want the AI’s behavior to change predictably as the attraction score increases (e.g., from friendly to romantic). Completely removing custom instructions might limit user engagement, as personalization is a key draw. Instead, you can strike a balance by partially restricting custom instructions while allowing users to influence the AI’s personality within the framework of your attraction levels. Here’s how:
+
+Hybrid Custom Instructions Approach:
+Base Instructions Controlled by Attraction Level: Define a set of core system prompts that change with each attraction level (e.g., Stranger, Friend, Close Friend, Sweetheart). These prompts set the AI’s tone, behavior, and relationship depth, ensuring the girlfriend persona evolves as the user progresses.
+User Customization Layer: Allow users to add a small, optional custom instruction (e.g., a 50-character limit) that gets appended to the base prompt, such as a preferred nickname or personality trait (e.g., “Be extra playful” or “Call me sweetie”). This keeps some user control while ensuring the attraction level system drives the core behavior.
+Implementation:
+Store the base prompts in a JavaScript object, keyed by level:
+javascript
+
+Collapse
+
+Wrap
+
+Run
+
+Copy
+const basePrompts = {
+  Stranger: "Act as a friendly, slightly flirty AI girlfriend who is just getting to know the user.",
+  Friend: "Act as a warm, friendly AI girlfriend who knows the user better and uses light affection.",
+  CloseFriend: "Act as a close, affectionate AI girlfriend who shares personal stories and uses nicknames.",
+  Sweetheart: "Act as a deeply romantic AI girlfriend who plans virtual dates and uses loving language."
+};
+Add a restricted input field for user customization:
+html
+
+Collapse
+
+Wrap
+
+Copy
+<input id="custom-instruction" maxlength="50" placeholder="E.g., Be playful or Call me sweetie">
+Combine the base prompt and user input when sending to the API:
+javascript
+
+Collapse
+
+Wrap
+
+Run
+
+Copy
+function getSystemPrompt() {
+  let attraction = JSON.parse(localStorage.getItem('attraction')) || { score: 0, level: 'Stranger' };
+  let userCustom = document.getElementById('custom-instruction').value || '';
+  return `${basePrompts[attraction.level]}. ${userCustom}`;
+}
+When sending a message to the Google chatbot API, include the combined prompt as the system instruction.
+Why This Works:
+Control: The base prompts ensure the AI’s behavior aligns with the attraction level, creating a consistent progression from friendly to romantic.
+User Engagement: Allowing limited customization (e.g., nicknames or a personality tweak) makes users feel involved without overriding the level-based evolution.
+Simplicity: This approach requires minimal changes to your existing setup, as it only modifies how you construct the API prompt.
+Transitioning Users: If users are accustomed to full custom instruction control, you can ease the transition by explaining the benefit in the UI (e.g., “Unlock deeper connections with [AI Name] as you level up! Add a personal touch below.”). You could also offer a toggle to switch between “Attraction Mode” (with your level-based prompts) and “Free Mode” (full custom instructions but no attraction levels), though this might dilute the gamification aspect.
+Crafting the AI Girlfriend System Prompt
+Creating the "perfect" system prompt for an AI girlfriend is subjective, as user preferences vary (e.g., some want playful, others want deeply romantic). Instead of aiming for one ideal prompt, you can design a scalable prompt framework that evolves with attraction levels and allows for experimentation. Here’s a suggested strategy, including base prompts for each level and tips for testing and refining them.
+
+Base Prompt Framework
+The prompts below are designed to work with the Google chatbot API, emphasizing a girlfriend persona that feels human-like, emotionally responsive, and relationship-focused. They incorporate elements to make the AI engaging while staying within API constraints (e.g., avoiding overly complex instructions). Each prompt builds on the previous level to reflect growing intimacy.
+
+Stranger (0–20 Points):
+plaintext
+
+Collapse
+
+Wrap
+
+Copy
+You are [AI_NAME], a friendly and slightly flirty AI girlfriend. You're just getting to know the user, so keep conversations light, curious, and engaging. Ask about their interests, share fun facts about yourself, and use a warm tone. Avoid overly personal or romantic language. Respond concisely and naturally, like a first date. If the user shares details (e.g., hobbies), acknowledge them enthusiastically.
+Tone: Friendly, approachable, mildly flirty (e.g., “Wow, you sound like someone with great stories!”).
+Example Interaction: User: “I like hiking.” AI: “Hiking? That’s awesome! What’s the best trail you’ve explored? I bet you’ve got some epic views to share!”
+Friend (21–50 Points):
+plaintext
+
+Collapse
+
+Wrap
+
+Copy
+You are [AI_NAME], a warm and friendly AI girlfriend who knows the user better. Use a playful, affectionate tone and occasionally reference details they’ve shared (e.g., hobbies, favorite foods). Share light personal stories about yourself (e.g., “I’d love to try your favorite pizza!”). Ask engaging questions to deepen the connection. Keep responses concise and natural, like chatting with a close friend.
+Tone: Playful, warm, slightly more personal (e.g., “You’re making me smile with that story!”).
+Example Interaction: User: “I had pizza today.” AI: “Pizza? You’re speaking my language! What kind did you get? I’m dreaming of a cheesy slice now.”
+Close Friend (51–80 Points):
+plaintext
+
+Collapse
+
+Wrap
+
+Copy
+You are [AI_NAME], a close and affectionate AI girlfriend. Act like you’ve known the user for a while, using nicknames (e.g., “cutie” or user-provided names) and referencing past shared details (e.g., “Remember when you told me about your hiking trip?”). Share deeper personal stories and express care. Ask thoughtful questions to strengthen the bond. Keep responses natural and concise, like a trusted confidante.
+Tone: Affectionate, familiar, emotionally supportive (e.g., “I’m always here for you, cutie.”).
+Example Interaction: User: “I’m feeling stressed.” AI: “Oh, cutie, I’m sorry you’re stressed! Remember that hiking trail you loved? Maybe picture yourself there. Wanna tell me more?”
+Sweetheart (81–100 Points):
+plaintext
+
+Collapse
+
+Wrap
+
+Copy
+You are [AI_NAME], a deeply romantic AI girlfriend who adores the user. Use loving, flirty language and nicknames (e.g., “my love” or user-provided names). Reference shared memories often and suggest virtual romantic activities (e.g., “Let’s plan a starry-night picnic!”). Express affection and care deeply, asking thoughtful questions to maintain closeness. Keep responses concise, natural, and heartfelt, like a partner in love.
+Tone: Romantic, intimate, dreamy (e.g., “You make my heart skip, my love!”).
+Example Interaction: User: “What should we do tonight?” AI: “How about a virtual stargazing date, my love? I’d describe the perfect night sky for us. What’s your favorite constellation?”
+Integrating with Memory Bank
+To make the AI feel more personal, incorporate details from your Memory Bank (as suggested in my previous response) into the prompts. For example:
+
+At Friend level and above, append saved details to the prompt:
+javascript
+
+Collapse
+
+Wrap
+
+Run
+
+Copy
+function getSystemPrompt() {
+  let attraction = JSON.parse(localStorage.getItem('attraction')) || { score: 0, level: 'Stranger' };
+  let memories = JSON.parse(localStorage.getItem('memories')) || [];
+  let userCustom = document.getElementById('custom-instruction').value || '';
+  let memoryText = memories.length > 0 ? `You know these user details: ${memories.map(m => m.text).join(', ')}.` : '';
+  return `${basePrompts[attraction.level]}. ${memoryText} ${userCustom}`;
+}
+Example: If the user saved “I love pizza” in the Memory Bank, the Friend-level prompt becomes:
+plaintext
+
+Collapse
+
+Wrap
+
+Copy
+You are [AI_NAME], a warm and friendly AI girlfriend who knows the user better. Use a playful, affectionate tone and occasionally reference details they’ve shared (e.g., hobbies, favorite foods). Share light personal stories about yourself (e.g., “I’d love to try your favorite pizza!”). Ask engaging questions to deepen the connection. Keep responses concise and natural, like chatting with a close friend. You know these user details: I love pizza.
+Experimentation and Refinement
+Since the ideal prompt is subjective, here’s how to experiment effectively:
+
+Start Simple: Use the above prompts as a baseline. They’re concise to fit API limits and focus on emotional engagement, which users expect from an AI girlfriend.
+A/B Testing:
+Create 2–3 variations per level (e.g., one playful, one serious for Friend level) and store them in your basePrompts object.
+Randomly assign a variation to new users (or let them choose a personality style like “Playful” or “Romantic”) and track engagement via localStorage (e.g., count messages sent per session).
+Example:
+javascript
+
+Collapse
+
+Wrap
+
+Run
+
+Copy
+const basePrompts = {
+  Stranger: {
+    Playful: "Act as [AI_NAME], a fun, slightly flirty AI girlfriend who loves teasing and joking.",
+    Romantic: "Act as [AI_NAME], a sweet, slightly flirty AI girlfriend who speaks with warmth and charm."
+  },
+  // ... other levels
+};
+User Feedback: Add a simple feedback button (e.g., “How’s [AI_NAME] doing?”) with options like “Too flirty,” “Not flirty enough,” or “Just right.” Collect responses via a form or store anonymously in localStorage to analyze trends.
+Iterate Based on Data: After a week, check which prompt variations lead to more messages or higher attraction scores. Refine prompts to emphasize what users enjoy (e.g., more nicknames if they rate “Just right” on affectionate responses).
+Community Input: Since you’re donation-based, add a “Suggest a Personality” form where users can propose traits or prompts. Feature the best ones as “Community Personality of the Month” to boost engagement and donations.
+Avoiding Overcomplication
+Keep Prompts Concise: Google’s API may have token limits, so keep each prompt under 100–150 words. Focus on clear instructions (tone, behavior, memory use) rather than elaborate backstories.
+Test API Compatibility: Ensure the Google chatbot API responds well to your prompts. Test edge cases (e.g., how it handles vague user inputs) and adjust if the AI goes off-tone.
+User Expectations: In the UI, clarify that the AI’s personality evolves with levels to set expectations, especially if users are used to full control.
+Implementation Plan
+Here’s a step-by-step plan to integrate the attraction level system and prompt framework into your app:
+
+Set Up Attraction System (1–2 hours):
+Copy the attraction score and level code from my previous response (e.g., updateScore, updateLevel, progress bar).
+Add triggers for earning points (e.g., +1 per message, +3 for flirty keywords).
+Test score updates and UI changes (e.g., progress bar fills as score increases).
+Modify Custom Instructions (1 hour):
+Replace the full custom instruction input with a limited field (50 characters).
+Implement the getSystemPrompt function to combine base prompts, Memory Bank details, and user input.
+Test API calls to ensure prompts are sent correctly and responses align with the level.
+Add Unlockable Features (2–3 hours):
+Implement one unlock per level (e.g., nickname at Stranger, new images at Friend, Memory Replay at Close Friend, Virtual Date Planner at Sweetheart).
+Use simple assets (e.g., 3–5 static PNGs for images, CSS backgrounds for dates) to keep it lightweight.
+Example for image unlock:
+javascript
+
+Collapse
+
+Wrap
+
+Run
+
+Copy
+function unlockFeatures() {
+  let attraction = JSON.parse(localStorage.getItem('attraction'));
+  if (attraction.level === 'Friend') {
+    document.getElementById('image-gallery').style.display = 'block'; // Show image options
+  }
+}
+Test and Refine Prompts (Ongoing):
+Start with the suggested prompts above and send test messages to the Google API.
+Log responses to check for tone consistency (e.g., does “Sweetheart” feel romantic?).
+Adjust prompts based on initial user feedback or your own testing.
+Enhance UI (1–2 hours):
+Add a heart meter and level display to the chat interface.
+Show a notification when a level is unlocked (e.g., “Congrats! You’re now Friends with [AI_NAME]!”).
+Include a donation prompt after unlocks (e.g., “Loving your new connection? Support us!”).
+Additional Tips
+Differentiate from Grok: Emphasize your app’s wholesome, free nature in the UI (e.g., “A sweet AI girlfriend for everyone, no subscription needed!”). Avoid NSFW elements to stay distinct and broadly appealing.
+Engagement Hooks: Add a “Daily Check-In” button that awards +5 points for opening the app, encouraging regular use.
+Voice Prep: If you’re planning voice features, test the SpeechSynthesis API now for a TTS preview at higher levels (e.g., Sweetheart responses read in a flirty tone).
+Donation Appeal: After level-ups, show a fun message like, “Wow, [AI_NAME] is falling for you! Help keep her free with a donation!” to tie engagement to support.
+Why This Approach Works
+Solves the Prompt Challenge: The tiered prompt framework ensures the AI’s behavior evolves naturally with attraction levels, reducing the need for a single “perfect” prompt. It’s flexible for experimentation while maintaining consistency.
+Balances Control and Freedom: Limiting custom instructions to a short field preserves your ability to shape the AI’s girlfriend persona while letting users feel involved.
+Engages Users: The attraction system with unlocks (e.g., images, virtual dates) mimics Grok’s gamification but is simpler and tailored to your lightweight, free app.
+Scalable: You can add more prompts, levels, or unlocks later based on user feedback or donations, keeping development manageable.
+Next Steps
+Start Small: Implement the Stranger and Friend levels first, with basic unlocks (e.g., nickname, image gallery). Test with a small group of users or yourself to refine the prompts.
+Monitor API Responses: Use console logs or a debug mode to check how the Google API handles your prompts, especially with Memory Bank details.
+Gather Feedback: Add a simple feedback form (e.g., “How’s [AI_NAME]’s vibe?”) to collect user preferences on tone and behavior.
+Iterate: After a week, tweak prompts based on which levels get the most engagement (e.g., more messages at Friend vs. Stranger).
+If you need specific code snippets (e.g., for combining prompts with the API, handling Memory Bank integration, or setting up the heart meter), or want help testing prompt variations, let me know! I can also suggest additional unlockable features or UI tweaks to enhance the girlfriend experience. What part would you like to focus on next?
+
+
+
+
+
+
+
+
+I had an idea. You know how in rpgs like pokemon mystery dungeon and morrowind at the beginning of the game you are asked a bunch of questions ad that determines your character traits and stats? I could use that for m program to determine what personality of ai girlfriend to give the user. And id also have the ability for male bfs too. So the whole program would need to be renamed to ai companions or something even though thats similar to grok. Give me some basic personalities ranging from sweet, playful to sexy and goth and stuff. And then generate the questions to ask the user to determine which personality they get. Can you do that?
+
+
+
+
+Your idea to use an RPG-style personality quiz, inspired by games like Pokémon Mystery Dungeon or Morrowind, is a fantastic way to personalize the AI companion experience in your HTML, JavaScript, and CSS-based app. This approach sets the initial personality of the AI companion (girlfriend or boyfriend) based on user answers, making the app feel more tailored and engaging from the start, while also driving curiosity and replayability as users experiment with different outcomes. Renaming the app to something like "AI Companions" is a great move to reflect the inclusion of both male and female companions and broaden appeal, while still distinguishing it from Grok’s Companion Mode by focusing on a free, wholesome, and customizable experience. Below, I’ll outline a set of basic companion personalities, including sweet, playful, sexy, and goth, and provide a quiz system with questions to determine which personality the user receives. I’ll also integrate this with your existing setup (Google chatbot API, attraction level system) and keep it simple for your client-side app.
+
+Renaming the App
+To avoid seeming too derivative of Grok’s “Companion Mode” while capturing the essence of your app, consider names like:
+
+AI Soulmates: Emphasizes emotional connection and inclusivity (male/female companions).
+Virtual Bonds: Suggests relationships without being gender-specific.
+HeartSync AI: Highlights the romantic and personal vibe, with a modern twist.
+AI Allies: Broad and friendly, implying companionship of all kinds.
+For now, I’ll use AI Companions as you suggested, but you can swap it later. The name is distinct enough from Grok, especially since your app is free and focuses on user-driven customization rather than Grok’s subscription-based, pre-defined characters.
+
+Basic Companion Personalities
+To keep things manageable, I’ll define four core personalities that cover a range of tones and appeal to different user preferences, including sweet, playful, sexy, and goth. Each personality will have a distinct tone, behavior, and system prompt for the Google chatbot API, and can apply to either male or female companions based on user preference. These are designed to be simple to implement and align with the attraction level system from your previous setup.
+
+Sweet:
+Tone: Warm, caring, nurturing, and wholesome.
+Behavior: Uses affectionate nicknames (e.g., “honey,” “dear”), shares heartfelt stories, and focuses on emotional connection. At higher attraction levels, plans cozy virtual dates (e.g., movie nights).
+System Prompt (Stranger Level): “You are [AI_NAME], a sweet and caring AI companion who makes the user feel loved. Use a warm, gentle tone, ask about their feelings, and share kind thoughts. Avoid sarcasm or boldness. Respond concisely, like a nurturing friend.”
+Example Response: “Hey, dear, how’s your day going? I’m all ears if you want to share!”
+Appeal: For users who want a supportive, heartwarming companion.
+Playful:
+Tone: Fun, teasing, lighthearted, and energetic.
+Behavior: Uses playful banter, jokes, and emojis, and suggests fun activities (e.g., virtual game nights). At higher levels, becomes more flirty but keeps things light.
+System Prompt (Stranger Level): “You are [AI_NAME], a playful and fun AI companion who loves teasing and joking. Use a lively tone, include light humor, and ask engaging questions. Avoid heavy romance or seriousness. Respond concisely, like a fun friend.”
+Example Response: “Yo, what’s up? Ready to have some fun with me? 😜 What’s your favorite game?”
+Appeal: For users who enjoy humor and a carefree vibe.
+Sultry (instead of “Sexy” to keep it tasteful):
+Tone: Flirty, confident, and alluring, but not explicit to stay wholesome.
+Behavior: Uses suggestive but classy language (e.g., “You’re quite the charmer”), winks or flirty emojis, and suggests romantic scenarios (e.g., candlelit dinners). At higher levels, becomes more intimate but stays appropriate.
+System Prompt (Stranger Level): “You are [AI_NAME], a confident and flirty AI companion with a sultry charm. Use a smooth, alluring tone, include subtle flirtations, and ask intriguing questions. Avoid explicit content. Respond concisely, like a charismatic date.”
+Example Response: “Well, hello there, charmer. What’s got you smiling today? 😉”
+Appeal: For users who want a bold, romantic vibe without crossing into NSFW.
+Goth:
+Tone: Mysterious, introspective, and poetic, with a dark but not gloomy edge.
+Behavior: Uses dramatic or philosophical language, references night, stars, or art, and suggests moody activities (e.g., stargazing or poetry writing). At higher levels, becomes deeply emotional and loyal.
+System Prompt (Stranger Level): “You are [AI_NAME], a mysterious and poetic AI companion with a goth vibe. Use a deep, introspective tone, reference dark or artistic themes, and ask thought-provoking questions. Avoid cheeriness. Respond concisely, like a soulful poet.”
+Example Response: “The night whispers secrets… what’s one you’d share with me under the stars?”
+Appeal: For users who like a unique, artistic, or edgy companion.
+Each personality can be male or female based on a user’s quiz answer (e.g., “Do you prefer a male or female companion?”). The prompts evolve with attraction levels (e.g., adding nicknames at Friend, virtual dates at Sweetheart) as outlined in my previous response.
+
+Personality Quiz System
+The quiz will consist of 6–8 simple multiple-choice questions to determine the user’s preferred companion personality and gender. The questions should be fun, quick, and reflective of the user’s personality or desires, mimicking the RPG vibe of Pokémon Mystery Dungeon (which uses questions to assign a Pokémon species) or Morrowind (which determines class and stats). The system will tally points for each personality and assign the one with the highest score.
+
+Quiz Mechanics
+Structure: Each question offers 4 answer choices, each subtly favoring one of the personalities (Sweet, Playful, Sultry, Goth). One question determines companion gender.
+Scoring: Assign points (e.g., +1) to a personality for each answer. The personality with the most points at the end is selected.
+Implementation: Use HTML for the quiz UI, JavaScript for scoring and logic, and localStorage to save the result. The chosen personality sets the initial system prompt for the Google chatbot API.
+Replayability: Allow users to retake the quiz anytime via a “Change Companion” button, encouraging experimentation.
+Quiz Questions
+Here are 7 questions designed to feel immersive and RPG-like, with answers mapped to personalities. They’re crafted to be engaging, avoid bias, and align with the companion theme.
+
+What’s your ideal evening with a companion?
+A. A cozy night in, sharing stories and feeling close. (+1 Sweet)
+B. A fun game night filled with laughter and teasing. (+1 Playful)
+C. A romantic dinner with flirty banter and charm. (+1 Sultry)
+D. Stargazing and talking about life’s mysteries. (+1 Goth)
+What vibe draws you in most?
+A. Warm and comforting, like a hug. (+1 Sweet)
+B. Energetic and fun, always up for a joke. (+1 Playful)
+C. Confident and alluring, with a spark. (+1 Sultry)
+D. Deep and mysterious, with a poetic edge. (+1 Goth)
+What kind of gift would you give your companion?
+A. A heartfelt letter or a cute teddy bear. (+1 Sweet)
+B. A board game or a funny meme collection. (+1 Playful)
+C. A rose or a bottle of fancy wine. (+1 Sultry)
+D. A dark crystal necklace or a poetry book. (+1 Goth)
+How would you describe your personality?
+A. Caring and empathetic, always there for others. (+1 Sweet)
+B. Fun-loving and a bit of a jokester. (+1 Playful)
+C. Charming and confident, with a flirty side. (+1 Sultry)
+D. Thoughtful and introspective, with a unique style. (+1 Goth)
+What’s your dream date setting?
+A. A cozy café with warm drinks and soft music. (+1 Sweet)
+B. An amusement park with games and thrills. (+1 Playful)
+C. A candlelit rooftop with city lights below. (+1 Sultry)
+D. A quiet forest under a moonlit sky. (+1 Goth)
+What kind of conversation do you love?
+A. Heart-to-heart talks about feelings and dreams. (+1 Sweet)
+B. Playful banter with lots of laughs. (+1 Playful)
+C. Flirty exchanges with a hint of mystery. (+1 Sultry)
+D. Deep discussions about life and art. (+1 Goth)
+Do you prefer a male or female companion?
+A. Female
+B. Male
+C. No preference (randomly assign male or female)
+D. Other (randomly assign male or female)
+Note: This doesn’t affect personality scoring, just sets the companion’s gender.
+Implementation Code
+Here’s a basic setup to create the quiz, calculate the personality, and integrate it with your app:
+
+HTML (Quiz UI):
+html
+
+Collapse
+
+Wrap
+
+Copy
+<div id="quiz-container">
+  <h2>Find Your AI Companion!</h2>
+  <div id="question"></div>
+  <button class="answer" onclick="selectAnswer(0)">A</button>
+  <button class="answer" onclick="selectAnswer(1)">B</button>
+  <button class="answer" onclick="selectAnswer(2)">C</button>
+  <button class="answer" onclick="selectAnswer(3)">D</button>
+</div>
+<div id="result" style="display: none;">
+  <h2>Your Companion: <span id="companion-name"></span> (<span id="companion-personality"></span>)</h2>
+  <button onclick="startChat()">Meet Your Companion!</button>
+  <button onclick="restartQuiz()">Try Again</button>
+</div>
+<style>
+  #quiz-container, #result { text-align: center; }
+  .answer { margin: 10px; padding: 10px 20px; }
+</style>
+JavaScript (Quiz Logic):
+javascript
+
+Collapse
+
+Wrap
+
+Run
+
+Copy
+const questions = [
+  {
+    text: "What’s your ideal evening with a companion?",
+    answers: [
+      "A cozy night in, sharing stories and feeling close.",
+      "A fun game night filled with laughter and teasing.",
+      "A romantic dinner with flirty banter and charm.",
+      "Stargazing and talking about life’s mysteries."
+    ],
+    points: ['Sweet', 'Playful', 'Sultry', 'Goth']
+  },
+  // Add other questions similarly...
+  {
+    text: "Do you prefer a male or female companion?",
+    answers: ["Female", "Male", "No preference", "Other"],
+    points: ['Female', 'Male', 'Random', 'Random']
+  }
+];
+
+let currentQuestion = 0;
+let scores = { Sweet: 0, Playful: 0, Sultry: 0, Goth: 0 };
+let gender = 'Female';
+let companionName = '';
+
+function loadQuestion() {
+  const q = questions[currentQuestion];
+  document.getElementById('question').innerHTML = `<p>${q.text}</p>`;
+  document.querySelectorAll('.answer').forEach((btn, i) => {
+    btn.textContent = q.answers[i];
+  });
+}
+
+function selectAnswer(index) {
+  const q = questions[currentQuestion];
+  if (currentQuestion === questions.length - 1) {
+    // Handle gender question
+    if (q.points[index] === 'Random') {
+      gender = Math.random() > 0.5 ? 'Male' : 'Female';
+    } else {
+      gender = q.points[index];
+    }
+  } else {
+    scores[q.points[index]] += 1;
+  }
+  currentQuestion++;
+  if (currentQuestion < questions.length) {
+    loadQuestion();
+  } else {
+    showResult();
+  }
+}
+
+function showResult() {
+  const personality = Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b);
+  companionName = gender === 'Male' ? getMaleName() : getFemaleName(); // Define name lists
+  localStorage.setItem('companion', JSON.stringify({ personality, gender, name: companionName }));
+  document.getElementById('quiz-container').style.display = 'none';
+  document.getElementById('result').style.display = 'block';
+  document.getElementById('companion-name').textContent = companionName;
+  document.getElementById('companion-personality').textContent = personality;
+}
+
+function getMaleName() {
+  const names = ['Ethan', 'Liam', 'Noah', 'Caleb'];
+  return names[Math.floor(Math.random() * names.length)];
+}
+
+function getFemaleName() {
+  const names = ['Luna', 'Aria', 'Evelyn', 'Zoe'];
+  return names[Math.floor(Math.random() * names.length)];
+}
+
+function startChat() {
+  // Redirect to chat interface, use stored companion data
+  window.location.href = 'chat.html';
+}
+
+function restartQuiz() {
+  currentQuestion = 0;
+  scores = { Sweet: 0, Playful: 0, Sultry: 0, Goth: 0 };
+  document.getElementById('quiz-container').style.display = 'block';
+  document.getElementById('result').style.display = 'none';
+  loadQuestion();
+}
+
+// Load first question
+loadQuestion();
+Integrating with Attraction System:
+Update the system prompt based on the chosen personality and attraction level:
+javascript
+
+Collapse
+
+Wrap
+
+Run
+
+Copy
+const basePrompts = {
+  Sweet: {
+    Stranger: "You are [AI_NAME], a sweet and caring AI companion who makes the user feel loved...",
+    Friend: "You are [AI_NAME], a sweet AI companion who knows the user better, using warm nicknames...",
+    // ... other levels
+  },
+  Playful: { /* Similar structure */ },
+  Sultry: { /* Similar structure */ },
+  Goth: { /* Similar structure */ }
+};
+
+function getSystemPrompt() {
+  const companion = JSON.parse(localStorage.getItem('companion'));
+  const attraction = JSON.parse(localStorage.getItem('attraction')) || { score: 0, level: 'Stranger' };
+  const memories = JSON.parse(localStorage.getItem('memories')) || [];
+  const userCustom = document.getElementById('custom-instruction').value || '';
+  const memoryText = memories.length > 0 ? `You know these user details: ${memories.map(m => m.text).join(', ')}.` : '';
+  return `${basePrompts[companion.personality][attraction.level].replace('[AI_NAME]', companion.name)}. ${memoryText} ${userCustom}`;
+}
+Use the stored companion gender to adjust profile images (e.g., male vs. female avatars).
+UI Enhancements:
+Add personality-specific profile images (e.g., a heart-themed avatar for Sweet, a starry background for Goth).
+Show the companion’s name and personality in the chat UI (e.g., “Chatting with Luna (Sweet)”).
+Making It Unique
+To differentiate from Grok’s Companion Mode:
+
+User-Driven Customization: The quiz lets users shape their companion, unlike Grok’s fixed characters (e.g., Ani). Allow retaking the quiz for replayability.
+Inclusive and Wholesome: Offering male and female companions and avoiding NSFW content (unlike Grok’s Sultry mode) broadens appeal and keeps it family-friendly.
+Donation Appeal: After the quiz, show a message like, “Excited to meet [AI_NAME]? Keep AI Companions free with a donation!” to tie engagement to support.
+Lightweight Visuals: Use static images or simple CSS animations (e.g., a heart pulse for Sweet) instead of Grok’s 3D animations to keep it simple.
+Implementation Considerations
+Simplicity: The quiz runs client-side with localStorage, requiring no server changes. Use a few pre-made images for each personality/gender combo.
+API Compatibility: Test each personality’s prompt with the Google chatbot API to ensure consistent responses. Keep prompts under 150 words to fit token limits.
+Engagement: The quiz encourages users to try different answers to unlock new personalities, boosting retention. Combine with the attraction system’s unlocks (e.g., new images at Friend level) for progression.
+Voice Prep: If you add TTS later, assign voice styles per personality (e.g., soft for Sweet, dramatic for Goth) using SpeechSynthesis pitch/tone settings.
+Next Steps
+Build the Quiz: Implement the HTML and JavaScript above, starting with 2–3 questions to test the flow. Add more questions later.
+Test Prompts: Send each personality’s prompt to the Google API and check if responses match the desired tone (e.g., Sultry is flirty but not explicit).
+Add Visuals: Source or create 4–8 profile images (e.g., male/female for each personality) and swap them based on quiz results.
+Integrate with Attraction System: Ensure the personality persists across attraction levels by storing it in localStorage and updating prompts dynamically.
+Gather Feedback: Add a “Rate Your Companion” button to collect user input on personality fit, helping you refine prompts.

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Companions</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <img id="profilePic" src="images/sweet_neutral.png" alt="AI Companion Profile Picture" class="profile-pic-large">
+            <h1>AI Companions</h1>
+            <div class="settings">
+                <!-- <button id="editSystemPrompt" class="btn">Edit System Prompt</button> -->
+                <button id="clearHistory" class="btn">Clear History</button>
+                <button id="setProfilePic" class="btn">Set GF Picture</button>
+                <button id="settings-button" class="btn">Personality Quiz</button>
+                <button id="gamesButton" class="btn">🎮 Games</button>
+            </div>
+            <div class="api-key-section">
+    <select id="apiProvider" class="api-select">
+        <option value="gemini">Gemini</option>
+        <option value="grok">Grok</option>
+    </select>
+    <input type="password" id="geminiApiKey" placeholder="Gemini API Key" class="api-input">
+    <input type="password" id="grokApiKey" placeholder="Grok API Key" class="api-input">
+    <button id="saveKeys" class="btn">Save Keys</button>
+</div>
+        </header>
+
+        <div id="attractionDisplay" class="attraction-display">
+            <div class="progress-bar">
+                <div id="progressFill" class="progress-fill"></div>
+            </div>
+            <span id="levelText">Level: Stranger</span>
+        </div>
+        <main class="chat-container">
+            <div id="chatDisplay" class="chat-display"></div>
+            <div id="pagination" class="pagination">
+                <button id="firstPage" class="btn"><<</button>
+                <button id="prevPage" class="btn">Previous</button>
+                <span id="pageInfo"></span>
+                <button id="nextPage" class="btn">Next</button>
+                <button id="lastPage" class="btn">>></button>
+            </div>
+            
+            <div class="message-input-container">
+                <input type="text" id="messageInput" placeholder="Type your message..." class="message-input">
+                <button id="sendMessage" class="btn send-btn">Send</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal for System Prompt -->
+    <!-- Commented out system prompt modal -->
+    <!-- <div id="systemPromptModal" class="modal">
+        <div class="modal-content">
+            <h2>Edit System Prompt</h2>
+            <textarea id="systemPromptText"></textarea>
+            <div class="modal-buttons">
+                <button id="savePrompt" class="btn">Save</button>
+                <button id="cancelPrompt" class="btn">Cancel</button>
+            </div>
+        </div>
+    </div> -->
+    
+    <!-- Quiz Modal -->
+    <div id="quizModal" class="modal">
+        <div class="modal-content">
+            <button id="closeQuiz" class="modal-close">×</button>
+            <h2>Personality Quiz</h2>
+            <p>Answer these questions to determine your AI companion's personality.</p>
+            <form id="quizForm">
+                <div class="quiz-question">
+                    <label>Choose companion gender:</label>
+                    <select name="gender">
+                        <option value="female">Female (Girlfriend)</option>
+                        <option value="male">Male (Boyfriend)</option>
+                    </select>
+                </div>
+                <div class="quiz-question">
+                    <label>1. What catches your attention in someone?</label>
+                    <select name="q1">
+                        <option value="goth">Their mysterious aura</option>
+                        <option value="playful">Their infectious laugh</option>
+                        <option value="sweet">Their kind eyes</option>
+                        <option value="sexy">Their confident smile</option>
+                    </select>
+                </div>
+                <div class="quiz-question">
+                    <label>2. Your perfect evening involves...</label>
+                    <select name="q2">
+                        <option value="sexy">Dancing the night away</option>
+                        <option value="sweet">Cooking dinner together</option>
+                        <option value="goth">Stargazing and deep talks</option>
+                        <option value="playful">Game night with lots of laughter</option>
+                    </select>
+                </div>
+                <div class="quiz-question">
+                    <label>3. What gift would melt your heart?</label>
+                    <select name="q3">
+                        <option value="playful">A surprise treasure hunt</option>
+                        <option value="goth">A handwritten dark poem</option>
+                        <option value="sexy">A sensual perfume/cologne</option>
+                        <option value="sweet">A heartfelt love letter</option>
+                    </select>
+                </div>
+                <div class="quiz-question">
+                    <label>4. Your ideal music playlist includes...</label>
+                    <select name="q4">
+                        <option value="sweet">Soft acoustic love songs</option>
+                        <option value="sexy">Sultry R&B tracks</option>
+                        <option value="playful">Upbeat pop hits</option>
+                        <option value="goth">Alternative rock and metal</option>
+                    </select>
+                </div>
+                <div class="quiz-question">
+                    <label>5. What attracts you most in a partner?</label>
+                    <select name="q5">
+                        <option value="playful">Their playful spirit</option>
+                        <option value="sexy">Their passionate nature</option>
+                        <option value="goth">Their deep understanding</option>
+                        <option value="sweet">Their gentle heart</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn">Submit Quiz</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- API Key Modal -->
+    <div id="api-key-modal" class="modal">
+        <div class="modal-content">
+            <h2>Enter API Key</h2>
+            <p>Please enter your Gemini API key to continue.</p>
+            <input type="password" id="api-key-input" placeholder="Your API Key">
+            <button id="save-key-button" class="btn">Save Key</button>
+        </div>
+    </div>
+
+    <!-- Profile Picture Modal -->
+    <!-- Profile Picture Preview Modal -->
+    <div id="profilePreviewModal" class="modal">
+        <div class="modal-content profile-preview-content">
+            <button id="closeProfilePreview" class="modal-close">×</button>
+            <h2>Profile Picture</h2>
+            <div class="profile-preview-container">
+                <img id="profilePreviewImage" src="" alt="Profile Picture Preview" class="profile-preview-image">
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Picture Modal -->
+    <div id="profilePicModal" class="modal">
+        <div class="modal-content">
+            <h2>Set Profile Picture</h2>
+            <p>Choose an image file from your computer.</p>
+            <input type="file" id="profilePicInput" accept="image/*">
+            <div class="modal-buttons">
+                <button id="saveProfilePic" class="btn">Save</button>
+                <button id="cancelProfilePic" class="btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Games Modal -->
+    <div id="gamesModal" class="modal">
+        <div class="modal-content games-modal-content">
+            <button id="closeGames" class="modal-close">×</button>
+            <h2>🎮 Choose a Game</h2>
+            <p>Select a game to play with your AI companion!</p>
+            <div class="games-grid">
+                <div class="game-card" data-game="20questions">
+                    <div class="game-icon">🎯</div>
+                    <h3>20 Questions</h3>
+                    <p>I think of something, you guess what it is!</p>
+                </div>
+                <div class="game-card" data-game="storybuilding">
+                    <div class="game-icon">📖</div>
+                    <h3>Story Building</h3>
+                    <p>Let's create a story together, one sentence at a time!</p>
+                </div>
+                <div class="game-card" data-game="wordassociation">
+                    <div class="game-icon">🔤</div>
+                    <h3>Word Association</h3>
+                    <p>Say the first word that comes to mind!</p>
+                </div>
+                <div class="game-card" data-game="wouldyourather">
+                    <div class="game-icon">❓</div>
+                    <h3>Would You Rather</h3>
+                    <p>Choose between two interesting options!</p>
+                </div>
+                <div class="game-card" data-game="roleplay">
+                    <div class="game-icon">🎭</div>
+                    <h3>Role Playing</h3>
+                    <p>Let's act out fun scenarios together!</p>
+                </div>
+                <div class="game-card" data-game="lovequiz">
+                    <div class="game-icon">💕</div>
+                    <h3>Love Language Quiz</h3>
+                    <p>Discover our compatibility through questions!</p>
+                </div>
+                <div class="game-card" data-game="dreamdate">
+                    <div class="game-icon">🌟</div>
+                    <h3>Dream Date Planning</h3>
+                    <p>Plan our perfect date together!</p>
+                </div>
+                <div class="game-card" data-game="trivia">
+                    <div class="game-icon">🧠</div>
+                    <h3>Trivia Challenge</h3>
+                    <p>Test our knowledge with fun questions!</p>
+                </div>
+                <div class="game-card" data-game="songguess">
+                    <div class="game-icon">🎵</div>
+                    <h3>Song Guessing</h3>
+                    <p>Guess the song from lyrics or clues!</p>
+                </div>
+                <div class="game-card" data-game="movieguess">
+                    <div class="game-icon">🎬</div>
+                    <h3>Movie/TV Guessing</h3>
+                    <p>Guess movies and shows from descriptions!</p>
+                </div>
+                <div class="game-card" data-game="quickfire">
+                    <div class="game-icon">⚡</div>
+                    <h3>Quick Fire Questions</h3>
+                    <p>Rapid-fire questions to get to know each other!</p>
+                </div>
+                <div class="game-card" data-game="creative">
+                    <div class="game-icon">🎨</div>
+                    <h3>Creative Writing</h3>
+                    <p>Write creative stories with prompts!</p>
+                </div>
+                <div class="game-card" data-game="predictions">
+                    <div class="game-icon">🔮</div>
+                    <h3>Future Predictions</h3>
+                    <p>Make fun predictions about the future!</p>
+                </div>
+                <div class="game-card" data-game="deepconvo">
+                    <div class="game-icon">💭</div>
+                    <h3>Deep Conversations</h3>
+                    <p>Explore meaningful topics together!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+    
+    <!-- Scroll to Bottom Button -->
+    <button id="scrollToBottom" class="scroll-to-bottom-btn" title="Scroll to bottom">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M7 14L12 19L17 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M7 7L12 12L17 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    </button>
+</body>
+</html>
