@@ -273,7 +273,6 @@ document.addEventListener('DOMContentLoaded', () => {
             currentPage = totalPages;
             displayCurrentPage();
             updateAttraction(1);
-            const currentApiKey = apiProvider === 'gemini' ? geminiApiKey : grokApiKey;
             saveUserProgress(currentApiKey);
         } catch (error) {
             console.error('Error sending message:', error);
@@ -451,8 +450,8 @@ async function sendToGeminiAPI(message, apiKey) {
         }
         localStorage.setItem('attraction', JSON.stringify(attraction));
         const currentApiKey = apiProvider === 'gemini' ? geminiApiKey : 
-                         apiProvider === 'grok' ? grokApiKey : groqApiKey;
-saveUserProgress(currentApiKey);
+                             apiProvider === 'grok' ? grokApiKey : groqApiKey;
+        saveUserProgress(currentApiKey);
         updateAttractionUI();
     }
 
@@ -540,7 +539,8 @@ saveUserProgress(currentApiKey);
         chatMessages.innerHTML = '';
         chatHistory = [];
         localStorage.removeItem('chatHistory');
-        const currentApiKey = apiProvider === 'gemini' ? geminiApiKey : grokApiKey;
+        const currentApiKey = apiProvider === 'gemini' ? geminiApiKey : 
+                             apiProvider === 'grok' ? grokApiKey : groqApiKey;
         saveUserProgress(currentApiKey);
         currentPage = 1;
         displayCurrentPage();
