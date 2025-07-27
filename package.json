@@ -4,7 +4,7 @@
   "description": "AI Chatbot Girlfriend Web Application",
   "main": "server/app.js",
   "scripts": {
-    "start": "node server/app.js",
+    "start": "NODE_ENV=production node server/app.js",
     "dev": "nodemon server/app.js",
     "install-deps": "npm install"
   },
