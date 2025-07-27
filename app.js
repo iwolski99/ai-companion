@@ -26,12 +26,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let geminiApiKey = localStorage.getItem('geminiApiKey');
     let grokApiKey = localStorage.getItem('grokApiKey');
+    let groqApiKey = localStorage.getItem('groqApiKey');
     let apiProvider = localStorage.getItem('apiProvider') || 'gemini';
 
     // Apply personality theme on load
     applyPersonalityTheme();
 
-    if (!geminiApiKey && !grokApiKey) {
+    // Show modal if no API key exists for the selected provider
+    const currentApiKey = apiProvider === 'gemini' ? geminiApiKey : 
+                         apiProvider === 'grok' ? grokApiKey : groqApiKey;
+    if (!currentApiKey) {
         apiKeyModal.style.display = 'block';
     }
 
@@ -54,27 +58,36 @@ document.addEventListener('DOMContentLoaded', () => {
     function saveApiKeys() {
         geminiApiKey = document.getElementById('geminiApiKey').value.trim();
         grokApiKey = document.getElementById('grokApiKey').value.trim();
+        groqApiKey = document.getElementById('groqApiKey').value.trim();
         apiProvider = document.getElementById('apiProvider').value;
-        if (geminiApiKey || grokApiKey) {
+        
+        const currentApiKey = apiProvider === 'gemini' ? geminiApiKey : 
+                             apiProvider === 'grok' ? grokApiKey : groqApiKey;
+        
+        if (currentApiKey) {
             if (geminiApiKey) localStorage.setItem('geminiApiKey', geminiApiKey);
             if (grokApiKey) localStorage.setItem('grokApiKey', grokApiKey);
+            if (groqApiKey) localStorage.setItem('groqApiKey', groqApiKey);
             localStorage.setItem('apiProvider', apiProvider);
-            const currentApiKey = apiProvider === 'gemini' ? geminiApiKey : grokApiKey;
             loadUserProgress(currentApiKey);
             apiKeyModal.style.display = 'none';
         } else {
-            alert('Please enter at least one valid API key.');
+            alert(`Please enter a valid ${apiProvider === 'gemini' ? 'Gemini' : apiProvider === 'grok' ? 'Grok' : 'Groq'} API key.`);
         }
     }
 
     function loadApiKeys() {
         geminiApiKey = localStorage.getItem('geminiApiKey');
         grokApiKey = localStorage.getItem('grokApiKey');
+        groqApiKey = localStorage.getItem('groqApiKey');
         apiProvider = localStorage.getItem('apiProvider') || 'gemini';
         document.getElementById('apiProvider').value = apiProvider;
         document.getElementById('geminiApiKey').value = geminiApiKey || '';
         document.getElementById('grokApiKey').value = grokApiKey || '';
-        if (!geminiApiKey && !grokApiKey) {
+        document.getElementById('groqApiKey').value = groqApiKey || '';
+        const currentApiKey = apiProvider === 'gemini' ? geminiApiKey : 
+                             apiProvider === 'grok' ? grokApiKey : groqApiKey;
+        if (!currentApiKey) {
             apiKeyModal.style.display = 'block';
         }
     }
@@ -244,6 +257,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 response = await sendToGeminiAPI(message, geminiApiKey);
             } else if (apiProvider === 'grok' && grokApiKey) {
                 response = await sendToGrokAPI(message, grokApiKey);
+            } else if (apiProvider === 'groq' && groqApiKey) {
+                response = await sendToGroqAPI(message, groqApiKey);
             } else {
                 throw new Error('No valid API key for selected provider.');
             }
@@ -338,6 +353,40 @@ document.addEventListener('DOMContentLoaded', () => {
     return botResponse;
 }
 
+async function sendToGroqAPI(message, apiKey) {
+    let systemPrompt = basePrompts[personality]?.[attraction.level] || '';
+    if (systemPrompt) {
+        systemPrompt = systemPrompt.replace('AI companion', companionGender === 'female' ? 'AI girlfriend' : 'AI boyfriend');
+    }
+    const messages = chatHistory.map(msg => ({ role: msg.role, content: msg.parts[0].text }));
+    messages.push({ role: 'user', content: message });
+    messages.unshift({ role: 'system', content: systemPrompt });
+
+    const url = `https://api.groq.com/openai/v1/chat/completions`;
+
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+            model: 'llama-3.1-70b-versatile',
+            messages,
+            temperature: 0.7,
+            top_p: 0.8
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error(`Groq API request failed: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const botResponse = data.choices[0].message.content;
+    return botResponse;
+}
+
 async function sendToGeminiAPI(message, apiKey) {
     let systemPrompt = basePrompts[personality]?.[attraction.level] || '';
     if (systemPrompt) {
@@ -404,7 +453,8 @@ async function sendToGeminiAPI(message, apiKey) {
             updateProfilePicture();
         }
         localStorage.setItem('attraction', JSON.stringify(attraction));
-        const currentApiKey = apiProvider === 'gemini' ? geminiApiKey : grokApiKey;
+        const currentApiKey = apiProvider === 'gemini' ? geminiApiKey : 
+                         apiProvider === 'grok' ? grokApiKey : groqApiKey;
 saveUserProgress(currentApiKey);
         updateAttractionUI();
     }
