@@ -32,13 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Apply personality theme on load
     applyPersonalityTheme();
 
-    // Show modal if no API key exists for the selected provider
-    const currentApiKey = apiProvider === 'gemini' ? geminiApiKey : 
-                         apiProvider === 'grok' ? grokApiKey : groqApiKey;
-    if (!currentApiKey) {
-        apiKeyModal.style.display = 'block';
-    }
-
     function applyPersonalityTheme() {
         document.body.className = `theme-${personality}`;
         updateProgressBarTheme();
@@ -85,11 +78,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('geminiApiKey').value = geminiApiKey || '';
         document.getElementById('grokApiKey').value = grokApiKey || '';
         document.getElementById('groqApiKey').value = groqApiKey || '';
-        const currentApiKey = apiProvider === 'gemini' ? geminiApiKey : 
-                             apiProvider === 'grok' ? grokApiKey : groqApiKey;
-        if (!currentApiKey) {
-            apiKeyModal.style.display = 'block';
-        }
     }
 
     function showQuizModal() {
@@ -252,6 +240,15 @@ document.addEventListener('DOMContentLoaded', () => {
         showTypingIndicator();
 
         try {
+            const currentApiKey = apiProvider === 'gemini' ? geminiApiKey : 
+                                 apiProvider === 'grok' ? grokApiKey : groqApiKey;
+            
+            if (!currentApiKey) {
+                hideTypingIndicator();
+                apiKeyModal.style.display = 'block';
+                return;
+            }
+            
             let response;
             if (apiProvider === 'gemini' && geminiApiKey) {
                 response = await sendToGeminiAPI(message, geminiApiKey);
