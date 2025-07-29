@@ -223,6 +223,12 @@ async function sendMessage() {
     const message = messageInput.value.trim();
     if (!message) return;
 
+    // Check for game exit command
+    if (message.toLowerCase() === '/exit' && currentGame) {
+        endGame();
+        return;
+    }
+
     // Check if API key is configured
     let currentApiKey = '';
     if (apiProvider === 'gemini') {
@@ -256,13 +262,20 @@ async function sendMessage() {
 
     try {
         let response = '';
+        
+        // Create enhanced prompt with game context
+        let enhancedMessage = message;
+        if (currentGame) {
+            const gameContext = getGameContext();
+            enhancedMessage = `${gameContext}\n\nUser message: ${message}`;
+        }
 
         if (apiProvider === 'gemini') {
-            response = await sendToGeminiAPI(message, currentApiKey);
+            response = await sendToGeminiAPI(enhancedMessage, currentApiKey);
         } else if (apiProvider === 'grok') {
-            response = await sendToGrokAPI(message, currentApiKey);
+            response = await sendToGrokAPI(enhancedMessage, currentApiKey);
         } else if (apiProvider === 'groq') {
-            response = await sendToGroqAPI(message, currentApiKey);
+            response = await sendToGroqAPI(enhancedMessage, currentApiKey);
         }
 
         // Remove typing indicator and add real response
@@ -307,15 +320,21 @@ function displayChatHistory() {
         if (msg.sender === 'ai') {
             senderName = companionGender === 'female' ? 'Her' : 'Him';
         } else if (msg.sender === 'game') {
-            senderName = '🎮 Game';
+            senderName = '🎮 Game System';
+        }
+
+        // Add special styling for game messages
+        let messageContent = msg.message;
+        if (msg.sender === 'game') {
+            messageContent = `<span style="color: #ffd700; font-weight: 500;">${msg.message}</span>`;
         }
 
         messageDiv.innerHTML = `
             <div class="message-content">
                 <strong>${senderName}:</strong>
-                <span>${msg.message}</span>
+                <span>${messageContent}</span>
             </div>
-            <div class="message-time">${new Date().toLocaleTimeString()}</div>
+            <div class="message-time">${new Date(msg.timestamp).toLocaleTimeString()}</div>
         `;
         chatDisplay.appendChild(messageDiv);
     });
@@ -390,6 +409,12 @@ function getSystemPrompt() {
 // AI API Functions
 async function sendToGeminiAPI(message, apiKey) {
     const systemPrompt = getSystemPrompt();
+    let fullPrompt = systemPrompt;
+    
+    // Add game awareness if in a game
+    if (currentGame) {
+        fullPrompt += `\n\nYou are currently playing ${currentGame} with the user. You can see all the game messages in the chat and should respond naturally while being engaged with the game. Be encouraging, react to their moves, and make the experience fun and interactive.`;
+    }
 
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
@@ -399,7 +424,7 @@ async function sendToGeminiAPI(message, apiKey) {
         body: JSON.stringify({
             contents: [{
                 parts: [{
-                    text: `${systemPrompt}\n\nUser message: ${message}`
+                    text: `${fullPrompt}\n\nUser message: ${message}`
                 }]
             }],
             generationConfig: {
@@ -421,6 +446,12 @@ async function sendToGeminiAPI(message, apiKey) {
 
 async function sendToGrokAPI(message, apiKey) {
     const systemPrompt = getSystemPrompt();
+    let fullPrompt = systemPrompt;
+    
+    // Add game awareness if in a game
+    if (currentGame) {
+        fullPrompt += `\n\nYou are currently playing ${currentGame} with the user. You can see all the game messages in the chat and should respond naturally while being engaged with the game. Be encouraging, react to their moves, and make the experience fun and interactive.`;
+    }
 
     const response = await fetch('https://api.x.ai/v1/chat/completions', {
         method: 'POST',
@@ -432,7 +463,7 @@ async function sendToGrokAPI(message, apiKey) {
             messages: [
                 {
                     role: "system",
-                    content: systemPrompt
+                    content: fullPrompt
                 },
                 {
                     role: "user",
@@ -455,6 +486,12 @@ async function sendToGrokAPI(message, apiKey) {
 
 async function sendToGroqAPI(message, apiKey) {
     const systemPrompt = getSystemPrompt();
+    let fullPrompt = systemPrompt;
+    
+    // Add game awareness if in a game
+    if (currentGame) {
+        fullPrompt += `\n\nYou are currently playing ${currentGame} with the user. You can see all the game messages in the chat and should respond naturally while being engaged with the game. Be encouraging, react to their moves, and make the experience fun and interactive.`;
+    }
 
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
@@ -466,7 +503,7 @@ async function sendToGroqAPI(message, apiKey) {
             messages: [
                 {
                     role: "system",
-                    content: systemPrompt
+                    content: fullPrompt
                 },
                 {
                     role: "user",
@@ -487,48 +524,341 @@ async function sendToGroqAPI(message, apiKey) {
     return data.choices[0].message.content;
 }
 
+// Game state management
+let gameState = {
+    isActive: false,
+    currentGame: null,
+    gameData: {}
+};
+
 // Helper function to add game messages
 function appendGameAdminMessage(message) {
     addMessageToHistory('game', message);
 }
 
-// Game processors
+// Game processors with full functionality
 const gameProcessors = {
     '20questions': (message) => {
-        // Implement 20 questions logic here
-        appendGameAdminMessage(`You said: ${message}.  (20 Questions in progress...)`);
+        if (!gameState.gameData['20questions']) {
+            gameState.gameData['20questions'] = {
+                questionsAsked: 0,
+                target: null,
+                gamePhase: 'waiting', // waiting, guessing, ended
+                questions: [
+                    "Is it alive?",
+                    "Is it bigger than a breadbox?", 
+                    "Can you hold it in your hand?",
+                    "Is it made by humans?",
+                    "Do you use it daily?",
+                    "Is it found indoors?",
+                    "Is it electronic?",
+                    "Is it edible?",
+                    "Is it made of metal?",
+                    "Is it used for entertainment?"
+                ]
+            };
+        }
+
+        const data = gameState.gameData['20questions'];
+        
+        if (message.toLowerCase().includes('start') && data.gamePhase === 'waiting') {
+            data.gamePhase = 'guessing';
+            data.questionsAsked = 0;
+            appendGameAdminMessage("🎯 Great! Think of something and I'll try to guess it. Type 'ready' when you've thought of something!");
+            return;
+        }
+        
+        if (message.toLowerCase().includes('ready') && data.gamePhase === 'guessing') {
+            data.questionsAsked = 1;
+            appendGameAdminMessage(`🎯 Question ${data.questionsAsked}/20: ${data.questions[0]}`);
+            return;
+        }
+        
+        if (data.gamePhase === 'guessing' && data.questionsAsked > 0 && data.questionsAsked <= 20) {
+            const response = message.toLowerCase();
+            if (response.includes('yes') || response.includes('no')) {
+                data.questionsAsked++;
+                if (data.questionsAsked <= 20 && data.questionsAsked <= data.questions.length) {
+                    appendGameAdminMessage(`🎯 Question ${data.questionsAsked}/20: ${data.questions[data.questionsAsked - 1]}`);
+                } else if (data.questionsAsked <= 20) {
+                    const genericQuestions = [
+                        "Is it something you'd find in a kitchen?",
+                        "Is it colorful?",
+                        "Would children play with it?",
+                        "Is it expensive?",
+                        "Can it move on its own?"
+                    ];
+                    const qIndex = (data.questionsAsked - data.questions.length - 1) % genericQuestions.length;
+                    appendGameAdminMessage(`🎯 Question ${data.questionsAsked}/20: ${genericQuestions[qIndex]}`);
+                } else {
+                    data.gamePhase = 'ended';
+                    appendGameAdminMessage("🎯 I give up! What were you thinking of? (The game will end after you tell me)");
+                }
+            } else {
+                appendGameAdminMessage("🎯 Please answer with 'yes' or 'no'!");
+            }
+        }
+        
+        if (data.gamePhase === 'ended') {
+            appendGameAdminMessage(`🎯 Thanks for playing! That was fun. Type '/exit' to leave the game.`);
+        }
     },
+
     'trivia': (message) => {
-        // Implement trivia logic here
-        appendGameAdminMessage(`You said: ${message}. (Trivia in progress...)`);
+        if (!gameState.gameData['trivia']) {
+            gameState.gameData['trivia'] = {
+                score: 0,
+                questionsAsked: 0,
+                currentQuestion: null,
+                currentAnswer: null,
+                questions: [
+                    { q: "What is the capital of France?", a: "paris" },
+                    { q: "What year did World War II end?", a: "1945" },
+                    { q: "What is the largest planet in our solar system?", a: "jupiter" },
+                    { q: "Who painted the Mona Lisa?", a: "leonardo da vinci" },
+                    { q: "What is 15 + 27?", a: "42" }
+                ]
+            };
+        }
+
+        const data = gameState.gameData['trivia'];
+        
+        if (message.toLowerCase().includes('start') && !data.currentQuestion) {
+            data.questionsAsked = 0;
+            data.score = 0;
+            const question = data.questions[data.questionsAsked];
+            data.currentQuestion = question.q;
+            data.currentAnswer = question.a;
+            appendGameAdminMessage(`🧠 Question ${data.questionsAsked + 1}: ${data.currentQuestion}`);
+            return;
+        }
+        
+        if (data.currentQuestion) {
+            const userAnswer = message.toLowerCase().trim();
+            if (userAnswer.includes(data.currentAnswer)) {
+                data.score++;
+                appendGameAdminMessage(`🧠 Correct! Score: ${data.score}/${data.questionsAsked + 1}`);
+            } else {
+                appendGameAdminMessage(`🧠 Wrong! The answer was: ${data.currentAnswer}. Score: ${data.score}/${data.questionsAsked + 1}`);
+            }
+            
+            data.questionsAsked++;
+            if (data.questionsAsked < data.questions.length) {
+                const question = data.questions[data.questionsAsked];
+                data.currentQuestion = question.q;
+                data.currentAnswer = question.a;
+                appendGameAdminMessage(`🧠 Question ${data.questionsAsked + 1}: ${data.currentQuestion}`);
+            } else {
+                data.currentQuestion = null;
+                appendGameAdminMessage(`🧠 Game over! Final score: ${data.score}/${data.questions.length}. Type '/exit' to leave the game.`);
+            }
+        }
     },
+
     'storybuilding': (message) => {
-        // Implement story building logic here
-        appendGameAdminMessage(`You added: ${message}. (Storybuilding in progress...)`);
+        if (!gameState.gameData['storybuilding']) {
+            gameState.gameData['storybuilding'] = {
+                story: ["Once upon a time, in a land far away..."],
+                turnCount: 1
+            };
+        }
+
+        const data = gameState.gameData['storybuilding'];
+        
+        if (message.toLowerCase().includes('start')) {
+            appendGameAdminMessage("📖 Let's build a story together! I'll start: 'Once upon a time, in a land far away...' Now add your sentence!");
+            return;
+        }
+        
+        data.story.push(message);
+        data.turnCount++;
+        appendGameAdminMessage(`📖 Great addition! Our story so far: "${data.story.join(' ')}" Now it's my turn again!`);
     },
+
     'wordassociation': (message) => {
-        // Implement word association logic here
-        appendGameAdminMessage(`Your word: ${message}. (Word Association in progress...)`);
+        if (!gameState.gameData['wordassociation']) {
+            gameState.gameData['wordassociation'] = {
+                currentWord: 'sunshine',
+                wordChain: ['sunshine'],
+                turnCount: 0
+            };
+        }
+
+        const data = gameState.gameData['wordassociation'];
+        
+        if (message.toLowerCase().includes('start')) {
+            appendGameAdminMessage(`🔤 Word Association! Starting word: "${data.currentWord}". What word comes to mind?`);
+            return;
+        }
+        
+        const userWord = message.toLowerCase().trim();
+        data.wordChain.push(userWord);
+        data.currentWord = userWord;
+        data.turnCount++;
+        appendGameAdminMessage(`🔤 "${userWord}" - good one! Chain: ${data.wordChain.join(' → ')}`);
     },
+
     'wouldyourather': (message) => {
-        // Implement would you rather logic here
-        appendGameAdminMessage(`You chose: ${message}. (Would You Rather in progress...)`);
+        if (!gameState.gameData['wouldyourather']) {
+            gameState.gameData['wouldyourather'] = {
+                questionsAsked: 0,
+                questions: [
+                    "Would you rather have the ability to fly or be invisible?",
+                    "Would you rather always be 10 minutes late or 20 minutes early?",
+                    "Would you rather have unlimited money or unlimited time?",
+                    "Would you rather read minds or predict the future?",
+                    "Would you rather live in the past or the future?"
+                ]
+            };
+        }
+
+        const data = gameState.gameData['wouldyourather'];
+        
+        if (message.toLowerCase().includes('start')) {
+            appendGameAdminMessage(`❓ ${data.questions[0]}`);
+            return;
+        }
+        
+        appendGameAdminMessage(`❓ Interesting choice! I can see why you'd pick that.`);
+        data.questionsAsked++;
+        
+        if (data.questionsAsked < data.questions.length) {
+            appendGameAdminMessage(`❓ Next question: ${data.questions[data.questionsAsked]}`);
+        } else {
+            appendGameAdminMessage(`❓ That was fun! We've gone through all my questions. Type '/exit' to leave the game.`);
+        }
     },
+
     'songguess': (message) => {
-        // Implement song guessing logic here
-        appendGameAdminMessage(`You guessed: ${message}. (Song Guessing in progress...)`);
+        if (!gameState.gameData['songguess']) {
+            gameState.gameData['songguess'] = {
+                currentSong: 0,
+                score: 0,
+                songs: [
+                    { clue: "🎵 'Is this the real life? Is this just fantasy?'", answer: "bohemian rhapsody", artist: "Queen" },
+                    { clue: "🎵 'Hello, is it me you're looking for?'", answer: "hello", artist: "Lionel Richie" },
+                    { clue: "🎵 'I see trees of green, red roses too'", answer: "what a wonderful world", artist: "Louis Armstrong" }
+                ]
+            };
+        }
+
+        const data = gameState.gameData['songguess'];
+        
+        if (message.toLowerCase().includes('start')) {
+            appendGameAdminMessage(`🎵 Song Guessing Game! Here's your first clue: ${data.songs[0].clue}`);
+            return;
+        }
+        
+        const guess = message.toLowerCase();
+        const currentSong = data.songs[data.currentSong];
+        
+        if (guess.includes(currentSong.answer.toLowerCase()) || guess.includes(currentSong.artist.toLowerCase())) {
+            data.score++;
+            appendGameAdminMessage(`🎵 Correct! It was "${currentSong.answer}" by ${currentSong.artist}. Score: ${data.score}`);
+        } else {
+            appendGameAdminMessage(`🎵 Not quite! It was "${currentSong.answer}" by ${currentSong.artist}. Score: ${data.score}`);
+        }
+        
+        data.currentSong++;
+        if (data.currentSong < data.songs.length) {
+            appendGameAdminMessage(`🎵 Next clue: ${data.songs[data.currentSong].clue}`);
+        } else {
+            appendGameAdminMessage(`🎵 Game over! Final score: ${data.score}/${data.songs.length}. Type '/exit' to leave the game.`);
+        }
     },
+
     'movieguess': (message) => {
-        // Implement movie guessing logic here
-        appendGameAdminMessage(`You guessed: ${message}. (Movie Guessing in progress...)`);
+        if (!gameState.gameData['movieguess']) {
+            gameState.gameData['movieguess'] = {
+                currentMovie: 0,
+                score: 0,
+                movies: [
+                    { clue: "🎬 A group of friends in New York, one's a paleontologist, another's a chef...", answer: "friends" },
+                    { clue: "🎬 A wizard boy attends a magical school and fights a dark lord", answer: "harry potter" },
+                    { clue: "🎬 'I'll be back' - Time traveling robots", answer: "terminator" }
+                ]
+            };
+        }
+
+        const data = gameState.gameData['movieguess'];
+        
+        if (message.toLowerCase().includes('start')) {
+            appendGameAdminMessage(`🎬 Movie/TV Guessing! Here's your first clue: ${data.movies[0].clue}`);
+            return;
+        }
+        
+        const guess = message.toLowerCase();
+        const currentMovie = data.movies[data.currentMovie];
+        
+        if (guess.includes(currentMovie.answer.toLowerCase())) {
+            data.score++;
+            appendGameAdminMessage(`🎬 Correct! It was "${currentMovie.answer}". Score: ${data.score}`);
+        } else {
+            appendGameAdminMessage(`🎬 Not quite! It was "${currentMovie.answer}". Score: ${data.score}`);
+        }
+        
+        data.currentMovie++;
+        if (data.currentMovie < data.movies.length) {
+            appendGameAdminMessage(`🎬 Next clue: ${data.movies[data.currentMovie].clue}`);
+        } else {
+            appendGameAdminMessage(`🎬 Game over! Final score: ${data.score}/${data.movies.length}. Type '/exit' to leave the game.`);
+        }
     },
+
     'roleplay': (message) => {
-        // Implement roleplay logic here
-        appendGameAdminMessage(`You said: ${message}. (Roleplay in progress...)`);
+        if (!gameState.gameData['roleplay']) {
+            gameState.gameData['roleplay'] = {
+                scenario: null,
+                started: false
+            };
+        }
+
+        const data = gameState.gameData['roleplay'];
+        
+        if (message.toLowerCase().includes('start') && !data.started) {
+            appendGameAdminMessage("🎭 Role Playing time! What scenario would you like to explore? (cafe date, adventure quest, mystery detective, etc.)");
+            return;
+        }
+        
+        if (!data.started && !data.scenario) {
+            data.scenario = message;
+            data.started = true;
+            appendGameAdminMessage(`🎭 Great! Let's roleplay a ${message} scenario. I'll play along with whatever character fits the scene!`);
+            return;
+        }
+        
+        appendGameAdminMessage(`🎭 *Playing along in the ${data.scenario} scenario* This is so much fun!`);
     },
+
     'lovequiz': (message) => {
-        // Implement love quiz logic here
-        appendGameAdminMessage(`Your answer: ${message}. (Love Quiz in progress...)`);
+        if (!gameState.gameData['lovequiz']) {
+            gameState.gameData['lovequiz'] = {
+                currentQuestion: 0,
+                questions: [
+                    "What's your ideal date activity?",
+                    "What's most important in a relationship?",
+                    "How do you prefer to show affection?",
+                    "What's your love language?",
+                    "What makes you feel most loved?"
+                ]
+            };
+        }
+
+        const data = gameState.gameData['lovequiz'];
+        
+        if (message.toLowerCase().includes('start')) {
+            appendGameAdminMessage(`💕 Love Language Quiz! Question 1: ${data.questions[0]}`);
+            return;
+        }
+        
+        appendGameAdminMessage(`💕 Interesting answer! That tells me a lot about you.`);
+        data.currentQuestion++;
+        
+        if (data.currentQuestion < data.questions.length) {
+            appendGameAdminMessage(`💕 Question ${data.currentQuestion + 1}: ${data.questions[data.currentQuestion]}`);
+        } else {
+            appendGameAdminMessage(`💕 Thanks for sharing! I feel like I know you better now. We're very compatible! Type '/exit' to leave the game.`);
+        }
     }
 };
 
@@ -563,8 +893,30 @@ const gameInitializers = {
     }
 };
 
+// Game context for AI integration
+function getGameContext() {
+    if (!currentGame || !gameState.isActive) {
+        return '';
+    }
+    
+    const gameName = currentGame;
+    const data = gameState.gameData[gameName] || {};
+    
+    let context = `\n\n[GAME CONTEXT - DO NOT MENTION THIS TO USER]\n`;
+    context += `Currently playing: ${gameName}\n`;
+    context += `Game state: ${JSON.stringify(data)}\n`;
+    context += `You are participating in this ${gameName} game. Respond as the AI girlfriend while being engaged with the game. The user can see all game messages in the chat history, so you can reference them naturally.\n`;
+    context += `You can comment on their game performance, encourage them, or react to their moves. Type '/exit' exits the game.\n`;
+    context += `[END GAME CONTEXT]\n\n`;
+    
+    return context;
+}
+
 function startGame(gameName) {
     currentGame = gameName;
+    gameState.isActive = true;
+    gameState.currentGame = gameName;
+    
     const gamesModal = document.getElementById('gamesModal');
     if (gamesModal) {
         gamesModal.style.display = 'none';
@@ -572,13 +924,28 @@ function startGame(gameName) {
     updateGameUI();
 
     // Show game start message
-    appendGameAdminMessage(`🎮 Starting ${gameName}...`);
+    appendGameAdminMessage(`🎮 Starting ${gameName}... (Type '/exit' anytime to quit the game)`);
 
     if (gameInitializers[gameName]) {
         gameInitializers[gameName]();
     }
 
     displayChatHistory();
+}
+
+function endGame() {
+    if (currentGame) {
+        appendGameAdminMessage(`🎮 Exiting ${currentGame}. Thanks for playing!`);
+        currentGame = null;
+        gameState.isActive = false;
+        gameState.currentGame = null;
+        gameState.gameData = {}; // Reset game data
+        updateGameUI();
+        
+        // Add user message for the exit command
+        addMessageToHistory('user', '/exit');
+        displayChatHistory();
+    }
 }
 
 function updateGameUI() {

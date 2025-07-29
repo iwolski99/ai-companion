@@ -1024,6 +1024,30 @@ h1 {
 }
 
 /* Game status indicators */
+.game-status {
+    background: rgba(255, 215, 0, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    border-radius: 12px;
+    padding: 10px 15px;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    color: #ffd700;
+}
+
+.game-indicator {
+    font-weight: 600;
+}
+
+.game-exit-hint {
+    font-size: 12px;
+    opacity: 0.8;
+    font-style: italic;
+}
+
 .game-active {
     background: rgba(194, 24, 91, 0.3) !important;
     border-color: var(--sultry-accent) !important;
