@@ -10,63 +10,29 @@
 <body>
     <div class="container">
         <header>
-            <div class="top-bar">
-                <div class="profile-section">
-                    <img id="profilePic" src="images/sweet_neutral.svg" alt="AI Companion Profile Picture" class="profile-pic-large">
-                    <div class="profile-info">
-                        <h1>AI Companions</h1>
-                        <p class="companion-name">Chatting with <span id="companionNameDisplay">Her</span></p>
-                    </div>
-                </div>
-                
-                <div class="header-controls">
-                    <button id="settingsMenuBtn" class="modern-btn settings-btn">
-                        ⚙️ Settings
+            <img id="profilePic" src="images/sweet_neutral.svg" alt="AI Companion Profile Picture" class="profile-pic-large">
+            <h1>AI Companions</h1>
+            <div class="settings">
+                <!-- <button id="editSystemPrompt" class="btn">Edit System Prompt</button> -->
+                <button id="clearHistory" class="btn">Clear History</button>
+                <button id="resetAttraction" class="btn">Reset Attraction</button>
+                <button id="setProfilePic" class="btn">Set GF Picture</button>
+                <button id="settings-button" class="btn">Personality Quiz</button>
+                <button id="gamesButton" class="btn">🎮 Games</button>
+            </div>
+            <div class="api-key-section">
+                <select id="apiProvider" class="api-select">
+                    <option value="gemini">Gemini</option>
+                    <option value="grok">Grok</option>
+                    <option value="groq">Groq</option>
+                </select>
+                <div class="api-input-container">
+                    <input type="password" id="apiKey" placeholder="Enter API Key" class="api-input">
+                    <button type="button" class="toggle-visibility" data-target="apiKey">
+                        <span class="eye-icon">👁️</span>
                     </button>
                 </div>
-            </div>
-            
-            <!-- Settings Menu (Hidden by default) -->
-            <div id="settingsMenu" class="settings-menu">
-                <div class="settings-section">
-                    <h3>Companion Settings</h3>
-                    <div class="setting-item">
-                        <label for="companionNameInput">AI Companion Name:</label>
-                        <input type="text" id="companionNameInput" placeholder="Enter name (e.g., Sarah, Alex)" class="name-input">
-                        <button id="saveCompanionName" class="mini-btn">Save</button>
-                    </div>
-                    <div class="setting-buttons">
-                        <button id="settings-button" class="modern-btn">📋 Personality Quiz</button>
-                        <button id="setProfilePic" class="modern-btn">🖼️ Set Picture</button>
-                    </div>
-                </div>
-                
-                <div class="settings-section">
-                    <h3>Chat Management</h3>
-                    <div class="setting-buttons">
-                        <button id="clearHistory" class="modern-btn">🗑️ Clear History</button>
-                        <button id="resetAttraction" class="modern-btn">💔 Reset Attraction</button>
-                        <button id="gamesButton" class="modern-btn">🎮 Games</button>
-                    </div>
-                </div>
-                
-                <div class="settings-section">
-                    <h3>API Configuration</h3>
-                    <div class="api-config">
-                        <select id="apiProvider" class="modern-select">
-                            <option value="gemini">Gemini</option>
-                            <option value="grok">Grok</option>
-                            <option value="groq">Groq</option>
-                        </select>
-                        <div class="api-input-container">
-                            <input type="password" id="apiKey" placeholder="Enter API Key" class="modern-input">
-                            <button type="button" class="toggle-visibility" data-target="apiKey">
-                                <span class="eye-icon">👁️</span>
-                            </button>
-                        </div>
-                        <button id="saveKeys" class="modern-btn">💾 Save Keys</button>
-                    </div>
-                </div>
+                <button id="saveKeys" class="btn">Save Keys</button>
             </div>
         </header>
 
@@ -296,14 +262,6 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M7 14L12 19L17 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             <path d="M7 7L12 12L17 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-    </button>
-
-    <!-- Scroll to Top Button -->
-    <button id="scrollToTop" class="scroll-to-top-btn" title="Scroll to top">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M17 10L12 5L7 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M17 17L12 12L7 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
     </button>
 </body>
