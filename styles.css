@@ -385,6 +385,15 @@ h1 {
     margin-right: 20%;
 }
 
+/* Timestamp positioning */
+.message-time {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    text-align: center;
+    margin-top: 5px;
+    font-style: italic;
+}
+
 /* Typing Indicator */
 .typing-indicator {
     display: flex;
