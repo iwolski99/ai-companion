@@ -12,13 +12,27 @@
         <header>
             <img id="profilePic" src="images/sweet_neutral.svg" alt="AI Companion Profile Picture" class="profile-pic-large">
             <h1>AI Companions</h1>
-            <div class="settings">
-                <!-- <button id="editSystemPrompt" class="btn">Edit System Prompt</button> -->
-                <button id="clearHistory" class="btn">Clear History</button>
-                <button id="resetAttraction" class="btn">Reset Attraction</button>
-                <button id="setProfilePic" class="btn">Set GF Picture</button>
-                <button id="settings-button" class="btn">Personality Quiz</button>
-                <button id="gamesButton" class="btn">🎮 Games</button>
+            
+            <!-- Top Action Bar -->
+            <div class="top-action-bar">
+                <div class="settings-dropdown">
+                    <button id="settingsDropdownBtn" class="btn settings-btn">⚙️ Settings</button>
+                    <div id="settingsDropdownMenu" class="dropdown-menu">
+                        <button id="changeNameBtn" class="dropdown-item">💝 Change AI Name</button>
+                        <button id="settings-button" class="dropdown-item">🧠 Personality Quiz</button>
+                        <button id="setProfilePic" class="dropdown-item">📸 Set GF Picture</button>
+                        <button id="clearHistory" class="dropdown-item">🗑️ Clear History</button>
+                        <button id="resetAttraction" class="dropdown-item">💔 Reset Attraction</button>
+                    </div>
+                </div>
+                
+                <div class="quick-stats">
+                    <span id="chatCount" class="stat-item">💬 0 messages</span>
+                    <span class="stat-separator">|</span>
+                    <span id="statusIndicator" class="stat-item status-online">🟢 Ready</span>
+                </div>
+                
+                <button id="gamesButton" class="btn games-btn">🎮 Games</button>
             </div>
             <div class="api-key-section">
                 <select id="apiProvider" class="api-select">
@@ -171,6 +185,23 @@
             <div class="modal-buttons">
                 <button id="saveProfilePic" class="btn">Save</button>
                 <button id="cancelProfilePic" class="btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Name Change Modal -->
+    <div id="nameChangeModal" class="modal">
+        <div class="modal-content">
+            <button id="closeNameChange" class="modal-close">×</button>
+            <h2>💝 Change AI Companion Name</h2>
+            <p>What would you like to call your AI companion?</p>
+            <div class="name-input-section">
+                <input type="text" id="aiNameInput" placeholder="Enter new name..." class="name-input" maxlength="20">
+                <small class="input-hint">Current name: <span id="currentAiName">Her</span></small>
+            </div>
+            <div class="modal-buttons">
+                <button id="saveAiName" class="btn">💝 Save Name</button>
+                <button id="cancelNameChange" class="btn">Cancel</button>
             </div>
         </div>
     </div>
