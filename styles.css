@@ -260,7 +260,6 @@ h1 {
     border-radius: 20px;
     padding: 20px;
     overflow-y: auto;
-    overflow-x: hidden;
     margin-bottom: 20px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
@@ -327,7 +326,7 @@ h1 {
 .message-content {
     padding: 16px 22px;
     border-radius: 20px;
-    max-width: 60%;
+    max-width: 70%;
     min-width: fit-content;
     width: auto;
     display: inline-block;
@@ -335,8 +334,6 @@ h1 {
     word-break: break-word;
     overflow-wrap: break-word;
     white-space: pre-wrap;
-    hyphens: auto;
-    overflow-x: hidden;
     transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -347,6 +344,7 @@ h1 {
     font-weight: 400;
     line-height: 1.6;
     position: relative;
+    overflow: hidden;
 }
 
 .message-content::before {
@@ -888,11 +886,16 @@ h1 {
     }
 
     .message-content {
-        max-width: 85%;
+        max-width: 80%;
+        padding: 12px 16px;
     }
 
     h1 {
         font-size: 2em;
+    }
+
+    .chat-display {
+        padding: 15px;
     }
 }
 
@@ -1388,7 +1391,6 @@ h1 {
 .attraction-display {
     margin: 20px 0;
     text-align: center;
-    position: relative;
 }
 
 .progress-bar {
@@ -1484,6 +1486,265 @@ h1 {
     margin: 20px 0;
     text-align: center;
     position: relative;
+}
+
+.progress-bar {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 25px;
+    height: 12px;
+    margin-bottom: 10px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.progress-fill {
+    background: linear-gradient(90deg, var(--default-primary), var(--default-secondary));
+    height: 100%;
+    border-radius: 25px;
+    width: 0%;
+    transition: width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-fill::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+#levelText {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Personality Theme Classes */
+.theme-sweet {
+    --primary: var(--sweet-primary);
+    --secondary: var(--sweet-secondary);
+    --gradient: var(--sweet-gradient);
+}
+
+.theme-playful {
+    --primary: var(--playful-primary);
+    --secondary: var(--playful-secondary);
+    --gradient: var(--playful-gradient);
+}
+
+.theme-sexy {
+    --primary: var(--sexy-primary);
+    --secondary: var(--sexy-secondary);
+    --gradient: var(--sexy-gradient);
+}
+
+.theme-goth {
+    --primary: var(--goth-primary);
+    --secondary: var(--goth-secondary);
+    --gradient: var(--goth-gradient);
+}
+
+/* Message Formatting Support */
+.message-content strong {
+    font-weight: 600;
+    color: #fff;
+}
+
+.message-content em {
+    font-style: italic;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.message-content code {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+
+    .settings {
+        flex-direction: column;
+    }
+
+    .api-key-section {
+        flex-direction: column;
+    }
+
+    .api-input {
+        width: 100%;
+    }
+
+    .message-content {
+        max-width: 85%;
+    }
+
+    h1 {
+        font-size: 2em;
+    }
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.quiz-question label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.quiz-question select {
+    width: 100%;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 14px;
+}
+
+.quiz-question select option {
+    background: #1a1a2e;
+    color: #fff;
+}
+
+.api-select option {
+    background: #1a1a2e;
+    color: #fff;
+}
+
+/* Enhanced Attraction Display with Particle Effects */
+.attraction-display {
+    margin: 20px 0;
+    text-align: center;
+}
+
+.progress-bar {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    height: 10px;
+    margin-bottom: 10px;
+}
+
+.progress-fill {
+    background: #4a90e2;
+    height: 100%;
+    border-radius: 20px;
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+#levelText {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+
+    .settings {
+        flex-direction: column;
+    }
+
+    .api-key-section {
+        flex-direction: column;
+    }
+
+    .api-input {
+        width: 100%;
+    }
+
+    .message-content {
+        max-width: 85%;
+    }
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.quiz-question label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.quiz-question select {
+    width: 100%;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 14px;
+}
+
+.quiz-question select option {
+    background: #1a1a2e;
+    color: #fff;
+}
+
+.api-select option {
+    background: #1a1a2e;
+    color: #fff;
+}
+
+/* Enhanced Attraction Display with Particle Effects */
+.attraction-display {
+    margin: 20px 0;
+    text-align: center;
 }
 
 .progress-bar {
@@ -1741,1041 +2002,6 @@ h1 {
 .attraction-display {
     margin: 20px 0;
     text-align: center;
-    position: relative;
-}
-
-.progress-bar {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border-radius: 25px;
-    height: 12px;
-    margin-bottom: 10px;
-    overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.2);
-}
-
-.progress-fill {
-    background: linear-gradient(90deg, var(--default-primary), var(--default-secondary));
-    height: 100%;
-    border-radius: 25px;
-    width: 0%;
-    transition: width 0.3s ease;
-}
-
-.progress-fill::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-    animation: shimmer 2s infinite;
-}
-
-@keyframes shimmer {
-    0% { left: -100%; }
-    100% { left: 100%; }
-}
-
-#levelText {
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.8);
-}
-
-/* Personality Theme Classes */
-.theme-sweet {
-    --primary: var(--sweet-primary);
-    --secondary: var(--sweet-secondary);
-    --gradient: var(--sweet-gradient);
-}
-
-.theme-playful {
-    --primary: var(--playful-primary);
-    --secondary: var(--playful-secondary);
-    --gradient: var(--playful-gradient);
-}
-
-.theme-sexy {
-    --primary: var(--sexy-primary);
-    --secondary: var(--sexy-secondary);
-    --gradient: var(--sexy-gradient);
-}
-
-.theme-goth {
-    --primary: var(--goth-primary);
-    --secondary: var(--goth-secondary);
-    --gradient: var(--goth-gradient);
-}
-
-/* Message Formatting Support */
-.message-content strong {
-    font-weight: 600;
-    color: #fff;
-}
-
-.message-content em {
-    font-style: italic;
-    color: rgba(255, 255, 255, 0.9);
-}
-
-.message-content code {
-    background: rgba(0, 0, 0, 0.3);
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-family: 'Courier New', monospace;
-    font-size: 0.9em;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .container {
-        padding: 10px;
-    }
-
-    .settings {
-        flex-direction: column;
-    }
-
-    .api-key-section {
-        flex-direction: column;
-    }
-
-    .api-input {
-        width: 100%;
-    }
-
-    .message-content {
-        max-width: 85%;
-    }
-
-    h1 {
-        font-size: 2em;
-    }
-}
-
-/* Scrollbar Styling */
-::-webkit-scrollbar {
-    width: 8px;
-}
-
-::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-    transition: background 0.3s ease;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
-.quiz-question label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 500;
-}
-
-.quiz-question select {
-    width: 100%;
-    padding: 10px;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    border-radius: 8px;
-    color: #fff;
-    font-size: 14px;
-}
-
-.quiz-question select option {
-    background: #1a1a2e;
-    color: #fff;
-}
-
-.api-select option {
-    background: #1a1a2e;
-    color: #fff;
-}
-
-/* Enhanced Attraction Display with Particle Effects */
-.attraction-display {
-    margin: 20px 0;
-    text-align: center;
-}
-
-.progress-bar {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    height: 10px;
-    margin-bottom: 10px;
-}
-
-.progress-fill {
-    background: #4a90e2;
-    height: 100%;
-    border-radius: 20px;
-    width: 0%;
-    transition: width 0.3s ease;
-}
-
-#levelText {
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.8);
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .container {
-        padding: 10px;
-    }
-
-    .settings {
-        flex-direction: column;
-    }
-
-    .api-key-section {
-        flex-direction: column;
-    }
-
-    .api-input {
-        width: 100%;
-    }
-
-    .message-content {
-        max-width: 85%;
-    }
-}
-
-/* Scrollbar Styling */
-::-webkit-scrollbar {
-    width: 8px;
-}
-
-::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
-.quiz-question label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 500;
-}
-
-.quiz-question select {
-    width: 100%;
-    padding: 10px;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    border-radius: 8px;
-    color: #fff;
-    font-size: 14px;
-}
-
-.quiz-question select option {
-    background: #1a1a2e;
-    color: #fff;
-}
-
-.api-select option {
-    background: #1a1a2e;
-    color: #fff;
-}
-
-/* Enhanced Attraction Display with Particle Effects */
-.attraction-display {
-    margin: 20px 0;
-    text-align: center;
-    position: relative;
-}
-
-.progress-bar {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border-radius: 25px;
-    height: 12px;
-    margin-bottom: 10px;
-    overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.2);
-}
-
-.progress-fill {
-    background: linear-gradient(90deg, var(--default-primary), var(--default-secondary));
-    height: 100%;
-    border-radius: 25px;
-    width: 0%;
-    transition: width 0.3s ease;
-}
-
-.progress-fill::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-    animation: shimmer 2s infinite;
-}
-
-@keyframes shimmer {
-    0% { left: -100%; }
-    100% { left: 100%; }
-}
-
-#levelText {
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.8);
-}
-
-/* Personality Theme Classes */
-.theme-sweet {
-    --primary: var(--sweet-primary);
-    --secondary: var(--sweet-secondary);
-    --gradient: var(--sweet-gradient);
-}
-
-.theme-playful {
-    --primary: var(--playful-primary);
-    --secondary: var(--playful-secondary);
-    --gradient: var(--playful-gradient);
-}
-
-.theme-sexy {
-    --primary: var(--sexy-primary);
-    --secondary: var(--sexy-secondary);
-    --gradient: var(--sexy-gradient);
-}
-
-.theme-goth {
-    --primary: var(--goth-primary);
-    --secondary: var(--goth-secondary);
-    --gradient: var(--goth-gradient);
-}
-
-/* Message Formatting Support */
-.message-content strong {
-    font-weight: 600;
-    color: #fff;
-}
-
-.message-content em {
-    font-style: italic;
-    color: rgba(255, 255, 255, 0.9);
-}
-
-.message-content code {
-    background: rgba(0, 0, 0, 0.3);
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-family: 'Courier New', monospace;
-    font-size: 0.9em;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .container {
-        padding: 10px;
-    }
-
-    .settings {
-        flex-direction: column;
-    }
-
-    .api-key-section {
-        flex-direction: column;
-    }
-
-    .api-input {
-        width: 100%;
-    }
-
-    .message-content {
-        max-width: 85%;
-    }
-
-    h1 {
-        font-size: 2em;
-    }
-}
-
-/* Scrollbar Styling */
-::-webkit-scrollbar {
-    width: 8px;
-}
-
-::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-    transition: background 0.3s ease;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
-.quiz-question label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 500;
-}
-
-.quiz-question select {
-    width: 100%;
-    padding: 10px;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    border-radius: 8px;
-    color: #fff;
-    font-size: 14px;
-}
-
-.quiz-question select option {
-    background: #1a1a2e;
-    color: #fff;
-}
-
-.api-select option {
-    background: #1a1a2e;
-    color: #fff;
-}
-
-/* Enhanced Attraction Display with Particle Effects */
-.attraction-display {
-    margin: 20px 0;
-    text-align: center;
-}
-
-.progress-bar {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    height: 10px;
-    margin-bottom: 10px;
-}
-
-.progress-fill {
-    background: #4a90e2;
-    height: 100%;
-    border-radius: 20px;
-    width: 0%;
-    transition: width 0.3s ease;
-}
-
-#levelText {
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.8);
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .container {
-        padding: 10px;
-    }
-
-    .settings {
-        flex-direction: column;
-    }
-
-    .api-key-section {
-        flex-direction: column;
-    }
-
-    .api-input {
-        width: 100%;
-    }
-
-    .message-content {
-        max-width: 85%;
-    }
-}
-
-/* Scrollbar Styling */
-::-webkit-scrollbar {
-    width: 8px;
-}
-
-::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
-.quiz-question label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 500;
-}
-
-.quiz-question select {
-    width: 100%;
-    padding: 10px;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    border-radius: 8px;
-    color: #fff;
-    font-size: 14px;
-}
-
-.quiz-question select option {
-    background: #1a1a2e;
-    color: #fff;
-}
-
-.api-select option {
-    background: #1a1a2e;
-    color: #fff;
-}
-
-/* Enhanced Attraction Display with Particle Effects */
-.attraction-display {
-    margin: 20px 0;
-    text-align: center;
-    position: relative;
-}
-
-.progress-bar {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border-radius: 25px;
-    height: 12px;
-    margin-bottom: 10px;
-    overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.2);
-}
-
-.progress-fill {
-    background: linear-gradient(90deg, var(--default-primary), var(--default-secondary));
-    height: 100%;
-    border-radius: 25px;
-    width: 0%;
-    transition: width 0.3s ease;
-}
-
-.progress-fill::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-    animation: shimmer 2s infinite;
-}
-
-@keyframes shimmer {
-    0% { left: -100%; }
-    100% { left: 100%; }
-}
-
-#levelText {
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.8);
-}
-
-/* Personality Theme Classes */
-.theme-sweet {
-    --primary: var(--sweet-primary);
-    --secondary: var(--sweet-secondary);
-    --gradient: var(--sweet-gradient);
-}
-
-.theme-playful {
-    --primary: var(--playful-primary);
-    --secondary: var(--playful-secondary);
-    --gradient: var(--playful-gradient);
-}
-
-.theme-sexy {
-    --primary: var(--sexy-primary);
-    --secondary: var(--sexy-secondary);
-    --gradient: var(--sexy-gradient);
-}
-
-.theme-goth {
-    --primary: var(--goth-primary);
-    --secondary: var(--goth-secondary);
-    --gradient: var(--goth-gradient);
-}
-
-/* Message Formatting Support */
-.message-content strong {
-    font-weight: 600;
-    color: #fff;
-}
-
-.message-content em {
-    font-style: italic;
-    color: rgba(255, 255, 255, 0.9);
-}
-
-.message-content code {
-    background: rgba(0, 0, 0, 0.3);
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-family: 'Courier New', monospace;
-    font-size: 0.9em;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .container {
-        padding: 10px;
-    }
-
-    .settings {
-        flex-direction: column;
-    }
-
-    .api-key-section {
-        flex-direction: column;
-    }
-
-    .api-input {
-        width: 100%;
-    }
-
-    .message-content {
-        max-width: 85%;
-    }
-
-    h1 {
-        font-size: 2em;
-    }
-}
-
-/* Scrollbar Styling */
-::-webkit-scrollbar {
-    width: 8px;
-}
-
-::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-    transition: background 0.3s ease;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
-.quiz-question label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 500;
-}
-
-.quiz-question select {
-    width: 100%;
-    padding: 10px;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    border-radius: 8px;
-    color: #fff;
-    font-size: 14px;
-}
-
-.quiz-question select option {
-    background: #1a1a2e;
-    color: #fff;
-}
-
-.api-select option {
-    background: #1a1a2e;
-    color: #fff;
-}
-
-/* Enhanced Attraction Display with Particle Effects */
-.attraction-display {
-    margin: 20px 0;
-    text-align: center;
-    position: relative;
-}
-
-.progress-bar {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    height: 10px;
-    margin-bottom: 10px;
-}
-
-.progress-fill {
-    background: #4a90e2;
-    height: 100%;
-    border-radius: 20px;
-    width: 0%;
-    transition: width 0.3s ease;
-}
-
-#levelText {
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.8);
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .container {
-        padding: 10px;
-    }
-
-    .settings {
-        flex-direction: column;
-    }
-
-    .api-key-section {
-        flex-direction: column;
-    }
-
-    .api-input {
-        width: 100%;
-    }
-
-    .message-content {
-        max-width: 85%;
-    }
-}
-
-/* Scrollbar Styling */
-::-webkit-scrollbar {
-    width: 8px;
-}
-
-::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
-.quiz-question label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 500;
-}
-
-.quiz-question select {
-    width: 100%;
-    padding: 10px;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    border-radius: 8px;
-    color: #fff;
-    font-size: 14px;
-}
-
-.quiz-question select option {
-    background: #1a1a2e;
-    color: #fff;
-}
-
-.api-select option {
-    background: #1a1a2e;
-    color: #fff;
-}
-
-/* Enhanced Attraction Display with Particle Effects */
-.attraction-display {
-    margin: 20px 0;
-    text-align: center;
-    position: relative;
-}
-
-.progress-bar {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border-radius: 25px;
-    height: 12px;
-    margin-bottom: 10px;
-    overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.2);
-}
-
-.progress-fill {
-    background: linear-gradient(90deg, var(--default-primary), var(--default-secondary));
-    height: 100%;
-    border-radius: 25px;
-    width: 0%;
-    transition: width 0.3s ease;
-}
-
-.progress-fill::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-    animation: shimmer 2s infinite;
-}
-
-@keyframes shimmer {
-    0% { left: -100%; }
-    100% { left: 100%; }
-}
-
-#levelText {
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.8);
-}
-
-/* Personality Theme Classes */
-.theme-sweet {
-    --primary: var(--sweet-primary);
-    --secondary: var(--sweet-secondary);
-    --gradient: var(--sweet-gradient);
-}
-
-.theme-playful {
-    --primary: var(--playful-primary);
-    --secondary: var(--playful-secondary);
-    --gradient: var(--playful-gradient);
-}
-
-.theme-sexy {
-    --primary: var(--sexy-primary);
-    --secondary: var(--sexy-secondary);
-    --gradient: var(--sexy-gradient);
-}
-
-.theme-goth {
-    --primary: var(--goth-primary);
-    --secondary: var(--goth-secondary);
-    --gradient: var(--goth-gradient);
-}
-
-/* Message Formatting Support */
-.message-content strong {
-    font-weight: 600;
-    color: #fff;
-}
-
-.message-content em {
-    font-style: italic;
-    color: rgba(255, 255, 255, 0.9);
-}
-
-.message-content code {
-    background: rgba(0, 0, 0, 0.3);
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-family: 'Courier New', monospace;
-    font-size: 0.9em;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .container {
-        padding: 10px;
-    }
-
-    .settings {
-        flex-direction: column;
-    }
-
-    .api-key-section {
-        flex-direction: column;
-    }
-
-    .api-input {
-        width: 100%;
-    }
-
-    .message-content {
-        max-width: 85%;
-    }
-
-    h1 {
-        font-size: 2em;
-    }
-}
-
-/* Scrollbar Styling */
-::-webkit-scrollbar {
-    width: 8px;
-}
-
-::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-    transition: background 0.3s ease;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
-.quiz-question label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 500;
-}
-
-.quiz-question select {
-    width: 100%;
-    padding: 10px;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    border-radius: 8px;
-    color: #fff;
-    font-size: 14px;
-}
-
-.quiz-question select option {
-    background: #1a1a2e;
-    color: #fff;
-}
-
-.api-select option {
-    background: #1a1a2e;
-    color: #fff;
-}
-
-/* Enhanced Attraction Display with Particle Effects */
-.attraction-display {
-    margin: 20px 0;
-    text-align: center;
-    position: relative;
-}
-
-.progress-bar {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    height: 10px;
-    margin-bottom: 10px;
-}
-
-.progress-fill {
-    background: #4a90e2;
-    height: 100%;
-    border-radius: 20px;
-    width: 0%;
-    transition: width 0.3s ease;
-}
-
-#levelText {
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.8);
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .container {
-        padding: 10px;
-    }
-
-    .settings {
-        flex-direction: column;
-    }
-
-    .api-key-section {
-        flex-direction: column;
-    }
-
-    .api-input {
-        width: 100%;
-    }
-
-    .message-content {
-        max-width: 85%;
-    }
-}
-
-/* Scrollbar Styling */
-::-webkit-scrollbar {
-    width: 8px;
-}
-
-::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
-.quiz-question label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 500;
-}
-
-.quiz-question select {
-    width: 100%;
-    padding: 10px;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    border-radius: 8px;
-    color: #fff;
-    font-size: 14px;
-}
-
-.quiz-question select option {
-    background: #1a1a2e;
-    color: #fff;
-}
-
-.api-select option {
-    background: #1a1a2e;
-    color: #fff;
-}
-
-/* Enhanced Attraction Display with Particle Effects */
-.attraction-display {
-    margin: 20px 0;
-    text-align: center;
-    position: relative;
 }
 
 .progress-bar {
