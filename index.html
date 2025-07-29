@@ -12,27 +12,14 @@
         <header>
             <img id="profilePic" src="images/sweet_neutral.svg" alt="AI Companion Profile Picture" class="profile-pic-large">
             <h1>AI Companions</h1>
-            
-            <!-- Top section with quick actions -->
-            <div class="top-actions">
-                <button id="quickChatBtn" class="top-btn">💬 Quick Chat</button>
-                <button id="moodBoostBtn" class="top-btn">✨ Mood Boost</button>
-                <button id="dailyCheckInBtn" class="top-btn">📅 Daily Check-in</button>
-                <button id="settingsBtn" class="top-btn settings-btn">⚙️ Settings</button>
+            <div class="settings">
+                <!-- <button id="editSystemPrompt" class="btn">Edit System Prompt</button> -->
+                <button id="clearHistory" class="btn">Clear History</button>
+                <button id="resetAttraction" class="btn">Reset Attraction</button>
+                <button id="setProfilePic" class="btn">Set GF Picture</button>
+                <button id="settings-button" class="btn">Personality Quiz</button>
+                <button id="gamesButton" class="btn">🎮 Games</button>
             </div>
-
-            <!-- Settings dropdown menu (hidden by default) -->
-            <div id="settingsMenu" class="settings-menu">
-                <button id="setNameBtn" class="settings-item">👤 Change Her Name</button>
-                <button id="clearHistory" class="settings-item">🗑️ Clear History</button>
-                <button id="resetAttraction" class="settings-item">💕 Reset Attraction</button>
-                <button id="setProfilePic" class="settings-item">🖼️ Set Her Picture</button>
-                <button id="personalityQuizBtn" class="settings-item">🧠 Personality Quiz</button>
-                <button id="gamesButton" class="settings-item">🎮 Games</button>
-                <button id="exportDataBtn" class="settings-item">📤 Export Data</button>
-                <button id="themeToggleBtn" class="settings-item">🎨 Theme Settings</button>
-            </div>
-
             <div class="api-key-section">
                 <select id="apiProvider" class="api-select">
                     <option value="gemini">Gemini</option>
@@ -184,27 +171,6 @@
             <div class="modal-buttons">
                 <button id="saveProfilePic" class="btn">Save</button>
                 <button id="cancelProfilePic" class="btn">Cancel</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Name Change Modal -->
-    <div id="nameModal" class="modal">
-        <div class="modal-content">
-            <button id="closeNameModal" class="modal-close">×</button>
-            <h2>👤 Change Her Name</h2>
-            <p>Give your AI companion a personalized name!</p>
-            <div class="name-input-section">
-                <input type="text" id="companionNameInput" placeholder="Enter her name..." class="name-input" maxlength="20">
-                <div class="name-preview">
-                    <span>Preview: </span>
-                    <span id="namePreview">Her</span>
-                    <span>: Hello! This is how your messages will look.</span>
-                </div>
-            </div>
-            <div class="modal-buttons">
-                <button id="saveNameBtn" class="btn">Save Name</button>
-                <button id="resetNameBtn" class="btn secondary-btn">Reset to Default</button>
             </div>
         </div>
     </div>
