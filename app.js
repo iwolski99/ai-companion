@@ -291,7 +291,18 @@ function addMessageToHistory(sender, message) {
         message: message,
         timestamp: Date.now()
     });
+    
+    // Add attraction points for AI messages, but reduce for game AI messages
+    if (sender === 'ai') {
+        attraction += Math.floor(Math.random() * 3) + 1; // 1-3 points
+        updateAttractionDisplay();
+    } else if (sender === 'game_ai') {
+        attraction += Math.floor(Math.random() * 2) + 1; // 1-2 points (reduced)
+        updateAttractionDisplay();
+    }
+    
     localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+    localStorage.setItem('attraction', attraction.toString());
 }
 
 function displayChatHistory() {
@@ -314,11 +325,15 @@ function displayChatHistory() {
             senderName = companionGender === 'female' ? 'Her' : 'Him';
         } else if (msg.sender === 'game') {
             senderName = '🎮 Game System';
+        } else if (msg.sender === 'game_ai') {
+            senderName = companionGender === 'female' ? 'Her' : 'Him';
         }
 
         // Add special styling for game messages
         let messageContent = msg.message;
         if (msg.sender === 'game') {
+            messageContent = `<span style="color: #ffd700; font-weight: 500;">${msg.message}</span>`;
+        } else if (msg.sender === 'game_ai') {
             messageContent = `<span style="color: #ffd700; font-weight: 500;">${msg.message}</span>`;
         }
 
@@ -814,16 +829,19 @@ const gameProcessors = {
         // Add user's contribution to story
         data.story.push(message);
         data.turnCount++;
-        appendGameAdminMessage(`📖 Great addition! Our story so far: "${data.story.join(' ')}" Let me add my part...`);
-
-        // Get AI's story contribution
+        
+        // Get AI's story contribution first
         data.waitingForAI = true;
         const aiContribution = await getAIStoryContribution(data.story);
 
         if (aiContribution) {
             data.story.push(aiContribution);
             data.turnCount++;
-            appendGameAdminMessage(`📖 I'll add: "${aiContribution}"`);
+            
+            // Add the AI's contribution as "Her" message in yellow
+            addMessageToHistory('game_ai', aiContribution);
+            
+            // Then add the game system message
             appendGameAdminMessage(`📖 Updated story: "${data.story.join(' ')}" Your turn again!`);
         } else {
             appendGameAdminMessage("📖 I'm having trouble thinking of what to add. Your turn again!");
