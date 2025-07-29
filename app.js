@@ -216,12 +216,27 @@ function closeProfilePreviewModal() {
     }
 }
 
-function sendMessage() {
+async function sendMessage() {
     const messageInput = document.getElementById('messageInput');
     if (!messageInput) return;
 
     const message = messageInput.value.trim();
     if (!message) return;
+
+    // Check if API key is configured
+    let currentApiKey = '';
+    if (apiProvider === 'gemini') {
+        currentApiKey = geminiApiKey;
+    } else if (apiProvider === 'grok') {
+        currentApiKey = grokApiKey;
+    } else if (apiProvider === 'groq') {
+        currentApiKey = groqApiKey;
+    }
+
+    if (!currentApiKey) {
+        alert(`Please configure your ${apiProvider} API key first!`);
+        return;
+    }
 
     // Add user message to chat
     addMessageToHistory('user', message);
@@ -230,11 +245,33 @@ function sendMessage() {
     // Display updated chat
     displayChatHistory();
 
-    // Send to AI (placeholder for now)
-    setTimeout(() => {
-        addMessageToHistory('ai', 'This is a test response. Please configure your API keys and implement the full AI integration.');
+    // Show typing indicator
+    addMessageToHistory('ai', 'Typing...');
+    displayChatHistory();
+
+    try {
+        let response = '';
+        
+        if (apiProvider === 'gemini') {
+            response = await sendToGeminiAPI(message, currentApiKey);
+        } else if (apiProvider === 'grok') {
+            response = await sendToGrokAPI(message, currentApiKey);
+        } else if (apiProvider === 'groq') {
+            response = await sendToGroqAPI(message, currentApiKey);
+        }
+
+        // Remove typing indicator and add real response
+        chatHistory.pop(); // Remove "Typing..." message
+        addMessageToHistory('ai', response);
         displayChatHistory();
-    }, 1000);
+
+    } catch (error) {
+        console.error('Error sending message:', error);
+        // Remove typing indicator and add error message
+        chatHistory.pop(); // Remove "Typing..." message
+        addMessageToHistory('ai', 'Sorry, I encountered an error. Please check your API key and try again.');
+        displayChatHistory();
+    }
 }
 
 function addMessageToHistory(sender, message) {
@@ -284,6 +321,100 @@ function updateAttractionDisplay() {
 
         levelText.textContent = `Level: ${level}`;
     }
+}
+
+// AI API Functions
+async function sendToGeminiAPI(message, apiKey) {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            contents: [{
+                parts: [{
+                    text: `You are a sweet AI girlfriend. Respond in a caring, loving way. User message: ${message}`
+                }]
+            }],
+            generationConfig: {
+                temperature: 0.7,
+                topP: 0.8,
+                topK: 40,
+                maxOutputTokens: 1024,
+            }
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error(`Gemini API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.candidates[0].content.parts[0].text;
+}
+
+async function sendToGrokAPI(message, apiKey) {
+    const response = await fetch('https://api.x.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+            messages: [
+                {
+                    role: "system",
+                    content: "You are a sweet AI girlfriend. Respond in a caring, loving way."
+                },
+                {
+                    role: "user",
+                    content: message
+                }
+            ],
+            model: "grok-beta",
+            stream: false,
+            temperature: 0.7
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error(`Grok API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+}
+
+async function sendToGroqAPI(message, apiKey) {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+            messages: [
+                {
+                    role: "system",
+                    content: "You are a sweet AI girlfriend. Respond in a caring, loving way."
+                },
+                {
+                    role: "user",
+                    content: message
+                }
+            ],
+            model: "llama3-8b-8192",
+            temperature: 0.7,
+            max_tokens: 1024
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error(`Groq API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
 }
 
 // Initialize immediately if DOM is already loaded
