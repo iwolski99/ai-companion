@@ -327,6 +327,9 @@ h1 {
     padding: 16px 22px;
     border-radius: 20px;
     max-width: 70%;
+    min-width: fit-content;
+    width: auto;
+    display: inline-block;
     word-wrap: break-word;
     transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     backdrop-filter: blur(20px);
@@ -369,6 +372,11 @@ h1 {
     margin-left: auto;
     border-bottom-right-radius: 8px;
     border: 1px solid rgba(74, 144, 226, 0.3);
+}
+
+.message-user {
+    display: flex;
+    justify-content: flex-end;
 }
 
 .message-bot .message-content {
