@@ -100,15 +100,248 @@ body {
     flex-direction: column;
 }
 
-/* Glassmorphism Header */
+/* Modern Glassmorphism Header */
 header {
-    padding: 20px 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(20px);
-    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(25px);
+    border-radius: 24px;
     margin-bottom: 20px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    box-shadow: 
+        0 12px 40px rgba(0, 0, 0, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+/* Modern Top Bar */
+.top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 30px;
+    position: relative;
+}
+
+.profile-section {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.profile-info h1 {
+    margin: 0;
+    font-size: 2.2em;
+    font-weight: 700;
+    background: linear-gradient(135deg, #fff, #c2185b, #fff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: none;
+    filter: none;
+}
+
+.companion-name {
+    margin: 5px 0 0 0;
+    font-size: 0.9em;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 300;
+    font-style: italic;
+}
+
+.companion-name span {
+    color: var(--sultry-accent);
+    font-weight: 500;
+    font-style: normal;
+}
+
+.header-controls {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+/* Modern Button Styling */
+.modern-btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
+    backdrop-filter: blur(10px);
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    font-size: 14px;
+    font-weight: 500;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    font-family: inherit;
+    text-align: center;
+    min-width: fit-content;
+}
+
+.modern-btn:hover {
+    background: linear-gradient(135deg, rgba(194, 24, 91, 0.3), rgba(194, 24, 91, 0.15));
+    border-color: rgba(194, 24, 91, 0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(194, 24, 91, 0.3);
+}
+
+.settings-btn {
+    background: linear-gradient(135deg, rgba(194, 24, 91, 0.2), rgba(194, 24, 91, 0.1));
+    border-color: rgba(194, 24, 91, 0.3);
+}
+
+.mini-btn {
+    padding: 8px 15px;
+    font-size: 12px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, rgba(194, 24, 91, 0.3), rgba(194, 24, 91, 0.2));
+    border: 1px solid rgba(194, 24, 91, 0.4);
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+    font-weight: 500;
+}
+
+.mini-btn:hover {
+    background: linear-gradient(135deg, rgba(194, 24, 91, 0.5), rgba(194, 24, 91, 0.3));
+    transform: translateY(-1px);
+}
+
+/* Settings Menu */
+.settings-menu {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    background: rgba(255, 255, 255, 0.03);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.settings-menu.active {
+    max-height: 800px;
+    padding: 25px 30px;
+}
+
+.settings-section {
+    margin-bottom: 25px;
+}
+
+.settings-section:last-child {
+    margin-bottom: 0;
+}
+
+.settings-section h3 {
+    color: #fff;
+    font-size: 1.1em;
+    font-weight: 600;
+    margin-bottom: 15px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(194, 24, 91, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.setting-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.setting-item label {
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+    min-width: 150px;
+    font-size: 14px;
+}
+
+.name-input {
+    flex: 1;
+    min-width: 200px;
+    padding: 10px 15px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 400;
+    transition: all 0.3s ease;
+}
+
+.name-input:focus {
+    outline: none;
+    border-color: var(--sultry-accent);
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 0 15px rgba(194, 24, 91, 0.3);
+}
+
+.name-input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.setting-buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.api-config {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.modern-select {
+    padding: 10px 15px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 120px;
+}
+
+.modern-select:focus {
+    outline: none;
+    border-color: var(--sultry-accent);
+    box-shadow: 0 0 15px rgba(194, 24, 91, 0.3);
+}
+
+.modern-select option {
+    background: #1a1a2e;
+    color: #fff;
+}
+
+.modern-input {
+    flex: 1;
+    min-width: 250px;
+    padding: 10px 45px 10px 15px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    color: #fff;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.modern-input:focus {
+    outline: none;
+    border-color: var(--sultry-accent);
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 0 15px rgba(194, 24, 91, 0.3);
+}
+
+.modern-input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
 }
 
 /* Improved Typography */
@@ -126,21 +359,13 @@ h1 {
     filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3));
 }
 
+/* Legacy styles for compatibility */
 .settings {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 15px;
-    flex-wrap: wrap;
-    justify-content: center;
+    display: none; /* Hidden since we moved to settings menu */
 }
 
 .api-key-section {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 15px;
-    flex-wrap: wrap;
+    display: none; /* Hidden since we moved to settings menu */
 }
 
 /* Glassmorphism Inputs */

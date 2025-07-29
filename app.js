@@ -8,6 +8,7 @@ let grokApiKey = localStorage.getItem('grokApiKey') || '';
 let groqApiKey = localStorage.getItem('groqApiKey') || '';
 let personality = localStorage.getItem('personality') || 'sweet';
 let companionGender = localStorage.getItem('companionGender') || 'female';
+let companionName = localStorage.getItem('companionName') || (companionGender === 'female' ? 'Her' : 'Him');
 let attraction = parseInt(localStorage.getItem('attraction') || '0');
 let currentGame = null;
 
@@ -62,6 +63,31 @@ function initializeEventListeners() {
     const setProfilePicBtn = document.getElementById('setProfilePic');
     if (setProfilePicBtn) {
         setProfilePicBtn.addEventListener('click', openProfilePicModal);
+    }
+
+    // Settings menu toggle
+    const settingsMenuBtn = document.getElementById('settingsMenuBtn');
+    const settingsMenu = document.getElementById('settingsMenu');
+    if (settingsMenuBtn && settingsMenu) {
+        settingsMenuBtn.addEventListener('click', function() {
+            settingsMenu.classList.toggle('active');
+        });
+    }
+
+    // Companion name functionality
+    const saveNameBtn = document.getElementById('saveCompanionName');
+    const nameInput = document.getElementById('companionNameInput');
+    if (saveNameBtn && nameInput) {
+        nameInput.value = companionName;
+        saveNameBtn.addEventListener('click', function() {
+            const newName = nameInput.value.trim();
+            if (newName) {
+                companionName = newName;
+                localStorage.setItem('companionName', companionName);
+                updateCompanionNameDisplay();
+                alert('Companion name updated successfully!');
+            }
+        });
     }
 
     // Send message button
@@ -156,11 +182,31 @@ function loadSavedData() {
             profilePic.src = savedProfilePic;
         }
     }
+
+    // Load companion name
+    const savedName = localStorage.getItem('companionName');
+    if (savedName) {
+        companionName = savedName;
+    }
+    
+    // Update name input field
+    const nameInput = document.getElementById('companionNameInput');
+    if (nameInput) {
+        nameInput.value = companionName;
+    }
 }
 
 function updateUI() {
     updateAttractionDisplay();
     displayChatHistory();
+    updateCompanionNameDisplay();
+}
+
+function updateCompanionNameDisplay() {
+    const nameDisplay = document.getElementById('companionNameDisplay');
+    if (nameDisplay) {
+        nameDisplay.textContent = companionName;
+    }
 }
 
 function saveApiKeys() {
@@ -476,11 +522,11 @@ function displayChatHistory() {
 
         let senderName = 'You';
         if (msg.sender === 'ai') {
-            senderName = companionGender === 'female' ? 'Her' : 'Him';
+            senderName = companionName;
         } else if (msg.sender === 'game') {
             senderName = '🎮 Game System';
         } else if (msg.sender === 'game_ai') {
-            senderName = companionGender === 'female' ? 'Her' : 'Him';
+            senderName = companionName;
         }
 
         // Add special styling for game messages
