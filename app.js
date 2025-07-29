@@ -10,7 +10,6 @@ let personality = localStorage.getItem('personality') || 'sweet';
 let companionGender = localStorage.getItem('companionGender') || 'female';
 let attraction = parseInt(localStorage.getItem('attraction') || '0');
 let currentGame = null;
-let aiCompanionName = localStorage.getItem('aiCompanionName') || (companionGender === 'female' ? 'Her' : 'Him');
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
@@ -63,35 +62,6 @@ function initializeEventListeners() {
     const setProfilePicBtn = document.getElementById('setProfilePic');
     if (setProfilePicBtn) {
         setProfilePicBtn.addEventListener('click', openProfilePicModal);
-    }
-
-    // Settings dropdown
-    const settingsDropdownBtn = document.getElementById('settingsDropdownBtn');
-    const settingsDropdownMenu = document.getElementById('settingsDropdownMenu');
-    if (settingsDropdownBtn && settingsDropdownMenu) {
-        settingsDropdownBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            settingsDropdownMenu.classList.toggle('show');
-        });
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function() {
-            settingsDropdownMenu.classList.remove('show');
-        });
-
-        // Prevent dropdown from closing when clicking inside
-        settingsDropdownMenu.addEventListener('click', function(e) {
-            e.stopPropagation();
-        });
-    }
-
-    // AI name change button
-    const changeNameBtn = document.getElementById('changeNameBtn');
-    if (changeNameBtn) {
-        changeNameBtn.addEventListener('click', function() {
-            settingsDropdownMenu.classList.remove('show');
-            openNameChangeModal();
-        });
     }
 
     // Send message button
@@ -164,12 +134,6 @@ function setupModalCloseButtons() {
     if (closeProfilePreview) {
         closeProfilePreview.addEventListener('click', closeProfilePreviewModal);
     }
-
-    // Name change modal close
-    const closeNameChange = document.getElementById('closeNameChange');
-    if (closeNameChange) {
-        closeNameChange.addEventListener('click', closeNameChangeModal);
-    }
 }
 
 function loadSavedData() {
@@ -192,38 +156,11 @@ function loadSavedData() {
             profilePic.src = savedProfilePic;
         }
     }
-    
-    // Load saved AI name
-    const savedAiName = localStorage.getItem('aiCompanionName');
-    if (savedAiName) {
-        aiCompanionName = savedAiName;
-    }
 }
 
 function updateUI() {
     updateAttractionDisplay();
     displayChatHistory();
-    updateQuickStats();
-}
-
-function updateQuickStats() {
-    const chatCountElement = document.getElementById('chatCount');
-    const statusElement = document.getElementById('statusIndicator');
-    
-    if (chatCountElement) {
-        const messageCount = chatHistory.length;
-        chatCountElement.textContent = `💬 ${messageCount} messages`;
-    }
-    
-    if (statusElement) {
-        if (currentGame) {
-            statusElement.textContent = '🎮 Gaming';
-            statusElement.className = 'stat-item status-busy';
-        } else {
-            statusElement.textContent = '🟢 Ready';
-            statusElement.className = 'stat-item status-online';
-        }
-    }
 }
 
 function saveApiKeys() {
@@ -347,77 +284,6 @@ function closeProfilePreviewModal() {
     if (modal) {
         modal.style.display = 'none';
     }
-}
-
-function openNameChangeModal() {
-    const modal = document.getElementById('nameChangeModal');
-    const currentNameSpan = document.getElementById('currentAiName');
-    const nameInput = document.getElementById('aiNameInput');
-    
-    if (modal && currentNameSpan && nameInput) {
-        currentNameSpan.textContent = aiCompanionName;
-        nameInput.value = aiCompanionName;
-        modal.style.display = 'block';
-        
-        // Focus the input
-        setTimeout(() => nameInput.focus(), 100);
-        
-        // Set up event listeners
-        const saveBtn = document.getElementById('saveAiName');
-        const cancelBtn = document.getElementById('cancelNameChange');
-        
-        if (saveBtn) {
-            saveBtn.onclick = saveAiName;
-        }
-        
-        if (cancelBtn) {
-            cancelBtn.onclick = closeNameChangeModal;
-        }
-        
-        // Allow Enter key to save
-        nameInput.onkeypress = function(e) {
-            if (e.key === 'Enter') {
-                saveAiName();
-            }
-        };
-    }
-}
-
-function closeNameChangeModal() {
-    const modal = document.getElementById('nameChangeModal');
-    if (modal) {
-        modal.style.display = 'none';
-    }
-}
-
-function saveAiName() {
-    const nameInput = document.getElementById('aiNameInput');
-    if (!nameInput) return;
-    
-    const newName = nameInput.value.trim();
-    
-    if (!newName) {
-        alert('Please enter a name for your AI companion!');
-        return;
-    }
-    
-    // Update the global variable and save to localStorage
-    aiCompanionName = newName;
-    localStorage.setItem('aiCompanionName', aiCompanionName);
-    
-    // Close the modal
-    closeNameChangeModal();
-    
-    // Show success message
-    alert(`AI companion name changed to "${newName}"!`);
-    
-    // Update any displayed names
-    updateDisplayedNames();
-}
-
-function updateDisplayedNames() {
-    // This function will update all displayed instances of the AI name
-    // The chat display will be updated next time messages are rendered
 }
 
 function showProfilePreview(imageSrc) {
@@ -610,11 +476,11 @@ function displayChatHistory() {
 
         let senderName = 'You';
         if (msg.sender === 'ai') {
-            senderName = aiCompanionName;
+            senderName = companionGender === 'female' ? 'Her' : 'Him';
         } else if (msg.sender === 'game') {
             senderName = '🎮 Game System';
         } else if (msg.sender === 'game_ai') {
-            senderName = aiCompanionName;
+            senderName = companionGender === 'female' ? 'Her' : 'Him';
         }
 
         // Add special styling for game messages
@@ -1772,9 +1638,6 @@ function updateGameUI() {
             card.classList.remove('game-active');
         }
     });
-    
-    // Update quick stats
-    updateQuickStats();
 }
 
 // Initialize immediately if DOM is already loaded
