@@ -40,6 +40,12 @@ function initializeEventListeners() {
         clearHistoryBtn.addEventListener('click', clearChatHistory);
     }
 
+    // Reset attraction button
+    const resetAttractionBtn = document.getElementById('resetAttraction');
+    if (resetAttractionBtn) {
+        resetAttractionBtn.addEventListener('click', resetAttraction);
+    }
+
     // Settings/Quiz button
     const settingsBtn = document.getElementById('settings-button');
     if (settingsBtn) {
@@ -166,11 +172,35 @@ function saveApiKeys() {
 }
 
 function clearChatHistory() {
-    if (confirm('Are you sure you want to clear the chat history?')) {
+    const choice = confirm('Clear chat history?\n\nClick OK to clear history only\nClick Cancel to clear EVERYTHING (history + attraction level)');
+    
+    if (choice === true) {
+        // Clear only chat history
         chatHistory = [];
         localStorage.removeItem('chatHistory');
         displayChatHistory();
         alert('Chat history cleared!');
+    } else if (choice === false) {
+        // User clicked Cancel, ask if they want to reset everything
+        const resetAll = confirm('This will reset EVERYTHING:\n• Chat history\n• Attraction level\n• Relationship progress\n\nAre you sure?');
+        if (resetAll) {
+            chatHistory = [];
+            attraction = 0;
+            localStorage.removeItem('chatHistory');
+            localStorage.removeItem('attraction');
+            displayChatHistory();
+            updateAttractionDisplay();
+            alert('Everything has been reset!');
+        }
+    }
+}
+
+function resetAttraction() {
+    if (confirm('Reset attraction level back to 0 (Stranger)?\n\nThis will not affect chat history.')) {
+        attraction = 0;
+        localStorage.removeItem('attraction');
+        updateAttractionDisplay();
+        alert('Attraction level reset to Stranger!');
     }
 }
 
@@ -292,13 +322,16 @@ function addMessageToHistory(sender, message) {
         timestamp: Date.now()
     });
     
-    // Add attraction points for AI messages, but reduce for game AI messages
+    // Add attraction points for AI messages, but significantly reduce for game AI messages
     if (sender === 'ai') {
         attraction += Math.floor(Math.random() * 3) + 1; // 1-3 points
         updateAttractionDisplay();
     } else if (sender === 'game_ai') {
-        attraction += Math.floor(Math.random() * 2) + 1; // 1-2 points (reduced)
-        updateAttractionDisplay();
+        // Much smaller chance of gaining attraction during games
+        if (Math.random() < 0.3) { // Only 30% chance
+            attraction += 1; // Only 1 point maximum
+            updateAttractionDisplay();
+        }
     }
     
     localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
@@ -698,7 +731,8 @@ const gameProcessors = {
             gameState.gameData['20questions'] = {
                 questionsAsked: 0,
                 target: null,
-                gamePhase: 'waiting', // waiting, guessing, ended
+                gamePhase: 'waiting', // waiting, ready, questioning, ended
+                waitingForAnswer: false,
                 questions: [
                     "Is it alive?",
                     "Is it bigger than a breadbox?", 
@@ -717,45 +751,67 @@ const gameProcessors = {
         const data = gameState.gameData['20questions'];
 
         if (message.toLowerCase().includes('start') && data.gamePhase === 'waiting') {
-            data.gamePhase = 'guessing';
+            data.gamePhase = 'ready';
+            appendGameAdminMessage("🎯 Great! Think of something (an object, animal, person, etc.) and I'll try to guess it. Type 'ready' when you've thought of something!");
+            return;
+        }
+
+        if (message.toLowerCase().includes('ready') && data.gamePhase === 'ready') {
+            data.gamePhase = 'questioning';
             data.questionsAsked = 0;
-            appendGameAdminMessage("🎯 Great! Think of something and I'll try to guess it. Type 'ready' when you've thought of something!");
+            data.waitingForAnswer = true;
+            appendGameAdminMessage(`🎯 Perfect! Question 1/20: ${data.questions[0]} (Please answer YES or NO)`);
             return;
         }
 
-        if (message.toLowerCase().includes('ready') && data.gamePhase === 'guessing') {
-            data.questionsAsked = 1;
-            appendGameAdminMessage(`🎯 Question ${data.questionsAsked}/20: ${data.questions[0]}`);
-            return;
-        }
+        if (data.gamePhase === 'questioning' && data.waitingForAnswer) {
+            const response = message.toLowerCase().trim();
+            
+            // Strict yes/no checking
+            if (!response.includes('yes') && !response.includes('no')) {
+                appendGameAdminMessage("🎯 Please answer with 'YES' or 'NO' only!");
+                return;
+            }
 
-        if (data.gamePhase === 'guessing' && data.questionsAsked > 0 && data.questionsAsked <= 20) {
-            const response = message.toLowerCase();
-            if (response.includes('yes') || response.includes('no')) {
-                data.questionsAsked++;
-                if (data.questionsAsked <= 20 && data.questionsAsked <= data.questions.length) {
-                    appendGameAdminMessage(`🎯 Question ${data.questionsAsked}/20: ${data.questions[data.questionsAsked - 1]}`);
-                } else if (data.questionsAsked <= 20) {
+            // Process the answer
+            data.questionsAsked++;
+            data.waitingForAnswer = false;
+
+            if (data.questionsAsked >= 20) {
+                data.gamePhase = 'ended';
+                appendGameAdminMessage("🎯 I've used all 20 questions! I give up. What were you thinking of?");
+                return;
+            }
+
+            // Ask next question
+            setTimeout(() => {
+                data.waitingForAnswer = true;
+                if (data.questionsAsked < data.questions.length) {
+                    appendGameAdminMessage(`🎯 Question ${data.questionsAsked + 1}/20: ${data.questions[data.questionsAsked]} (Please answer YES or NO)`);
+                } else {
                     const genericQuestions = [
                         "Is it something you'd find in a kitchen?",
                         "Is it colorful?",
                         "Would children play with it?",
                         "Is it expensive?",
-                        "Can it move on its own?"
+                        "Can it move on its own?",
+                        "Is it soft?",
+                        "Is it used for work?",
+                        "Is it round?",
+                        "Would you find it outside?",
+                        "Is it smaller than a car?"
                     ];
-                    const qIndex = (data.questionsAsked - data.questions.length - 1) % genericQuestions.length;
-                    appendGameAdminMessage(`🎯 Question ${data.questionsAsked}/20: ${genericQuestions[qIndex]}`);
-                } else {
-                    data.gamePhase = 'ended';
-                    appendGameAdminMessage("🎯 I give up! What were you thinking of? (The game will end after you tell me)");
+                    const qIndex = (data.questionsAsked - data.questions.length) % genericQuestions.length;
+                    appendGameAdminMessage(`🎯 Question ${data.questionsAsked + 1}/20: ${genericQuestions[qIndex]} (Please answer YES or NO)`);
                 }
-            } else {
-                appendGameAdminMessage("🎯 Please answer with 'yes' or 'no'!");
-            }
+                displayChatHistory();
+            }, 1000);
+            return;
         }
 
-        if (data.gamePhase === 'ended') {
-            appendGameAdminMessage(`🎯 Thanks for playing! That was fun. Type '/exit' to leave the game.`);
+        if (data.gamePhase === 'ended' && !data.waitingForAnswer) {
+            appendGameAdminMessage(`🎯 "${message}" - interesting! Thanks for playing! That was fun. Type '/exit' to leave the game.`);
+            data.waitingForAnswer = false; // Prevent multiple responses
         }
     },
 
