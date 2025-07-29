@@ -286,6 +286,16 @@ function closeProfilePreviewModal() {
     }
 }
 
+function showProfilePreview(imageSrc) {
+    const modal = document.getElementById('profilePreviewModal');
+    const previewImage = document.getElementById('profilePreviewImage');
+    
+    if (modal && previewImage) {
+        previewImage.src = imageSrc;
+        modal.style.display = 'block';
+    }
+}
+
 function closeProfilePicModal() {
     const modal = document.getElementById('profilePicModal');
     if (modal) {
@@ -462,7 +472,7 @@ function displayChatHistory() {
 
     chatHistory.forEach(msg => {
         const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${msg.sender}-message`;
+        messageDiv.className = `message message-${msg.sender}`;
 
         let senderName = 'You';
         if (msg.sender === 'ai') {
@@ -481,13 +491,33 @@ function displayChatHistory() {
             messageContent = `<span style="color: #ffd700; font-weight: 500;">${msg.message}</span>`;
         }
 
-        messageDiv.innerHTML = `
-            <div class="message-content">
-                <strong>${senderName}:</strong>
-                <span>${messageContent}</span>
-            </div>
-            <div class="message-time">${new Date(msg.timestamp).toLocaleTimeString()}</div>
-        `;
+        // Create profile picture element for AI messages
+        let profilePicHtml = '';
+        if (msg.sender === 'ai' || msg.sender === 'game_ai') {
+            const savedProfilePic = localStorage.getItem('profilePictureData');
+            const profileSrc = savedProfilePic || 'images/sweet_neutral.svg';
+            profilePicHtml = `<img src="${profileSrc}" alt="AI Profile" class="profile-pic message-profile-pic" onclick="showProfilePreview('${profileSrc}')">`;
+        }
+
+        if (msg.sender === 'ai' || msg.sender === 'game_ai') {
+            messageDiv.innerHTML = `
+                ${profilePicHtml}
+                <div class="message-content">
+                    <strong>${senderName}:</strong>
+                    <span>${messageContent}</span>
+                </div>
+                <div class="message-time">${new Date(msg.timestamp).toLocaleTimeString()}</div>
+            `;
+        } else {
+            messageDiv.innerHTML = `
+                <div class="message-content">
+                    <strong>${senderName}:</strong>
+                    <span>${messageContent}</span>
+                </div>
+                <div class="message-time">${new Date(msg.timestamp).toLocaleTimeString()}</div>
+            `;
+        }
+        
         chatDisplay.appendChild(messageDiv);
     });
 
