@@ -163,7 +163,12 @@ function setupModalCloseButtons() {
 }
 
 function loadSavedData() {
-    // Load API provider first
+    // Load API keys first
+    geminiApiKey = localStorage.getItem('geminiApiKey') || '';
+    grokApiKey = localStorage.getItem('grokApiKey') || '';
+    groqApiKey = localStorage.getItem('groqApiKey') || '';
+
+    // Load API provider
     const savedProvider = localStorage.getItem('apiProvider');
     if (savedProvider) {
         apiProvider = savedProvider;
@@ -416,18 +421,17 @@ async function sendMessage() {
 
     // Check if API key is configured
     let currentApiKey = '';
-    const apiKeyInput = document.getElementById('apiKey');
 
     if (apiProvider === 'gemini') {
-        currentApiKey = geminiApiKey || (apiKeyInput ? apiKeyInput.value.trim() : '');
+        currentApiKey = geminiApiKey;
     } else if (apiProvider === 'grok') {
-        currentApiKey = grokApiKey || (apiKeyInput ? apiKeyInput.value.trim() : '');
+        currentApiKey = grokApiKey;
     } else if (apiProvider === 'groq') {
-        currentApiKey = groqApiKey || (apiKeyInput ? apiKeyInput.value.trim() : '');
+        currentApiKey = groqApiKey;
     }
 
     if (!currentApiKey) {
-        alert(`Please configure your ${apiProvider} API key first!`);
+        alert(`Please configure your ${apiProvider} API key first! Go to settings to add your API key.`);
         return;
     }
 
@@ -890,4 +894,286 @@ async function generateNextQuestion(questionHistory, answers) {
             const apiResponse = await fetch('https://api.x.ai/v1/chat/completions', {
                 method: 'POST',
                 headers: {
-                    '
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${currentApiKey}`
+                },
+                body: JSON.stringify({
+                    messages: [{
+                        role: "user",
+                        content: context
+                    }],
+                    model: "grok-beta",
+                    stream: false,
+                    temperature: 0.5
+                })
+            });
+
+            if (apiResponse.ok) {
+                const data = await apiResponse.json();
+                response = data.choices[0].message.content.trim();
+            }
+        } else if (apiProvider === 'groq') {
+            const apiResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${currentApiKey}`
+                },
+                body: JSON.stringify({
+                    messages: [{
+                        role: "user",
+                        content: context
+                    }],
+                    model: "llama3-8b-8192",
+                    temperature: 0.5,
+                    max_tokens: 50
+                })
+            });
+
+            if (apiResponse.ok) {
+                const data = await apiResponse.json();
+                response = data.choices[0].message.content.trim();
+            }
+        }
+
+        return response || fallbackQuestions[Math.floor(Math.random() * fallbackQuestions.length)];
+    } catch (error) {
+        console.error('Error generating next question:', error);
+        return fallbackQuestions[Math.floor(Math.random() * fallbackQuestions.length)];
+    }
+}
+
+// Game processing functions (to be implemented)
+const gameProcessors = {
+    '20questions': function(message) {
+        // Handle game-specific logic, e.g., check if the user wants to quit
+        if (message.toLowerCase() === '/exit') {
+            endGame();
+            return false; // Stop AI from responding
+        }
+
+        // Process user input (yes/no)
+        if (message.toLowerCase() === 'yes' || message.toLowerCase() === 'no') {
+            gameState.gameData.answers.push(message.toLowerCase());
+            gameState.gameData.questionCount++;
+
+            // Check win condition (20 questions asked)
+            if (gameState.gameData.questionCount >= 20) {
+                appendGameAdminMessage('I have asked 20 questions! I give up. What were you thinking of?');
+                endGame();
+                return false;
+            }
+
+            // Generate the next question
+            generateNextQuestion(gameState.gameData.questions, gameState.gameData.answers)
+                .then(nextQuestion => {
+                    gameState.gameData.questions.push(nextQuestion);
+                    appendGameAdminMessage(nextQuestion);
+                    displayChatHistory();
+                });
+
+            return false; // Stop AI from responding directly
+        } else {
+            // If the user's answer wasn't "yes" or "no", prompt them to provide a valid answer
+            appendGameAdminMessage('Please answer "yes" or "no".');
+            displayChatHistory();
+            return false;
+        }
+    },
+};
+
+// Game starter function
+function startGame(gameName) {
+    if (gameState.isActive) {
+        appendGameAdminMessage(`Please end the current game (${gameState.currentGame}) before starting a new one.`);
+        displayChatHistory();
+        return;
+    }
+
+    gameState.isActive = true;
+    gameState.currentGame = gameName;
+
+    if (gameName === '20questions') {
+        start20Questions();
+    } else {
+        appendGameAdminMessage(`Starting ${gameName}... (Functionality not yet implemented)`);
+    }
+
+    displayChatHistory();
+}
+
+// Game ender function
+function endGame() {
+    if (!gameState.isActive) {
+        appendGameAdminMessage('No game is currently active.');
+        displayChatHistory();
+        return;
+    }
+
+    appendGameAdminMessage(`Ending ${gameState.currentGame}...`);
+    gameState.isActive = false;
+    gameState.currentGame = null;
+    gameState.gameData = {};
+    displayChatHistory();
+}
+
+// Start 20 questions game
+function start20Questions() {
+    // Initialize game-specific data
+    gameState.gameData = {
+        questions: [],
+        answers: [],
+        questionCount: 0
+    };
+
+   appendGameAdminMessage('Let\'s play 20 Questions! Think of something, and I\'ll try to guess what it is in 20 questions. Answer with "yes" or "no".');
+
+    // Generate the first question
+    generateNextQuestion(gameState.gameData.questions, gameState.gameData.answers)
+        .then(nextQuestion => {
+            gameState.gameData.questions.push(nextQuestion);
+            appendGameAdminMessage(nextQuestion);
+            displayChatHistory();
+        });
+}'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${currentApiKey}`
+                },
+                body: JSON.stringify({
+                    messages: [{
+                        role: "user",
+                        content: context
+                    }],
+                    model: "grok-beta",
+                    stream: false,
+                    temperature: 0.5
+                })
+            });
+
+            if (apiResponse.ok) {
+                const data = await apiResponse.json();
+                response = data.choices[0].message.content.trim();
+            }
+        } else if (apiProvider === 'groq') {
+            const apiResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${currentApiKey}`
+                },
+                body: JSON.stringify({
+                    messages: [{
+                        role: "user",
+                        content: context
+                    }],
+                    model: "llama3-8b-8192",
+                    temperature: 0.5,
+                    max_tokens: 50
+                })
+            });
+
+            if (apiResponse.ok) {
+                const data = await apiResponse.json();
+                response = data.choices[0].message.content.trim();
+            }
+        }
+
+        return response || fallbackQuestions[Math.floor(Math.random() * fallbackQuestions.length)];
+    } catch (error) {
+        console.error('Error generating next question:', error);
+        return fallbackQuestions[Math.floor(Math.random() * fallbackQuestions.length)];
+    }
+}
+
+// Game processing functions (to be implemented)
+const gameProcessors = {
+    '20questions': function(message) {
+        // Handle game-specific logic, e.g., check if the user wants to quit
+        if (message.toLowerCase() === '/exit') {
+            endGame();
+            return false; // Stop AI from responding
+        }
+
+        // Process user input (yes/no)
+        if (message.toLowerCase() === 'yes' || message.toLowerCase() === 'no') {
+            gameState.gameData.answers.push(message.toLowerCase());
+            gameState.gameData.questionCount++;
+
+            // Check win condition (20 questions asked)
+            if (gameState.gameData.questionCount >= 20) {
+                appendGameAdminMessage('I have asked 20 questions! I give up. What were you thinking of?');
+                endGame();
+                return false;
+            }
+
+            // Generate the next question
+            generateNextQuestion(gameState.gameData.questions, gameState.gameData.answers)
+                .then(nextQuestion => {
+                    gameState.gameData.questions.push(nextQuestion);
+                    appendGameAdminMessage(nextQuestion);
+                    displayChatHistory();
+                });
+
+            return false; // Stop AI from responding directly
+        } else {
+            // If the user's answer wasn't "yes" or "no", prompt them to provide a valid answer
+            appendGameAdminMessage('Please answer "yes" or "no".');
+            displayChatHistory();
+            return false;
+        }
+    },
+};
+
+// Game starter function
+function startGame(gameName) {
+    if (gameState.isActive) {
+        appendGameAdminMessage(`Please end the current game (${gameState.currentGame}) before starting a new one.`);
+        displayChatHistory();
+        return;
+    }
+
+    gameState.isActive = true;
+    gameState.currentGame = gameName;
+
+    if (gameName === '20questions') {
+        start20Questions();
+    } else {
+        appendGameAdminMessage(`Starting ${gameName}... (Functionality not yet implemented)`);
+    }
+
+    displayChatHistory();
+}
+
+// Game ender function
+function endGame() {
+    if (!gameState.isActive) {
+        appendGameAdminMessage('No game is currently active.');
+        displayChatHistory();
+        return;
+    }
+
+    appendGameAdminMessage(`Ending ${gameState.currentGame}...`);
+    gameState.isActive = false;
+    gameState.currentGame = null;
+    gameState.gameData = {};
+    displayChatHistory();
+}
+
+// Start 20 questions game
+function start20Questions() {
+    // Initialize game-specific data
+    gameState.gameData = {
+        questions: [],
+        answers: [],
+        questionCount: 0
+    };
+
+   appendGameAdminMessage('Let\'s play 20 Questions! Think of something, and I\'ll try to guess what it is in 20 questions. Answer with "yes" or "no".');
+
+    // Generate the first question
+    generateNextQuestion(gameState.gameData.questions, gameState.gameData.answers)
+        .then(nextQuestion => {
+            gameState.gameData.questions.push(nextQuestion);
+            appendGameAdminMessage(nextQuestion);
+            displayChatHistory();
+        });
+}
