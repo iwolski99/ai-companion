@@ -8,9 +8,9 @@ let grokApiKey = localStorage.getItem('grokApiKey') || '';
 let groqApiKey = localStorage.getItem('groqApiKey') || '';
 let personality = localStorage.getItem('personality') || 'sweet';
 let companionGender = localStorage.getItem('companionGender') || 'female';
-let companionName = localStorage.getItem('companionName') || (companionGender === 'female' ? 'Her' : 'Him');
 let attraction = parseInt(localStorage.getItem('attraction') || '0');
 let currentGame = null;
+let aiCompanionName = localStorage.getItem('aiCompanionName') || (companionGender === 'female' ? 'Her' : 'Him');
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
@@ -65,28 +65,32 @@ function initializeEventListeners() {
         setProfilePicBtn.addEventListener('click', openProfilePicModal);
     }
 
-    // Settings menu toggle
-    const settingsMenuBtn = document.getElementById('settingsMenuBtn');
-    const settingsMenu = document.getElementById('settingsMenu');
-    if (settingsMenuBtn && settingsMenu) {
-        settingsMenuBtn.addEventListener('click', function() {
-            settingsMenu.classList.toggle('active');
+    // Settings dropdown
+    const settingsDropdownBtn = document.getElementById('settingsDropdownBtn');
+    const settingsDropdownMenu = document.getElementById('settingsDropdownMenu');
+    if (settingsDropdownBtn && settingsDropdownMenu) {
+        settingsDropdownBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            settingsDropdownMenu.classList.toggle('show');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function() {
+            settingsDropdownMenu.classList.remove('show');
+        });
+
+        // Prevent dropdown from closing when clicking inside
+        settingsDropdownMenu.addEventListener('click', function(e) {
+            e.stopPropagation();
         });
     }
 
-    // Companion name functionality
-    const saveNameBtn = document.getElementById('saveCompanionName');
-    const nameInput = document.getElementById('companionNameInput');
-    if (saveNameBtn && nameInput) {
-        nameInput.value = companionName;
-        saveNameBtn.addEventListener('click', function() {
-            const newName = nameInput.value.trim();
-            if (newName) {
-                companionName = newName;
-                localStorage.setItem('companionName', companionName);
-                updateCompanionNameDisplay();
-                alert('Companion name updated successfully!');
-            }
+    // AI name change button
+    const changeNameBtn = document.getElementById('changeNameBtn');
+    if (changeNameBtn) {
+        changeNameBtn.addEventListener('click', function() {
+            settingsDropdownMenu.classList.remove('show');
+            openNameChangeModal();
         });
     }
 
@@ -160,6 +164,12 @@ function setupModalCloseButtons() {
     if (closeProfilePreview) {
         closeProfilePreview.addEventListener('click', closeProfilePreviewModal);
     }
+
+    // Name change modal close
+    const closeNameChange = document.getElementById('closeNameChange');
+    if (closeNameChange) {
+        closeNameChange.addEventListener('click', closeNameChangeModal);
+    }
 }
 
 function loadSavedData() {
@@ -182,30 +192,37 @@ function loadSavedData() {
             profilePic.src = savedProfilePic;
         }
     }
-
-    // Load companion name
-    const savedName = localStorage.getItem('companionName');
-    if (savedName) {
-        companionName = savedName;
-    }
     
-    // Update name input field
-    const nameInput = document.getElementById('companionNameInput');
-    if (nameInput) {
-        nameInput.value = companionName;
+    // Load saved AI name
+    const savedAiName = localStorage.getItem('aiCompanionName');
+    if (savedAiName) {
+        aiCompanionName = savedAiName;
     }
 }
 
 function updateUI() {
     updateAttractionDisplay();
     displayChatHistory();
-    updateCompanionNameDisplay();
+    updateQuickStats();
 }
 
-function updateCompanionNameDisplay() {
-    const nameDisplay = document.getElementById('companionNameDisplay');
-    if (nameDisplay) {
-        nameDisplay.textContent = companionName;
+function updateQuickStats() {
+    const chatCountElement = document.getElementById('chatCount');
+    const statusElement = document.getElementById('statusIndicator');
+    
+    if (chatCountElement) {
+        const messageCount = chatHistory.length;
+        chatCountElement.textContent = `💬 ${messageCount} messages`;
+    }
+    
+    if (statusElement) {
+        if (currentGame) {
+            statusElement.textContent = '🎮 Gaming';
+            statusElement.className = 'stat-item status-busy';
+        } else {
+            statusElement.textContent = '🟢 Ready';
+            statusElement.className = 'stat-item status-online';
+        }
     }
 }
 
@@ -330,6 +347,77 @@ function closeProfilePreviewModal() {
     if (modal) {
         modal.style.display = 'none';
     }
+}
+
+function openNameChangeModal() {
+    const modal = document.getElementById('nameChangeModal');
+    const currentNameSpan = document.getElementById('currentAiName');
+    const nameInput = document.getElementById('aiNameInput');
+    
+    if (modal && currentNameSpan && nameInput) {
+        currentNameSpan.textContent = aiCompanionName;
+        nameInput.value = aiCompanionName;
+        modal.style.display = 'block';
+        
+        // Focus the input
+        setTimeout(() => nameInput.focus(), 100);
+        
+        // Set up event listeners
+        const saveBtn = document.getElementById('saveAiName');
+        const cancelBtn = document.getElementById('cancelNameChange');
+        
+        if (saveBtn) {
+            saveBtn.onclick = saveAiName;
+        }
+        
+        if (cancelBtn) {
+            cancelBtn.onclick = closeNameChangeModal;
+        }
+        
+        // Allow Enter key to save
+        nameInput.onkeypress = function(e) {
+            if (e.key === 'Enter') {
+                saveAiName();
+            }
+        };
+    }
+}
+
+function closeNameChangeModal() {
+    const modal = document.getElementById('nameChangeModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function saveAiName() {
+    const nameInput = document.getElementById('aiNameInput');
+    if (!nameInput) return;
+    
+    const newName = nameInput.value.trim();
+    
+    if (!newName) {
+        alert('Please enter a name for your AI companion!');
+        return;
+    }
+    
+    // Update the global variable and save to localStorage
+    aiCompanionName = newName;
+    localStorage.setItem('aiCompanionName', aiCompanionName);
+    
+    // Close the modal
+    closeNameChangeModal();
+    
+    // Show success message
+    alert(`AI companion name changed to "${newName}"!`);
+    
+    // Update any displayed names
+    updateDisplayedNames();
+}
+
+function updateDisplayedNames() {
+    // This function will update all displayed instances of the AI name
+    // The chat display will be updated next time messages are rendered
 }
 
 function showProfilePreview(imageSrc) {
@@ -522,11 +610,11 @@ function displayChatHistory() {
 
         let senderName = 'You';
         if (msg.sender === 'ai') {
-            senderName = companionName;
+            senderName = aiCompanionName;
         } else if (msg.sender === 'game') {
             senderName = '🎮 Game System';
         } else if (msg.sender === 'game_ai') {
-            senderName = companionName;
+            senderName = aiCompanionName;
         }
 
         // Add special styling for game messages
@@ -1684,6 +1772,9 @@ function updateGameUI() {
             card.classList.remove('game-active');
         }
     });
+    
+    // Update quick stats
+    updateQuickStats();
 }
 
 // Initialize immediately if DOM is already loaded
