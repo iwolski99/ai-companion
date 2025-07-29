@@ -142,6 +142,12 @@ function loadSavedData() {
     grokApiKey = localStorage.getItem('grokApiKey') || '';
     groqApiKey = localStorage.getItem('groqApiKey') || '';
     
+    console.log('Loaded API keys:', {
+        gemini: geminiApiKey ? 'Found' : 'Missing',
+        grok: grokApiKey ? 'Found' : 'Missing', 
+        groq: groqApiKey ? 'Found' : 'Missing'
+    });
+    
     // Load API provider
     const savedProvider = localStorage.getItem('apiProvider');
     if (savedProvider) {
@@ -200,18 +206,25 @@ function updateApiKeyInput() {
     let placeholder = 'Enter API Key';
 
     if (apiProvider === 'gemini') {
-        currentKey = geminiApiKey;
+        currentKey = geminiApiKey || '';
         placeholder = 'Enter Gemini API Key';
     } else if (apiProvider === 'grok') {
-        currentKey = grokApiKey;
+        currentKey = grokApiKey || '';
         placeholder = 'Enter Grok API Key';
     } else if (apiProvider === 'groq') {
-        currentKey = groqApiKey;
+        currentKey = groqApiKey || '';
         placeholder = 'Enter Groq API Key';
     }
 
     apiKeyInput.value = currentKey;
     apiKeyInput.placeholder = placeholder;
+    
+    // Show visual feedback if key is loaded
+    if (currentKey) {
+        apiKeyInput.style.borderColor = '#4CAF50';
+    } else {
+        apiKeyInput.style.borderColor = '#ccc';
+    }
 }
 
 function clearChatHistory() {
