@@ -323,11 +323,18 @@ async function syncToServer() {
             personality
         });
 
+        // Add timeout to prevent hanging
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+
         const response = await fetch('/save-progress', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ apiKey: currentApiKey, progress })
+            body: JSON.stringify({ apiKey: currentApiKey, progress }),
+            signal: controller.signal
         });
+
+        clearTimeout(timeoutId);
 
         if (response.ok) {
             console.log('Successfully synced to server');
@@ -335,7 +342,11 @@ async function syncToServer() {
             console.error('Server sync failed with status:', response.status);
         }
     } catch (error) {
-        console.error('Error syncing to server:', error);
+        if (error.name === 'AbortError') {
+            console.log('Sync timeout - continuing without blocking');
+        } else {
+            console.error('Error syncing to server:', error);
+        }
     }
 }
 
@@ -558,8 +569,12 @@ async function sendMessage() {
         return;
     }
 
-    // Show typing indicator
-    addMessageToHistory('ai', 'Typing...');
+    // Show typing indicator (don't sync for typing indicator)
+    chatHistory.push({
+        sender: 'ai',
+        message: 'Typing...',
+        timestamp: Date.now()
+    });
     displayChatHistory();
 
     try {
@@ -613,8 +628,11 @@ function addMessageToHistory(sender, message) {
     localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
     localStorage.setItem('attraction', attraction.toString());
 
-    // Auto-sync to server after each message
-    syncToServer();
+    // Only sync to server for user messages or every 5 messages to reduce delays
+    if (sender === 'user' || chatHistory.length % 5 === 0) {
+        // Use setTimeout to make sync non-blocking
+        setTimeout(() => syncToServer(), 100);
+    }
 }
 
 function displayChatHistory() {
