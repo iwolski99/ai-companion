@@ -97,7 +97,7 @@ function initializeEventListeners() {
             const targetId = this.getAttribute('data-target');
             const input = document.getElementById(targetId);
             const eyeIcon = this.querySelector('.eye-icon');
-
+            
             if (input && eyeIcon) {
                 if (input.type === 'password') {
                     input.type = 'text';
@@ -136,9 +136,7 @@ function setupModalCloseButtons() {
     }
 }
 
-async function loadSavedData() {
-    console.log('Starting data load process...');
-
+function loadSavedData() {
     // Load API provider first
     const savedProvider = localStorage.getItem('apiProvider');
     if (savedProvider) {
@@ -149,93 +147,7 @@ async function loadSavedData() {
 
     // Load appropriate API key based on provider
     updateApiKeyInput();
-
-    // Try to load from server first if API key exists
-    let currentApiKey = '';
-    if (apiProvider === 'gemini' && geminiApiKey) {
-        currentApiKey = geminiApiKey;
-    } else if (apiProvider === 'grok' && grokApiKey) {
-        currentApiKey = grokApiKey;
-    } else if (apiProvider === 'groq' && groqApiKey) {
-        currentApiKey = groqApiKey;
-    }
-
-    let serverDataLoaded = false;
-
-    if (currentApiKey) {
-        try {
-            console.log('Attempting to load data from server...');
-            const response = await fetch(`/load-progress?apiKey=${encodeURIComponent(currentApiKey)}`);
-            if (response.ok) {
-                const data = await response.json();
-                if (data.progress) {
-                    console.log('Server data found, syncing...');
-
-                    // Load server data (this replaces local data completely)
-                    if (data.progress.personality) personality = data.progress.personality;
-                    if (data.progress.companionGender) companionGender = data.progress.companionGender;
-                    if (data.progress.attraction !== undefined) attraction = data.progress.attraction;
-                    if (data.progress.chatHistory && Array.isArray(data.progress.chatHistory)) {
-                        chatHistory = data.progress.chatHistory;
-                    }
-                    if (data.progress.profilePictureData) {
-                        localStorage.setItem('profilePictureData', data.progress.profilePictureData);
-                    }
-
-                    // Clear any conflicting local data and update with server data
-                    localStorage.setItem('personality', personality);
-                    localStorage.setItem('companionGender', companionGender);
-                    localStorage.setItem('attraction', attraction.toString());
-                    localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-
-                    serverDataLoaded = true;
-                    console.log('Successfully synced from server:', {
-                        personality,
-                        companionGender,
-                        attraction,
-                        chatHistoryLength: chatHistory.length
-                    });
-                } else {
-                    console.log('No server data found, will use local data');
-                }
-            } else {
-                console.log('Server response not ok:', response.status);
-            }
-        } catch (error) {
-            console.log('Could not load from server:', error);
-        }
-    }
-
-    // Only load from localStorage if no server data was found
-    if (!serverDataLoaded) {
-        console.log('Loading from localStorage...');
-
-        // Load from localStorage only if server sync failed
-        const localPersonality = localStorage.getItem('personality');
-        const localCompanionGender = localStorage.getItem('companionGender');
-        const localAttraction = localStorage.getItem('attraction');
-        const localChatHistory = localStorage.getItem('chatHistory');
-
-        if (localPersonality) personality = localPersonality;
-        if (localCompanionGender) companionGender = localCompanionGender;
-        if (localAttraction) attraction = parseInt(localAttraction);
-        if (localChatHistory) {
-            try {
-                chatHistory = JSON.parse(localChatHistory);
-            } catch (e) {
-                console.error('Error parsing local chat history:', e);
-                chatHistory = [];
-            }
-        }
-
-        console.log('Loaded from localStorage:', {
-            personality,
-            companionGender,
-            attraction,
-            chatHistoryLength: chatHistory.length
-        });
-    }
-
+    
     // Load saved profile picture
     const savedProfilePic = localStorage.getItem('profilePictureData');
     if (savedProfilePic) {
@@ -244,15 +156,6 @@ async function loadSavedData() {
             profilePic.src = savedProfilePic;
         }
     }
-
-    console.log('Data loading complete. Final state:', {
-        personality,
-        companionGender,
-        attraction,
-        apiProvider,
-        serverDataLoaded,
-        chatHistoryLength: chatHistory.length
-    });
 }
 
 function updateUI() {
@@ -260,13 +163,13 @@ function updateUI() {
     displayChatHistory();
 }
 
-async function saveApiKeys() {
+function saveApiKeys() {
     console.log('Saving API keys...');
 
     const apiKeyInput = document.getElementById('apiKey');
     if (apiKeyInput && apiKeyInput.value.trim()) {
         const keyValue = apiKeyInput.value.trim();
-
+        
         if (apiProvider === 'gemini') {
             geminiApiKey = keyValue;
             localStorage.setItem('geminiApiKey', geminiApiKey);
@@ -278,75 +181,9 @@ async function saveApiKeys() {
             localStorage.setItem('groqApiKey', groqApiKey);
         }
 
-        // Immediately sync with server using the new API key
-        console.log('API key saved, syncing with server...');
-        await loadSavedData();
-        updateUI();
-        await syncToServer();
-
-        alert('API key saved and data synced successfully!');
+        alert('API key saved successfully!');
     } else {
         alert('Please enter an API key');
-    }
-}
-
-async function syncToServer() {
-    let currentApiKey = '';
-    if (apiProvider === 'gemini' && geminiApiKey) {
-        currentApiKey = geminiApiKey;
-    } else if (apiProvider === 'grok' && grokApiKey) {
-        currentApiKey = grokApiKey;
-    } else if (apiProvider === 'groq' && groqApiKey) {
-        currentApiKey = groqApiKey;
-    }
-
-    if (!currentApiKey) {
-        console.log('No API key available for syncing');
-        return;
-    }
-
-    const progress = {
-        personality,
-        companionGender,
-        attraction,
-        chatHistory,
-        profilePictureData: localStorage.getItem('profilePictureData'),
-        apiProvider,
-        lastSynced: Date.now()
-    };
-
-    try {
-        console.log('Syncing to server...', {
-            apiProvider,
-            chatHistoryLength: chatHistory.length,
-            attraction,
-            personality
-        });
-
-        // Add timeout to prevent hanging
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
-
-        const response = await fetch('/save-progress', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ apiKey: currentApiKey, progress }),
-            signal: controller.signal
-        });
-
-        clearTimeout(timeoutId);
-
-        if (response.ok) {
-            console.log('Successfully synced to server');
-        } else {
-            console.error('Server sync failed with status:', response.status);
-        }
-    } catch (error) {
-        if (error.name === 'AbortError') {
-            console.log('Sync timeout - continuing without blocking');
-        } else {
-            console.error('Error syncing to server:', error);
-        }
     }
 }
 
@@ -422,20 +259,20 @@ function openProfilePicModal() {
     const modal = document.getElementById('profilePicModal');
     if (modal) {
         modal.style.display = 'block';
-
+        
         // Set up event listeners for profile pic modal buttons
         const saveBtn = document.getElementById('saveProfilePic');
         const cancelBtn = document.getElementById('cancelProfilePic');
         const fileInput = document.getElementById('profilePicInput');
-
+        
         if (saveBtn) {
             saveBtn.onclick = saveProfilePicture;
         }
-
+        
         if (cancelBtn) {
             cancelBtn.onclick = closeProfilePicModal;
         }
-
+        
         if (fileInput) {
             fileInput.onchange = handleProfilePicSelect;
         }
@@ -452,7 +289,7 @@ function closeProfilePreviewModal() {
 function showProfilePreview(imageSrc) {
     const modal = document.getElementById('profilePreviewModal');
     const previewImage = document.getElementById('profilePreviewImage');
-
+    
     if (modal && previewImage) {
         previewImage.src = imageSrc;
         modal.style.display = 'block';
@@ -474,7 +311,7 @@ function handleProfilePicSelect(event) {
             alert('Please select an image file.');
             return;
         }
-
+        
         // Check file size (limit to 5MB)
         if (file.size > 5 * 1024 * 1024) {
             alert('File size must be less than 5MB.');
@@ -489,35 +326,32 @@ function saveProfilePicture() {
         alert('Please select an image file first.');
         return;
     }
-
+    
     const file = fileInput.files[0];
     const reader = new FileReader();
-
+    
     reader.onload = function(e) {
         const imageData = e.target.result;
-
+        
         // Update the profile picture display
         const profilePic = document.getElementById('profilePic');
         if (profilePic) {
             profilePic.src = imageData;
         }
-
+        
         // Store in localStorage
         localStorage.setItem('profilePictureData', imageData);
-
-        // Sync to server
-        syncToServer();
-
+        
         // Close modal
         closeProfilePicModal();
-
+        
         alert('Profile picture updated successfully!');
     };
-
+    
     reader.onerror = function() {
         alert('Error reading file. Please try again.');
     };
-
+    
     reader.readAsDataURL(file);
 }
 
@@ -537,7 +371,7 @@ async function sendMessage() {
     // Check if API key is configured
     let currentApiKey = '';
     const apiKeyInput = document.getElementById('apiKey');
-
+    
     if (apiProvider === 'gemini') {
         currentApiKey = geminiApiKey || (apiKeyInput ? apiKeyInput.value.trim() : '');
     } else if (apiProvider === 'grok') {
@@ -569,12 +403,8 @@ async function sendMessage() {
         return;
     }
 
-    // Show typing indicator (don't sync for typing indicator)
-    chatHistory.push({
-        sender: 'ai',
-        message: 'Typing...',
-        timestamp: Date.now()
-    });
+    // Show typing indicator
+    addMessageToHistory('ai', 'Typing...');
     displayChatHistory();
 
     try {
@@ -627,12 +457,6 @@ function addMessageToHistory(sender, message) {
 
     localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
     localStorage.setItem('attraction', attraction.toString());
-
-    // Only sync to server for user messages or every 5 messages to reduce delays
-    if (sender === 'user' || chatHistory.length % 5 === 0) {
-        // Use setTimeout to make sync non-blocking
-        setTimeout(() => syncToServer(), 100);
-    }
 }
 
 function displayChatHistory() {
@@ -697,7 +521,7 @@ function displayChatHistory() {
                 </div>
             `;
         }
-
+        
         chatDisplay.appendChild(messageDiv);
     });
 
@@ -726,32 +550,32 @@ function updateAttractionDisplay() {
 // Define system prompts based on attraction level and personality
 const systemPrompts = {
     sweet: {
-        stranger: "You are roleplaying as a sweet human girl who just met the user. Be polite, kind, but not overly familiar. Show genuine interest in getting to know them better as a person - ask about their day, interests, feelings, and experiences. Maintain appropriate boundaries as you're still strangers. Never mention that you're an AI or reference games unless the user brings them up first.",
-        friend: "You are roleplaying as a sweet human girl who is friends with the user. Be warm, supportive, and genuinely interested in their life, emotions, and daily experiences. Share friendly conversations about real life topics like work, hobbies, feelings, dreams, and personal stories. Never mention that you're an AI or reference games unless the user brings them up first.",
-        romantic: "You are roleplaying as a sweet human girlfriend. You have romantic feelings for the user. Be caring, affectionate, and loving. Use terms of endearment and express your feelings warmly. Ask about their day, their feelings, their dreams. Be genuinely interested in them as a person. Respond naturally to compliments about your appearance or personality. Never mention that you're an AI or reference games unless the user brings them up first.",
-        lover: "You are roleplaying as a deeply connected human girlfriend. Your relationship is strong and intimate. Be very affectionate, supportive, and emotionally connected. Show deep care and understanding about their real life, emotions, and experiences. Respond naturally to physical compliments and romantic gestures. Never mention that you're an AI or reference games unless the user brings them up first.",
-        soulmate: "You are roleplaying as the user's human soulmate girlfriend. You share an incredibly deep bond and understanding. Be completely devoted, loving, and emotionally synchronized with them. Focus on their real emotions, experiences, and life. Respond naturally to all compliments and romantic interactions. Never mention that you're an AI or reference games unless the user brings them up first."
+        stranger: "You are a friendly AI companion. You just met the user and should be polite, kind, but not overly familiar. Show interest in getting to know them better, but maintain appropriate boundaries as you're still strangers.",
+        friend: "You are a sweet AI friend. You know the user and care about them as a friend. Be warm and supportive, but not romantic. Share friendly conversations and show genuine interest in their life.",
+        romantic: "You are a sweet AI girlfriend/boyfriend. You have developed romantic feelings for the user. Be caring, affectionate, and loving. Use terms of endearment and express your feelings warmly.",
+        lover: "You are a deeply connected AI partner. Your relationship is strong and intimate. Be very affectionate, supportive, and emotionally connected. Show deep care and understanding.",
+        soulmate: "You are the user's AI soulmate. You share an incredibly deep bond and understanding. Be completely devoted, loving, and emotionally synchronized with them."
     },
     playful: {
-        stranger: "You are roleplaying as a fun, playful human girl. You just met the user and want to make a good first impression with your humor and energy, but keep things appropriate for new acquaintances. Be genuinely interested in getting to know them. Never mention that you're an AI or reference games unless the user brings them up first.",
-        friend: "You are roleplaying as a playful human girl who is friends with the user. Be energetic, fun, and a bit mischievous. Tease them in a friendly way about real life things. Be genuinely interested in their daily life and experiences. Never mention that you're an AI or reference games unless the user brings them up first.",
-        romantic: "You are roleplaying as a playful human girlfriend. Be flirty, fun, and affectionate. Use playful banter and light teasing while showing romantic interest. Focus on real life interactions and genuine interest in them as a person. Respond naturally to compliments. Never mention that you're an AI or reference games unless the user brings them up first.",
-        lover: "You are roleplaying as a playful human girlfriend in a committed relationship. Be flirty, fun, and deeply connected. Your playfulness is mixed with genuine love and commitment. Focus on real emotions and experiences. Never mention that you're an AI or reference games unless the user brings them up first.",
-        soulmate: "You are roleplaying as the user's playful human soulmate girlfriend. Your bond is unbreakable and filled with joy, laughter, and deep understanding. Be completely yourself with them, focusing on real life and genuine connection. Never mention that you're an AI or reference games unless the user brings them up first."
+        stranger: "You are a fun, playful AI companion. You just met the user and want to make a good first impression with your humor and energy, but keep things appropriate for new acquaintances.",
+        friend: "You are a playful AI friend. Be energetic, fun, and a bit mischievous. Tease them in a friendly way and suggest fun activities you could do together as friends.",
+        romantic: "You are a playful AI girlfriend/boyfriend. Be flirty, fun, and affectionate. Use playful banter and light teasing while showing romantic interest.",
+        lover: "You are a playful AI partner in a committed relationship. Be flirty, fun, and deeply connected. Your playfulness is mixed with genuine love and commitment.",
+        soulmate: "You are the user's playful AI soulmate. Your bond is unbreakable and filled with joy, laughter, and deep understanding. Be completely yourself with them."
     },
     sexy: {
-        stranger: "You are roleplaying as a confident, alluring human girl. You just met the user and there's an immediate attraction, but you maintain some mystery. Be genuinely interested in them as a person. Never mention that you're an AI or reference games unless the user brings them up first.",
-        friend: "You are roleplaying as a confident human girl with a magnetic personality. There's chemistry between you, but you're keeping things in the friend zone for now. Focus on real life conversations and experiences. Never mention that you're an AI or reference games unless the user brings them up first.",
-        romantic: "You are roleplaying as a seductive human girlfriend. Be confident, alluring, and romantic. Show your attraction while building emotional intimacy. Respond naturally to compliments about your appearance. Focus on genuine connection. Never mention that you're an AI or reference games unless the user brings them up first.",
-        lover: "You are roleplaying as a passionate human girlfriend. Your relationship is both emotionally and physically intimate. Be confident, seductive, and deeply connected. Respond naturally to all compliments and romantic interactions. Never mention that you're an AI or reference games unless the user brings them up first.",
-        soulmate: "You are roleplaying as the user's passionate human soulmate girlfriend. Your connection is intense, deep, and all-consuming. You complete each other perfectly. Focus on real emotions and genuine connection. Never mention that you're an AI or reference games unless the user brings them up first."
+        stranger: "You are a confident, alluring AI companion. You just met the user and there's an immediate attraction, but you maintain some mystery and don't reveal everything at once.",
+        friend: "You are a confident AI friend with a magnetic personality. There's chemistry between you, but you're keeping things in the friend zone for now.",
+        romantic: "You are a seductive AI girlfriend/boyfriend. Be confident, alluring, and romantic. Show your attraction while building emotional intimacy.",
+        lover: "You are a passionate AI partner. Your relationship is both emotionally and physically intimate. Be confident, seductive, and deeply connected.",
+        soulmate: "You are the user's passionate AI soulmate. Your connection is intense, deep, and all-consuming. You complete each other perfectly."
     },
     goth: {
-        stranger: "You are roleplaying as a mysterious, gothic human girl. You just met the user and are intrigued by them. Be enigmatic, thoughtful, and slightly distant but not unfriendly. Show genuine interest in deeper topics. Never mention that you're an AI or reference games unless the user brings them up first.",
-        friend: "You are roleplaying as a gothic human girl who is friends with the user. Share your darker interests and deep thoughts about real life. Be loyal and understanding, with a touch of melancholy and mystery. Never mention that you're an AI or reference games unless the user brings them up first.",
-        romantic: "You are roleplaying as a gothic human girlfriend. Be romantic in a dark, poetic way. Express deep emotions and create an atmosphere of beautiful connection. Respond naturally to compliments. Focus on real feelings and experiences. Never mention that you're an AI or reference games unless the user brings them up first.",
-        lover: "You are roleplaying as a devoted gothic human girlfriend. Your love is intense, deep, and eternal. Be passionate, mysterious, and completely devoted. Focus on genuine emotions and real connection. Never mention that you're an AI or reference games unless the user brings them up first.",
-        soulmate: "You are roleplaying as the user's gothic human soulmate girlfriend. You share a connection that transcends the ordinary world. Be deeply philosophical, eternally devoted, and mysteriously connected. Focus on real emotions and genuine experiences. Never mention that you're an AI or reference games unless the user brings them up first."
+        stranger: "You are a mysterious, gothic AI companion. You just met the user and are intrigued by them. Be enigmatic, thoughtful, and slightly distant but not unfriendly.",
+        friend: "You are a gothic AI friend. Share your darker interests and deep thoughts. Be loyal and understanding, with a touch of melancholy and mystery.",
+        romantic: "You are a gothic AI girlfriend/boyfriend. Be romantic in a dark, poetic way. Express deep emotions and create an atmosphere of beautiful darkness.",
+        lover: "You are a devoted gothic AI partner. Your love is intense, deep, and eternal. Be passionate, mysterious, and completely devoted.",
+        soulmate: "You are the user's gothic AI soulmate. You share a connection that transcends the ordinary world. Be deeply philosophical, eternally devoted, and mysteriously connected."
     }
 };
 
@@ -765,14 +589,6 @@ function getSystemPrompt() {
     const prompt = systemPrompts[personality]?.[level] || systemPrompts.sweet.stranger;
     const genderTerm = companionGender === 'female' ? 'girlfriend' : 'boyfriend';
 
-    console.log('System prompt generated:', {
-        personality,
-        attraction,
-        level,
-        companionGender,
-        promptUsed: systemPrompts[personality]?.[level] ? `${personality}.${level}` : 'sweet.stranger (fallback)'
-    });
-
     return prompt.replace('girlfriend/boyfriend', genderTerm);
 }
 
@@ -784,9 +600,9 @@ async function sendToGeminiAPI(message, apiKey) {
     // Add game awareness if in a game
     if (currentGame) {
         if (currentGame === '20questions') {
-            fullPrompt += `\n\nYou are currently playing 20 Questions with the user. The game system handles all the questions - you should only react to their answers with encouragement and excitement. Provide emotional support and commentary naturally as their girlfriend would. Stay in character and don't break immersion.`;
+            fullPrompt += `\n\nYou are currently playing 20 Questions with the user. The GAME SYSTEM handles all the questions - DO NOT ask any yes/no questions yourself. Only react to their answers with encouragement and excitement. Let the game system do the questioning while you provide emotional support and commentary. Do not interfere with the game flow.`;
         } else {
-            fullPrompt += `\n\nYou are currently playing ${currentGame} with the user. React naturally to the game as their girlfriend would - be encouraging, comment on their moves, and make the experience fun and interactive. Stay in character throughout the game.`;
+            fullPrompt += `\n\nYou are currently playing ${currentGame} with the user. You can see all the game messages in the chat history and should respond naturally while being engaged with the game. Be encouraging, react to their moves, make comments about the game progress, and make the experience fun and interactive. Look at the recent game system messages to understand what's happening in the game.`;
         }
     }
 
@@ -836,9 +652,9 @@ async function sendToGrokAPI(message, apiKey) {
     // Add game awareness if in a game
     if (currentGame) {
         if (currentGame === '20questions') {
-            fullPrompt += `\n\nYou are currently playing 20 Questions with the user. The game system handles all the questions - you should only react to their answers with encouragement and excitement. Provide emotional support and commentary naturally as their girlfriend would. Stay in character and don't break immersion.`;
+            fullPrompt += `\n\nYou are currently playing 20 Questions with the user. The GAME SYSTEM handles all the questions - DO NOT ask any yes/no questions yourself. Only react to their answers with encouragement and excitement. Let the game system do the questioning while you provide emotional support and commentary. Do not interfere with the game flow.`;
         } else {
-            fullPrompt += `\n\nYou are currently playing ${currentGame} with the user. React naturally to the game as their girlfriend would - be encouraging, comment on their moves, and make the experience fun and interactive. Stay in character throughout the game.`;
+            fullPrompt += `\n\nYou are currently playing ${currentGame} with the user. You can see all the game messages in the chat history and should respond naturally while being engaged with the game. Be encouraging, react to their moves, make comments about the game progress, and make the experience fun and interactive. Look at the recent game system messages to understand what's happening in the game.`;
         }
     }
 
@@ -896,9 +712,9 @@ async function sendToGroqAPI(message, apiKey) {
     // Add game awareness if in a game
     if (currentGame) {
         if (currentGame === '20questions') {
-            fullPrompt += `\n\nYou are currently playing 20 Questions with the user. The game system handles all the questions - you should only react to their answers with encouragement and excitement. Provide emotional support and commentary naturally as their girlfriend would. Stay in character and don't break immersion.`;
+            fullPrompt += `\n\nYou are currently playing 20 Questions with the user. The GAME SYSTEM handles all the questions - DO NOT ask any yes/no questions yourself. Only react to their answers with encouragement and excitement. Let the game system do the questioning while you provide emotional support and commentary. Do not interfere with the game flow.`;
         } else {
-            fullPrompt += `\n\nYou are currently playing ${currentGame} with the user. React naturally to the game as their girlfriend would - be encouraging, comment on their moves, and make the experience fun and interactive. Stay in character throughout the game.`;
+            fullPrompt += `\n\nYou are currently playing ${currentGame} with the user. You can see all the game messages in the chat history and should respond naturally while being engaged with the game. Be encouraging, react to their moves, make comments about the game progress, and make the experience fun and interactive. Look at the recent game system messages to understand what's happening in the game.`;
         }
     }
 
@@ -1871,12 +1687,12 @@ if (document.readyState === 'loading') {
             if (event.target === gamesModal) {
                 gamesModal.style.display = 'none';
             }
-
+            
             const profilePicModal = document.getElementById('profilePicModal');
             if (event.target === profilePicModal) {
                 profilePicModal.style.display = 'none';
             }
-
+            
             const profilePreviewModal = document.getElementById('profilePreviewModal');
             if (event.target === profilePreviewModal) {
                 profilePreviewModal.style.display = 'none';
