@@ -279,12 +279,18 @@ async function sendMessage() {
     messageInput.value = '';
 
     // Process game input if a game is active
+    let shouldGetAIResponse = true;
     if (currentGame && gameProcessors[currentGame]) {
-        gameProcessors[currentGame](message);
+        shouldGetAIResponse = gameProcessors[currentGame](message);
     }
 
     // Display updated chat
     displayChatHistory();
+
+    // Only get AI response if not blocked by game processor
+    if (!shouldGetAIResponse) {
+        return;
+    }
 
     // Show typing indicator
     addMessageToHistory('ai', 'Typing...');
@@ -302,14 +308,18 @@ async function sendMessage() {
         }
 
         // Remove typing indicator and add real response
-        chatHistory.pop(); // Remove "Typing..." message
+        if (chatHistory.length > 0 && chatHistory[chatHistory.length - 1].message === 'Typing...') {
+            chatHistory.pop(); // Remove "Typing..." message
+        }
         addMessageToHistory('ai', response);
         displayChatHistory();
 
     } catch (error) {
         console.error('Error sending message:', error);
         // Remove typing indicator and add error message
-        chatHistory.pop(); // Remove "Typing..." message
+        if (chatHistory.length > 0 && chatHistory[chatHistory.length - 1].message === 'Typing...') {
+            chatHistory.pop(); // Remove "Typing..." message
+        }
         addMessageToHistory('ai', 'Sorry, I encountered an error. Please check your API key and try again.');
         displayChatHistory();
     }
@@ -753,7 +763,8 @@ const gameProcessors = {
         if (message.toLowerCase().includes('start') && data.gamePhase === 'waiting') {
             data.gamePhase = 'ready';
             appendGameAdminMessage("🎯 Great! Think of something (an object, animal, person, etc.) and I'll try to guess it. Type 'ready' when you've thought of something!");
-            return;
+            displayChatHistory();
+            return false; // Block AI response
         }
 
         if (message.toLowerCase().includes('ready') && data.gamePhase === 'ready') {
@@ -761,16 +772,18 @@ const gameProcessors = {
             data.questionsAsked = 0;
             data.waitingForAnswer = true;
             appendGameAdminMessage(`🎯 Perfect! Question 1/20: ${data.questions[0]} (Please answer YES or NO)`);
-            return;
+            displayChatHistory();
+            return false; // Block AI response
         }
 
         if (data.gamePhase === 'questioning' && data.waitingForAnswer) {
             const response = message.toLowerCase().trim();
             
-            // Strict yes/no checking
+            // Strict yes/no checking - block AI response for invalid answers
             if (!response.includes('yes') && !response.includes('no')) {
                 appendGameAdminMessage("🎯 Please answer with 'YES' or 'NO' only!");
-                return;
+                displayChatHistory();
+                return false; // Block AI response for invalid input
             }
 
             // Process the answer
@@ -780,7 +793,8 @@ const gameProcessors = {
             if (data.questionsAsked >= 20) {
                 data.gamePhase = 'ended';
                 appendGameAdminMessage("🎯 I've used all 20 questions! I give up. What were you thinking of?");
-                return;
+                displayChatHistory();
+                return false; // Block AI response
             }
 
             // Ask next question
@@ -806,13 +820,17 @@ const gameProcessors = {
                 }
                 displayChatHistory();
             }, 1000);
-            return;
+            return false; // Block AI response
         }
 
         if (data.gamePhase === 'ended' && !data.waitingForAnswer) {
             appendGameAdminMessage(`🎯 "${message}" - interesting! Thanks for playing! That was fun. Type '/exit' to leave the game.`);
             data.waitingForAnswer = false; // Prevent multiple responses
+            displayChatHistory();
+            return false; // Block AI response
         }
+
+        return true; // Allow AI response for other cases
     },
 
     'trivia': (message) => {
@@ -841,7 +859,8 @@ const gameProcessors = {
             data.currentQuestion = question.q;
             data.currentAnswer = question.a;
             appendGameAdminMessage(`🧠 Question ${data.questionsAsked + 1}: ${data.currentQuestion}`);
-            return;
+            displayChatHistory();
+            return false;
         }
 
         if (data.currentQuestion) {
@@ -863,7 +882,11 @@ const gameProcessors = {
                 data.currentQuestion = null;
                 appendGameAdminMessage(`🧠 Game over! Final score: ${data.score}/${data.questions.length}. Type '/exit' to leave the game.`);
             }
+            displayChatHistory();
+            return false;
         }
+        
+        return true;
     },
 
     'storybuilding': async (message) => {
@@ -879,7 +902,8 @@ const gameProcessors = {
 
         if (message.toLowerCase().includes('start')) {
             appendGameAdminMessage("📖 Let's build a story together! I'll start: 'Once upon a time, in a land far away...' Now add your sentence!");
-            return;
+            displayChatHistory();
+            return false;
         }
 
         // Add user's contribution to story
@@ -905,6 +929,7 @@ const gameProcessors = {
 
         data.waitingForAI = false;
         displayChatHistory();
+        return false;
     },
 
     'wordassociation': (message) => {
@@ -920,7 +945,8 @@ const gameProcessors = {
 
         if (message.toLowerCase().includes('start')) {
             appendGameAdminMessage(`🔤 Word Association! Starting word: "${data.currentWord}". What word comes to mind?`);
-            return;
+            displayChatHistory();
+            return false;
         }
 
         const userWord = message.toLowerCase().trim();
@@ -928,6 +954,8 @@ const gameProcessors = {
         data.currentWord = userWord;
         data.turnCount++;
         appendGameAdminMessage(`🔤 "${userWord}" - good one! Chain: ${data.wordChain.join(' → ')}`);
+        displayChatHistory();
+        return true; // Allow AI response for this game
     },
 
     'wouldyourather': (message) => {
@@ -948,7 +976,8 @@ const gameProcessors = {
 
         if (message.toLowerCase().includes('start')) {
             appendGameAdminMessage(`❓ ${data.questions[0]}`);
-            return;
+            displayChatHistory();
+            return true; // Allow AI response for this game
         }
 
         appendGameAdminMessage(`❓ Interesting choice! I can see why you'd pick that.`);
@@ -959,6 +988,8 @@ const gameProcessors = {
         } else {
             appendGameAdminMessage(`❓ That was fun! We've gone through all my questions. Type '/exit' to leave the game.`);
         }
+        displayChatHistory();
+        return true; // Allow AI response for this game
     },
 
     'songguess': (message) => {
@@ -978,7 +1009,8 @@ const gameProcessors = {
 
         if (message.toLowerCase().includes('start')) {
             appendGameAdminMessage(`🎵 Song Guessing Game! Here's your first clue: ${data.songs[0].clue}`);
-            return;
+            displayChatHistory();
+            return false;
         }
 
         const guess = message.toLowerCase();
@@ -997,6 +1029,8 @@ const gameProcessors = {
         } else {
             appendGameAdminMessage(`🎵 Game over! Final score: ${data.score}/${data.songs.length}. Type '/exit' to leave the game.`);
         }
+        displayChatHistory();
+        return false;
     },
 
     'movieguess': (message) => {
@@ -1016,7 +1050,8 @@ const gameProcessors = {
 
         if (message.toLowerCase().includes('start')) {
             appendGameAdminMessage(`🎬 Movie/TV Guessing! Here's your first clue: ${data.movies[0].clue}`);
-            return;
+            displayChatHistory();
+            return false;
         }
 
         const guess = message.toLowerCase();
@@ -1035,6 +1070,8 @@ const gameProcessors = {
         } else {
             appendGameAdminMessage(`🎬 Game over! Final score: ${data.score}/${data.movies.length}. Type '/exit' to leave the game.`);
         }
+        displayChatHistory();
+        return false;
     },
 
     'roleplay': (message) => {
@@ -1049,17 +1086,21 @@ const gameProcessors = {
 
         if (message.toLowerCase().includes('start') && !data.started) {
             appendGameAdminMessage("🎭 Role Playing time! What scenario would you like to explore? (cafe date, adventure quest, mystery detective, etc.)");
-            return;
+            displayChatHistory();
+            return false;
         }
 
         if (!data.started && !data.scenario) {
             data.scenario = message;
             data.started = true;
             appendGameAdminMessage(`🎭 Great! Let's roleplay a ${message} scenario. I'll play along with whatever character fits the scene!`);
-            return;
+            displayChatHistory();
+            return true; // Allow AI response for roleplay
         }
 
         appendGameAdminMessage(`🎭 *Playing along in the ${data.scenario} scenario* This is so much fun!`);
+        displayChatHistory();
+        return true; // Allow AI response for roleplay
     },
 
     'lovequiz': (message) => {
@@ -1080,7 +1121,8 @@ const gameProcessors = {
 
         if (message.toLowerCase().includes('start')) {
             appendGameAdminMessage(`💕 Love Language Quiz! Question 1: ${data.questions[0]}`);
-            return;
+            displayChatHistory();
+            return true; // Allow AI response for love quiz
         }
 
         appendGameAdminMessage(`💕 Interesting answer! That tells me a lot about you.`);
@@ -1091,6 +1133,8 @@ const gameProcessors = {
         } else {
             appendGameAdminMessage(`💕 Thanks for sharing! I feel like I know you better now. We're very compatible! Type '/exit' to leave the game.`);
         }
+        displayChatHistory();
+        return true; // Allow AI response for love quiz
     }
 };
 
