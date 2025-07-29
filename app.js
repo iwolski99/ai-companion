@@ -630,6 +630,233 @@ function appendGameAdminMessage(message) {
     addMessageToHistory('game', message);
 }
 
+// Generate intelligent next question for 20 questions
+async function generateNextQuestion(questionHistory, answers) {
+    let currentApiKey = '';
+    if (apiProvider === 'gemini') {
+        currentApiKey = geminiApiKey;
+    } else if (apiProvider === 'grok') {
+        currentApiKey = grokApiKey;
+    } else if (apiProvider === 'groq') {
+        currentApiKey = groqApiKey;
+    }
+
+    if (!currentApiKey) {
+        // Fallback to basic questions
+        const fallbackQuestions = [
+            "Is it bigger than a breadbox?",
+            "Can you hold it in your hand?",
+            "Is it made by humans?",
+            "Is it found indoors?",
+            "Is it electronic?",
+            "Is it soft?",
+            "Does it make noise?",
+            "Is it used for work?",
+            "Would children play with it?",
+            "Is it colorful?"
+        ];
+        return fallbackQuestions[Math.floor(Math.random() * fallbackQuestions.length)];
+    }
+
+    // Build context from previous Q&A
+    let context = "You are playing 20 questions. Here are the questions asked and answers received:\n";
+    for (let i = 0; i < questionHistory.length; i++) {
+        context += `Q: ${questionHistory[i]} A: ${answers[i]}\n`;
+    }
+    context += "\nBased on these clues, what is the BEST next yes/no question to narrow down what they're thinking of? Only respond with the question, nothing else.";
+
+    try {
+        let response = '';
+
+        if (apiProvider === 'gemini') {
+            const apiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${currentApiKey}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{
+                            text: context
+                        }]
+                    }],
+                    generationConfig: {
+                        temperature: 0.5,
+                        topP: 0.8,
+                        topK: 40,
+                        maxOutputTokens: 50,
+                    }
+                })
+            });
+
+            if (apiResponse.ok) {
+                const data = await apiResponse.json();
+                response = data.candidates[0].content.parts[0].text.trim();
+            }
+        } else if (apiProvider === 'grok') {
+            const apiResponse = await fetch('https://api.x.ai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${currentApiKey}`
+                },
+                body: JSON.stringify({
+                    messages: [
+                        { role: "system", content: "You are playing 20 questions. Generate the best next yes/no question." },
+                        { role: "user", content: context }
+                    ],
+                    model: "grok-beta",
+                    stream: false,
+                    temperature: 0.5,
+                    max_tokens: 50
+                })
+            });
+
+            if (apiResponse.ok) {
+                const data = await apiResponse.json();
+                response = data.choices[0].message.content.trim();
+            }
+        } else if (apiProvider === 'groq') {
+            const apiResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${currentApiKey}`
+                },
+                body: JSON.stringify({
+                    messages: [
+                        { role: "system", content: "You are playing 20 questions. Generate the best next yes/no question." },
+                        { role: "user", content: context }
+                    ],
+                    model: "llama3-8b-8192",
+                    temperature: 0.5,
+                    max_tokens: 50
+                })
+            });
+
+            if (apiResponse.ok) {
+                const data = await apiResponse.json();
+                response = data.choices[0].message.content.trim();
+            }
+        }
+
+        // Clean up the response
+        response = response.replace(/^["']|["']$/g, '');
+        return response || "Is it something you use every day?";
+
+    } catch (error) {
+        console.error('Error generating question:', error);
+        return "Is it something you use every day?";
+    }
+}
+
+// Make an intelligent guess based on all the answers
+async function makeIntelligentGuess(questionHistory, answers) {
+    let currentApiKey = '';
+    if (apiProvider === 'gemini') {
+        currentApiKey = geminiApiKey;
+    } else if (apiProvider === 'grok') {
+        currentApiKey = grokApiKey;
+    } else if (apiProvider === 'groq') {
+        currentApiKey = groqApiKey;
+    }
+
+    if (!currentApiKey) {
+        return null;
+    }
+
+    // Build context from all Q&A
+    let context = "Based on this 20 questions game, what do you think they're thinking of?\n";
+    for (let i = 0; i < questionHistory.length; i++) {
+        context += `Q: ${questionHistory[i]} A: ${answers[i]}\n`;
+    }
+    context += "\nWhat is your best guess? Respond with just the object/animal/thing name, nothing else.";
+
+    try {
+        let response = '';
+
+        if (apiProvider === 'gemini') {
+            const apiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${currentApiKey}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{
+                            text: context
+                        }]
+                    }],
+                    generationConfig: {
+                        temperature: 0.3,
+                        topP: 0.8,
+                        topK: 40,
+                        maxOutputTokens: 20,
+                    }
+                })
+            });
+
+            if (apiResponse.ok) {
+                const data = await apiResponse.json();
+                response = data.candidates[0].content.parts[0].text.trim();
+            }
+        } else if (apiProvider === 'grok') {
+            const apiResponse = await fetch('https://api.x.ai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${currentApiKey}`
+                },
+                body: JSON.stringify({
+                    messages: [
+                        { role: "system", content: "You are making a guess in 20 questions. Respond with just the object name." },
+                        { role: "user", content: context }
+                    ],
+                    model: "grok-beta",
+                    stream: false,
+                    temperature: 0.3,
+                    max_tokens: 20
+                })
+            });
+
+            if (apiResponse.ok) {
+                const data = await apiResponse.json();
+                response = data.choices[0].message.content.trim();
+            }
+        } else if (apiProvider === 'groq') {
+            const apiResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${currentApiKey}`
+                },
+                body: JSON.stringify({
+                    messages: [
+                        { role: "system", content: "You are making a guess in 20 questions. Respond with just the object name." },
+                        { role: "user", content: context }
+                    ],
+                    model: "llama3-8b-8192",
+                    temperature: 0.3,
+                    max_tokens: 20
+                })
+            });
+
+            if (apiResponse.ok) {
+                const data = await apiResponse.json();
+                response = data.choices[0].message.content.trim();
+            }
+        }
+
+        // Clean up the response
+        response = response.replace(/^["']|["']$/g, '').toLowerCase();
+        return response || null;
+
+    } catch (error) {
+        console.error('Error making guess:', error);
+        return null;
+    }
+}
+
 // Get AI contribution for story building game
 async function getAIStoryContribution(currentStory) {
     let currentApiKey = '';
@@ -736,25 +963,14 @@ Please add exactly ONE sentence to continue this story. Make it engaging and cre
 
 // Game processors with full functionality
 const gameProcessors = {
-    '20questions': (message) => {
+    '20questions': async (message) => {
         if (!gameState.gameData['20questions']) {
             gameState.gameData['20questions'] = {
                 questionsAsked: 0,
-                target: null,
                 gamePhase: 'waiting', // waiting, ready, questioning, ended
                 waitingForAnswer: false,
-                questions: [
-                    "Is it alive?",
-                    "Is it bigger than a breadbox?", 
-                    "Can you hold it in your hand?",
-                    "Is it made by humans?",
-                    "Do you use it daily?",
-                    "Is it found indoors?",
-                    "Is it electronic?",
-                    "Is it edible?",
-                    "Is it made of metal?",
-                    "Is it used for entertainment?"
-                ]
+                answers: [], // Store all answers
+                questionHistory: [] // Store all questions asked
             };
         }
 
@@ -764,70 +980,101 @@ const gameProcessors = {
             data.gamePhase = 'ready';
             appendGameAdminMessage("🎯 Great! Think of something (an object, animal, person, etc.) and I'll try to guess it. Type 'ready' when you've thought of something!");
             displayChatHistory();
-            return false; // Block AI response
+            return true; // Allow AI response to be encouraging
         }
 
         if (message.toLowerCase().includes('ready') && data.gamePhase === 'ready') {
             data.gamePhase = 'questioning';
             data.questionsAsked = 0;
             data.waitingForAnswer = true;
-            appendGameAdminMessage(`🎯 Perfect! Question 1/20: ${data.questions[0]} (Please answer YES or NO)`);
+            data.answers = [];
+            data.questionHistory = [];
+            
+            // Start with the first intelligent question
+            const firstQuestion = "Is it alive?";
+            data.questionHistory.push(firstQuestion);
+            appendGameAdminMessage(`🎯 Perfect! Question 1/20: ${firstQuestion} (Please answer YES or NO)`);
             displayChatHistory();
-            return false; // Block AI response
+            return true; // Allow AI response to show excitement
         }
 
         if (data.gamePhase === 'questioning' && data.waitingForAnswer) {
             const response = message.toLowerCase().trim();
             
-            // Strict yes/no checking - block AI response for invalid answers
+            // Strict yes/no checking
             if (!response.includes('yes') && !response.includes('no')) {
                 appendGameAdminMessage("🎯 Please answer with 'YES' or 'NO' only!");
                 displayChatHistory();
                 return false; // Block AI response for invalid input
             }
 
-            // Process the answer
+            // Record the answer
+            const answer = response.includes('yes') ? 'yes' : 'no';
+            data.answers.push(answer);
             data.questionsAsked++;
             data.waitingForAnswer = false;
+
+            // Check if we should make a guess (after 15 questions or if confident)
+            if (data.questionsAsked >= 15) {
+                // Try to make an intelligent guess
+                const guess = await makeIntelligentGuess(data.questionHistory, data.answers);
+                if (guess && data.questionsAsked >= 18) {
+                    data.gamePhase = 'guessing';
+                    appendGameAdminMessage(`🎯 I think I know! Is it a ${guess}? (YES or NO)`);
+                    displayChatHistory();
+                    return true; // Allow AI response to show confidence
+                }
+            }
 
             if (data.questionsAsked >= 20) {
                 data.gamePhase = 'ended';
                 appendGameAdminMessage("🎯 I've used all 20 questions! I give up. What were you thinking of?");
                 displayChatHistory();
-                return false; // Block AI response
+                return true; // Allow AI response to show disappointment
             }
 
-            // Ask next question
-            setTimeout(() => {
+            // Generate next intelligent question
+            setTimeout(async () => {
                 data.waitingForAnswer = true;
-                if (data.questionsAsked < data.questions.length) {
-                    appendGameAdminMessage(`🎯 Question ${data.questionsAsked + 1}/20: ${data.questions[data.questionsAsked]} (Please answer YES or NO)`);
-                } else {
-                    const genericQuestions = [
-                        "Is it something you'd find in a kitchen?",
-                        "Is it colorful?",
-                        "Would children play with it?",
-                        "Is it expensive?",
-                        "Can it move on its own?",
-                        "Is it soft?",
-                        "Is it used for work?",
-                        "Is it round?",
-                        "Would you find it outside?",
-                        "Is it smaller than a car?"
-                    ];
-                    const qIndex = (data.questionsAsked - data.questions.length) % genericQuestions.length;
-                    appendGameAdminMessage(`🎯 Question ${data.questionsAsked + 1}/20: ${genericQuestions[qIndex]} (Please answer YES or NO)`);
-                }
+                const nextQuestion = await generateNextQuestion(data.questionHistory, data.answers);
+                data.questionHistory.push(nextQuestion);
+                appendGameAdminMessage(`🎯 Question ${data.questionsAsked + 1}/20: ${nextQuestion} (Please answer YES or NO)`);
                 displayChatHistory();
             }, 1000);
-            return false; // Block AI response
+            return true; // Allow AI response to react to answer
+        }
+
+        if (data.gamePhase === 'guessing') {
+            const response = message.toLowerCase().trim();
+            if (response.includes('yes')) {
+                appendGameAdminMessage(`🎯 Yes! I guessed it! Thanks for playing! That was fun. Type '/exit' to leave the game.`);
+                data.gamePhase = 'ended';
+                displayChatHistory();
+                return true; // Allow AI response to celebrate
+            } else if (response.includes('no')) {
+                appendGameAdminMessage(`🎯 Hmm, let me ask more questions then...`);
+                data.gamePhase = 'questioning';
+                data.waitingForAnswer = true;
+                
+                // Continue with more questions
+                setTimeout(async () => {
+                    const nextQuestion = await generateNextQuestion(data.questionHistory, data.answers);
+                    data.questionHistory.push(nextQuestion);
+                    appendGameAdminMessage(`🎯 Question ${data.questionsAsked + 1}/20: ${nextQuestion} (Please answer YES or NO)`);
+                    displayChatHistory();
+                }, 1000);
+                return true; // Allow AI response to show determination
+            } else {
+                appendGameAdminMessage("🎯 Please answer with 'YES' or 'NO' only!");
+                displayChatHistory();
+                return false;
+            }
         }
 
         if (data.gamePhase === 'ended' && !data.waitingForAnswer) {
-            appendGameAdminMessage(`🎯 "${message}" - interesting! Thanks for playing! That was fun. Type '/exit' to leave the game.`);
-            data.waitingForAnswer = false; // Prevent multiple responses
+            appendGameAdminMessage(`🎯 "${message}" - interesting! I should have guessed that! Thanks for playing! Type '/exit' to leave the game.`);
             displayChatHistory();
-            return false; // Block AI response
+            return true; // Allow AI response to analyze what they learned
         }
 
         return true; // Allow AI response for other cases
