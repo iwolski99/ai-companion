@@ -25,8 +25,21 @@
         <option value="grok">Grok</option>
         <option value="groq">Groq</option>
     </select>
-    <input type="password" id="geminiApiKey" placeholder="Gemini API Key" class="api-input">
-    <input type="password" id="grokApiKey" placeholder="Grok API Key" class="api-input">
+    <div class="api-input-container">
+                    <input type="password" id="geminiApiKey" placeholder="Gemini API Key" class="api-input">
+                    <button type="button" class="toggle-visibility" data-target="geminiApiKey">
+                        <span class="eye-icon">👁️</span>
+                    </button>
+                </div>
+            </div>
+            <div class="api-key-section">
+                <label for="grokApiKey">Grok API Key:</label>
+                <div class="api-input-container">
+                    <input type="password" id="grokApiKey" placeholder="Grok API Key" class="api-input">
+                    <button type="button" class="toggle-visibility" data-target="grokApiKey">
+                        <span class="eye-icon">👁️</span>
+                    </button>
+                </div>
     <input type="password" id="groqApiKey" placeholder="Groq API Key" class="api-input">
     <button id="saveKeys" class="btn">Save Keys</button>
 </div>
@@ -47,7 +60,7 @@
                 <button id="nextPage" class="btn">Next</button>
                 <button id="lastPage" class="btn">>></button>
             </div>
-            
+
             <div class="message-input-container">
                 <input type="text" id="messageInput" placeholder="Type your message..." class="message-input">
                 <button id="sendMessage" class="btn send-btn">Send</button>
@@ -67,7 +80,7 @@
             </div>
         </div>
     </div> -->
-    
+
     <!-- Quiz Modal -->
     <div id="quizModal" class="modal">
         <div class="modal-content">
@@ -248,7 +261,7 @@
         </div>
     </div>
     <script src="app.js"></script>
-    
+
     <!-- Scroll to Bottom Button -->
     <button id="scrollToBottom" class="scroll-to-bottom-btn" title="Scroll to bottom">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
