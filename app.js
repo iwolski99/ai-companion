@@ -403,7 +403,7 @@ function getSystemPrompt() {
 async function sendToGeminiAPI(message, apiKey) {
     const systemPrompt = getSystemPrompt();
     let fullPrompt = systemPrompt;
-    
+
     // Add game awareness if in a game
     if (currentGame) {
         fullPrompt += `\n\nYou are currently playing ${currentGame} with the user. You can see all the game messages in the chat history and should respond naturally while being engaged with the game. Be encouraging, react to their moves, make comments about the game progress, and make the experience fun and interactive. Look at the recent game system messages to understand what's happening in the game.`;
@@ -451,7 +451,7 @@ async function sendToGeminiAPI(message, apiKey) {
 async function sendToGrokAPI(message, apiKey) {
     const systemPrompt = getSystemPrompt();
     let fullPrompt = systemPrompt;
-    
+
     // Add game awareness if in a game
     if (currentGame) {
         fullPrompt += `\n\nYou are currently playing ${currentGame} with the user. You can see all the game messages in the chat history and should respond naturally while being engaged with the game. Be encouraging, react to their moves, make comments about the game progress, and make the experience fun and interactive. Look at the recent game system messages to understand what's happening in the game.`;
@@ -474,6 +474,8 @@ async function sendToGrokAPI(message, apiKey) {
             messages.push({ role: "assistant", content: msg.message });
         } else if (msg.sender === 'game') {
             messages.push({ role: "user", content: `[Game System]: ${msg.message}` });
+        } else if (msg.sender === 'game_ai') {
+            messages.push({ role: "assistant", content: msg.message });
         }
     });
 
@@ -505,7 +507,7 @@ async function sendToGrokAPI(message, apiKey) {
 async function sendToGroqAPI(message, apiKey) {
     const systemPrompt = getSystemPrompt();
     let fullPrompt = systemPrompt;
-    
+
     // Add game awareness if in a game
     if (currentGame) {
         fullPrompt += `\n\nYou are currently playing ${currentGame} with the user. You can see all the game messages in the chat history and should respond naturally while being engaged with the game. Be encouraging, react to their moves, make comments about the game progress, and make the experience fun and interactive. Look at the recent game system messages to understand what's happening in the game.`;
@@ -528,6 +530,8 @@ async function sendToGroqAPI(message, apiKey) {
             messages.push({ role: "assistant", content: msg.message });
         } else if (msg.sender === 'game') {
             messages.push({ role: "user", content: `[Game System]: ${msg.message}` });
+        } else if (msg.sender === 'game_ai') {
+            messages.push({ role: "assistant", content: msg.message });
         }
     });
 
@@ -589,7 +593,7 @@ Please add exactly ONE sentence to continue this story. Make it engaging and cre
 
     try {
         let response = '';
-        
+
         if (apiProvider === 'gemini') {
             const apiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${currentApiKey}`, {
                 method: 'POST',
@@ -664,7 +668,7 @@ Please add exactly ONE sentence to continue this story. Make it engaging and cre
 
         // Clean up the response - remove quotes if they exist
         response = response.replace(/^["']|["']$/g, '');
-        
+
         return response || null;
     } catch (error) {
         console.error('Error getting AI story contribution:', error);
@@ -696,20 +700,20 @@ const gameProcessors = {
         }
 
         const data = gameState.gameData['20questions'];
-        
+
         if (message.toLowerCase().includes('start') && data.gamePhase === 'waiting') {
             data.gamePhase = 'guessing';
             data.questionsAsked = 0;
             appendGameAdminMessage("🎯 Great! Think of something and I'll try to guess it. Type 'ready' when you've thought of something!");
             return;
         }
-        
+
         if (message.toLowerCase().includes('ready') && data.gamePhase === 'guessing') {
             data.questionsAsked = 1;
             appendGameAdminMessage(`🎯 Question ${data.questionsAsked}/20: ${data.questions[0]}`);
             return;
         }
-        
+
         if (data.gamePhase === 'guessing' && data.questionsAsked > 0 && data.questionsAsked <= 20) {
             const response = message.toLowerCase();
             if (response.includes('yes') || response.includes('no')) {
@@ -734,7 +738,7 @@ const gameProcessors = {
                 appendGameAdminMessage("🎯 Please answer with 'yes' or 'no'!");
             }
         }
-        
+
         if (data.gamePhase === 'ended') {
             appendGameAdminMessage(`🎯 Thanks for playing! That was fun. Type '/exit' to leave the game.`);
         }
@@ -758,7 +762,7 @@ const gameProcessors = {
         }
 
         const data = gameState.gameData['trivia'];
-        
+
         if (message.toLowerCase().includes('start') && !data.currentQuestion) {
             data.questionsAsked = 0;
             data.score = 0;
@@ -768,7 +772,7 @@ const gameProcessors = {
             appendGameAdminMessage(`🧠 Question ${data.questionsAsked + 1}: ${data.currentQuestion}`);
             return;
         }
-        
+
         if (data.currentQuestion) {
             const userAnswer = message.toLowerCase().trim();
             if (userAnswer.includes(data.currentAnswer)) {
@@ -777,7 +781,7 @@ const gameProcessors = {
             } else {
                 appendGameAdminMessage(`🧠 Wrong! The answer was: ${data.currentAnswer}. Score: ${data.score}/${data.questionsAsked + 1}`);
             }
-            
+
             data.questionsAsked++;
             if (data.questionsAsked < data.questions.length) {
                 const question = data.questions[data.questionsAsked];
@@ -801,21 +805,21 @@ const gameProcessors = {
         }
 
         const data = gameState.gameData['storybuilding'];
-        
+
         if (message.toLowerCase().includes('start')) {
             appendGameAdminMessage("📖 Let's build a story together! I'll start: 'Once upon a time, in a land far away...' Now add your sentence!");
             return;
         }
-        
+
         // Add user's contribution to story
         data.story.push(message);
         data.turnCount++;
         appendGameAdminMessage(`📖 Great addition! Our story so far: "${data.story.join(' ')}" Let me add my part...`);
-        
+
         // Get AI's story contribution
         data.waitingForAI = true;
         const aiContribution = await getAIStoryContribution(data.story);
-        
+
         if (aiContribution) {
             data.story.push(aiContribution);
             data.turnCount++;
@@ -824,7 +828,7 @@ const gameProcessors = {
         } else {
             appendGameAdminMessage("📖 I'm having trouble thinking of what to add. Your turn again!");
         }
-        
+
         data.waitingForAI = false;
         displayChatHistory();
     },
@@ -839,12 +843,12 @@ const gameProcessors = {
         }
 
         const data = gameState.gameData['wordassociation'];
-        
+
         if (message.toLowerCase().includes('start')) {
             appendGameAdminMessage(`🔤 Word Association! Starting word: "${data.currentWord}". What word comes to mind?`);
             return;
         }
-        
+
         const userWord = message.toLowerCase().trim();
         data.wordChain.push(userWord);
         data.currentWord = userWord;
@@ -867,15 +871,15 @@ const gameProcessors = {
         }
 
         const data = gameState.gameData['wouldyourather'];
-        
+
         if (message.toLowerCase().includes('start')) {
             appendGameAdminMessage(`❓ ${data.questions[0]}`);
             return;
         }
-        
+
         appendGameAdminMessage(`❓ Interesting choice! I can see why you'd pick that.`);
         data.questionsAsked++;
-        
+
         if (data.questionsAsked < data.questions.length) {
             appendGameAdminMessage(`❓ Next question: ${data.questions[data.questionsAsked]}`);
         } else {
@@ -897,22 +901,22 @@ const gameProcessors = {
         }
 
         const data = gameState.gameData['songguess'];
-        
+
         if (message.toLowerCase().includes('start')) {
             appendGameAdminMessage(`🎵 Song Guessing Game! Here's your first clue: ${data.songs[0].clue}`);
             return;
         }
-        
+
         const guess = message.toLowerCase();
         const currentSong = data.songs[data.currentSong];
-        
+
         if (guess.includes(currentSong.answer.toLowerCase()) || guess.includes(currentSong.artist.toLowerCase())) {
             data.score++;
             appendGameAdminMessage(`🎵 Correct! It was "${currentSong.answer}" by ${currentSong.artist}. Score: ${data.score}`);
         } else {
             appendGameAdminMessage(`🎵 Not quite! It was "${currentSong.answer}" by ${currentSong.artist}. Score: ${data.score}`);
         }
-        
+
         data.currentSong++;
         if (data.currentSong < data.songs.length) {
             appendGameAdminMessage(`🎵 Next clue: ${data.songs[data.currentSong].clue}`);
@@ -935,22 +939,22 @@ const gameProcessors = {
         }
 
         const data = gameState.gameData['movieguess'];
-        
+
         if (message.toLowerCase().includes('start')) {
             appendGameAdminMessage(`🎬 Movie/TV Guessing! Here's your first clue: ${data.movies[0].clue}`);
             return;
         }
-        
+
         const guess = message.toLowerCase();
         const currentMovie = data.movies[data.currentMovie];
-        
+
         if (guess.includes(currentMovie.answer.toLowerCase())) {
             data.score++;
             appendGameAdminMessage(`🎬 Correct! It was "${currentMovie.answer}". Score: ${data.score}`);
         } else {
             appendGameAdminMessage(`🎬 Not quite! It was "${currentMovie.answer}". Score: ${data.score}`);
         }
-        
+
         data.currentMovie++;
         if (data.currentMovie < data.movies.length) {
             appendGameAdminMessage(`🎬 Next clue: ${data.movies[data.currentMovie].clue}`);
@@ -968,19 +972,19 @@ const gameProcessors = {
         }
 
         const data = gameState.gameData['roleplay'];
-        
+
         if (message.toLowerCase().includes('start') && !data.started) {
             appendGameAdminMessage("🎭 Role Playing time! What scenario would you like to explore? (cafe date, adventure quest, mystery detective, etc.)");
             return;
         }
-        
+
         if (!data.started && !data.scenario) {
             data.scenario = message;
             data.started = true;
             appendGameAdminMessage(`🎭 Great! Let's roleplay a ${message} scenario. I'll play along with whatever character fits the scene!`);
             return;
         }
-        
+
         appendGameAdminMessage(`🎭 *Playing along in the ${data.scenario} scenario* This is so much fun!`);
     },
 
@@ -999,15 +1003,15 @@ const gameProcessors = {
         }
 
         const data = gameState.gameData['lovequiz'];
-        
+
         if (message.toLowerCase().includes('start')) {
             appendGameAdminMessage(`💕 Love Language Quiz! Question 1: ${data.questions[0]}`);
             return;
         }
-        
+
         appendGameAdminMessage(`💕 Interesting answer! That tells me a lot about you.`);
         data.currentQuestion++;
-        
+
         if (data.currentQuestion < data.questions.length) {
             appendGameAdminMessage(`💕 Question ${data.currentQuestion + 1}: ${data.questions[data.currentQuestion]}`);
         } else {
@@ -1052,17 +1056,17 @@ function getGameContext() {
     if (!currentGame || !gameState.isActive) {
         return '';
     }
-    
+
     const gameName = currentGame;
     const data = gameState.gameData[gameName] || {};
-    
+
     let context = `\n\n[GAME CONTEXT - DO NOT MENTION THIS TO USER]\n`;
     context += `Currently playing: ${gameName}\n`;
     context += `Game state: ${JSON.stringify(data)}\n`;
     context += `You are participating in this ${gameName} game. Respond as the AI girlfriend while being engaged with the game. The user can see all game messages in the chat history, so you can reference them naturally.\n`;
     context += `You can comment on their game performance, encourage them, or react to their moves. Type '/exit' exits the game.\n`;
     context += `[END GAME CONTEXT]\n\n`;
-    
+
     return context;
 }
 
@@ -1070,7 +1074,7 @@ function startGame(gameName) {
     currentGame = gameName;
     gameState.isActive = true;
     gameState.currentGame = gameName;
-    
+
     const gamesModal = document.getElementById('gamesModal');
     if (gamesModal) {
         gamesModal.style.display = 'none';
@@ -1095,7 +1099,7 @@ function endGame() {
         gameState.currentGame = null;
         gameState.gameData = {}; // Reset game data
         updateGameUI();
-        
+
         // Add user message for the exit command
         addMessageToHistory('user', '/exit');
         displayChatHistory();
