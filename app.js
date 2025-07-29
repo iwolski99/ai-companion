@@ -10,7 +10,7 @@ let personality = localStorage.getItem('personality') || 'sweet';
 let companionGender = localStorage.getItem('companionGender') || 'female';
 let attraction = parseInt(localStorage.getItem('attraction') || '0');
 let currentGame = null;
-let aiCompanionName = localStorage.getItem('aiCompanionName') || (companionGender === 'female' ? 'Her' : 'Him');
+let companionName = localStorage.getItem('companionName') || (companionGender === 'female' ? 'Her' : 'Him');
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
@@ -65,35 +65,6 @@ function initializeEventListeners() {
         setProfilePicBtn.addEventListener('click', openProfilePicModal);
     }
 
-    // Settings dropdown
-    const settingsDropdownBtn = document.getElementById('settingsDropdownBtn');
-    const settingsDropdownMenu = document.getElementById('settingsDropdownMenu');
-    if (settingsDropdownBtn && settingsDropdownMenu) {
-        settingsDropdownBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            settingsDropdownMenu.classList.toggle('show');
-        });
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function() {
-            settingsDropdownMenu.classList.remove('show');
-        });
-
-        // Prevent dropdown from closing when clicking inside
-        settingsDropdownMenu.addEventListener('click', function(e) {
-            e.stopPropagation();
-        });
-    }
-
-    // AI name change button
-    const changeNameBtn = document.getElementById('changeNameBtn');
-    if (changeNameBtn) {
-        changeNameBtn.addEventListener('click', function() {
-            settingsDropdownMenu.classList.remove('show');
-            openNameChangeModal();
-        });
-    }
-
     // Send message button
     const sendBtn = document.getElementById('sendMessage');
     if (sendBtn) {
@@ -118,6 +89,32 @@ function initializeEventListeners() {
             localStorage.setItem('apiProvider', apiProvider);
             updateApiKeyInput();
         });
+    }
+
+    // Settings dropdown
+    const settingsDropdownBtn = document.getElementById('settingsDropdownBtn');
+    const settingsDropdownMenu = document.getElementById('settingsDropdownMenu');
+    if (settingsDropdownBtn && settingsDropdownMenu) {
+        settingsDropdownBtn.addEventListener('click', toggleSettingsDropdown);
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!settingsDropdownBtn.contains(event.target) && !settingsDropdownMenu.contains(event.target)) {
+                settingsDropdownMenu.classList.remove('show');
+            }
+        });
+    }
+
+    // Change name button
+    const changeNameBtn = document.getElementById('changeNameBtn');
+    if (changeNameBtn) {
+        changeNameBtn.addEventListener('click', openNameChangeModal);
+    }
+
+    // Quick chat button
+    const quickChatBtn = document.getElementById('quickChatBtn');
+    if (quickChatBtn) {
+        quickChatBtn.addEventListener('click', sendQuickChat);
     }
 
     // API Key visibility toggle
@@ -192,37 +189,110 @@ function loadSavedData() {
             profilePic.src = savedProfilePic;
         }
     }
-    
-    // Load saved AI name
-    const savedAiName = localStorage.getItem('aiCompanionName');
-    if (savedAiName) {
-        aiCompanionName = savedAiName;
-    }
 }
 
 function updateUI() {
     updateAttractionDisplay();
     displayChatHistory();
-    updateQuickStats();
+    updateTopInfoBar();
 }
 
-function updateQuickStats() {
-    const chatCountElement = document.getElementById('chatCount');
-    const statusElement = document.getElementById('statusIndicator');
-    
-    if (chatCountElement) {
-        const messageCount = chatHistory.length;
-        chatCountElement.textContent = `💬 ${messageCount} messages`;
+function updateTopInfoBar() {
+    const companionNameDisplay = document.getElementById('companionNameDisplay');
+    const personalityDisplay = document.getElementById('personalityDisplay');
+    const quickAttractionLevel = document.getElementById('quickAttractionLevel');
+    const messageCount = document.getElementById('messageCount');
+
+    if (companionNameDisplay) {
+        companionNameDisplay.textContent = companionName;
     }
-    
-    if (statusElement) {
-        if (currentGame) {
-            statusElement.textContent = '🎮 Gaming';
-            statusElement.className = 'stat-item status-busy';
-        } else {
-            statusElement.textContent = '🟢 Ready';
-            statusElement.className = 'stat-item status-online';
+
+    if (personalityDisplay) {
+        personalityDisplay.textContent = personality;
+    }
+
+    if (quickAttractionLevel) {
+        let level = 'Stranger';
+        if (attraction >= 80) level = 'Soulmate';
+        else if (attraction >= 60) level = 'Lover';
+        else if (attraction >= 40) level = 'Girlfriend/Boyfriend';
+        else if (attraction >= 20) level = 'Friend';
+        quickAttractionLevel.textContent = level;
+    }
+
+    if (messageCount) {
+        messageCount.textContent = chatHistory.length;
+    }
+}
+
+function toggleSettingsDropdown() {
+    const settingsDropdownMenu = document.getElementById('settingsDropdownMenu');
+    if (settingsDropdownMenu) {
+        settingsDropdownMenu.classList.toggle('show');
+    }
+}
+
+function openNameChangeModal() {
+    const modal = document.getElementById('nameChangeModal');
+    const input = document.getElementById('companionNameInput');
+    if (modal && input) {
+        input.value = companionName;
+        modal.style.display = 'block';
+        
+        // Close settings dropdown
+        const settingsDropdownMenu = document.getElementById('settingsDropdownMenu');
+        if (settingsDropdownMenu) {
+            settingsDropdownMenu.classList.remove('show');
         }
+
+        // Set up event listeners
+        const saveBtn = document.getElementById('saveCompanionName');
+        const cancelBtn = document.getElementById('cancelNameChange');
+        
+        if (saveBtn) {
+            saveBtn.onclick = saveCompanionName;
+        }
+        
+        if (cancelBtn) {
+            cancelBtn.onclick = closeNameChangeModal;
+        }
+    }
+}
+
+function closeNameChangeModal() {
+    const modal = document.getElementById('nameChangeModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function saveCompanionName() {
+    const input = document.getElementById('companionNameInput');
+    if (input && input.value.trim()) {
+        companionName = input.value.trim();
+        localStorage.setItem('companionName', companionName);
+        updateTopInfoBar();
+        closeNameChangeModal();
+        alert(`Companion name changed to "${companionName}"!`);
+    } else {
+        alert('Please enter a valid name.');
+    }
+}
+
+function sendQuickChat() {
+    const quickMessages = [
+        "How are you feeling today?",
+        "What's on your mind?",
+        "Tell me something interesting!",
+        "What would you like to talk about?",
+        "How was your day?"
+    ];
+    
+    const randomMessage = quickMessages[Math.floor(Math.random() * quickMessages.length)];
+    const messageInput = document.getElementById('messageInput');
+    if (messageInput) {
+        messageInput.value = randomMessage;
+        messageInput.focus();
     }
 }
 
@@ -347,77 +417,6 @@ function closeProfilePreviewModal() {
     if (modal) {
         modal.style.display = 'none';
     }
-}
-
-function openNameChangeModal() {
-    const modal = document.getElementById('nameChangeModal');
-    const currentNameSpan = document.getElementById('currentAiName');
-    const nameInput = document.getElementById('aiNameInput');
-    
-    if (modal && currentNameSpan && nameInput) {
-        currentNameSpan.textContent = aiCompanionName;
-        nameInput.value = aiCompanionName;
-        modal.style.display = 'block';
-        
-        // Focus the input
-        setTimeout(() => nameInput.focus(), 100);
-        
-        // Set up event listeners
-        const saveBtn = document.getElementById('saveAiName');
-        const cancelBtn = document.getElementById('cancelNameChange');
-        
-        if (saveBtn) {
-            saveBtn.onclick = saveAiName;
-        }
-        
-        if (cancelBtn) {
-            cancelBtn.onclick = closeNameChangeModal;
-        }
-        
-        // Allow Enter key to save
-        nameInput.onkeypress = function(e) {
-            if (e.key === 'Enter') {
-                saveAiName();
-            }
-        };
-    }
-}
-
-function closeNameChangeModal() {
-    const modal = document.getElementById('nameChangeModal');
-    if (modal) {
-        modal.style.display = 'none';
-    }
-}
-
-function saveAiName() {
-    const nameInput = document.getElementById('aiNameInput');
-    if (!nameInput) return;
-    
-    const newName = nameInput.value.trim();
-    
-    if (!newName) {
-        alert('Please enter a name for your AI companion!');
-        return;
-    }
-    
-    // Update the global variable and save to localStorage
-    aiCompanionName = newName;
-    localStorage.setItem('aiCompanionName', aiCompanionName);
-    
-    // Close the modal
-    closeNameChangeModal();
-    
-    // Show success message
-    alert(`AI companion name changed to "${newName}"!`);
-    
-    // Update any displayed names
-    updateDisplayedNames();
-}
-
-function updateDisplayedNames() {
-    // This function will update all displayed instances of the AI name
-    // The chat display will be updated next time messages are rendered
 }
 
 function showProfilePreview(imageSrc) {
@@ -610,11 +609,11 @@ function displayChatHistory() {
 
         let senderName = 'You';
         if (msg.sender === 'ai') {
-            senderName = aiCompanionName;
+            senderName = companionName;
         } else if (msg.sender === 'game') {
             senderName = '🎮 Game System';
         } else if (msg.sender === 'game_ai') {
-            senderName = aiCompanionName;
+            senderName = companionName;
         }
 
         // Add special styling for game messages
@@ -1772,9 +1771,6 @@ function updateGameUI() {
             card.classList.remove('game-active');
         }
     });
-    
-    // Update quick stats
-    updateQuickStats();
 }
 
 // Initialize immediately if DOM is already loaded
