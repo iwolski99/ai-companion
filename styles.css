@@ -932,6 +932,8 @@ h1:hover {
     header {
         padding: 15px 10px;
         margin-bottom: 10px;
+        position: relative;
+        z-index: 100;
     }
 
     .settings {
@@ -961,9 +963,8 @@ h1:hover {
     }
 
     .chat-display {
-        height: calc(100vh - 450px);
-        min-height: 250px;
-        max-height: 50vh;
+        min-height: 200px;
+        max-height: calc(100vh - 400px);
         padding: 15px;
     }
 
@@ -980,10 +981,14 @@ h1:hover {
 
     .attraction-display {
         margin: 10px 0;
+        position: relative;
+        z-index: 50;
     }
 
     .chat-container {
         gap: 10px;
+        flex: 1;
+        min-height: 0;
     }
 }
 
@@ -1013,8 +1018,38 @@ h1:hover {
     }
 
     .chat-display {
-        padding: 15px;
+        padding: 12px;
+        height: calc(100vh - 400px);
+        min-height: 200px;
         max-height: 45vh;
+    }
+
+    .message-input {
+        padding: 10px 14px;
+        font-size: 14px;
+    }
+
+    .send-btn {
+        padding: 10px 16px;
+        font-size: 12px;
+    }
+
+    .profile-pic-large {
+        width: 80px;
+        height: 80px;
+        margin-bottom: 10px;
+    }
+
+    .attraction-display {
+        margin: 8px 0;
+    }
+
+    .settings {
+        gap: 6px;
+    }
+
+    .api-key-section {
+        gap: 8px;
     }
 }
 
@@ -1032,158 +1067,6 @@ h1:hover {
     background: rgba(255, 255, 255, 0.2);
     border-radius: 4px;
     transition: background 0.3s ease;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
-.quiz-question label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 500;
-}
-
-.quiz-question select {
-    width: 100%;
-    padding: 10px;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    border-radius: 8px;
-    color: #fff;
-    font-size: 14px;
-}
-
-.quiz-question select option {
-    background: #1a1a2e;
-    color: #fff;
-}
-
-.api-select option {
-    background: #1a1a2e;
-    color: #fff;
-}
-
-/* Attraction Display */
-.attraction-display {
-    margin: 20px 0;
-    text-align: center;
-}
-
-.progress-bar {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    height: 10px;
-    margin-bottom: 10px;
-}
-
-.progress-fill {
-    background: #4a90e2;
-    height: 100%;
-    border-radius: 20px;
-    width: 0%;
-    transition: width 0.3s ease;
-}
-
-#levelText {
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.8);
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .container {
-        padding: 10px;
-        gap: 15px;
-    }
-
-    header {
-        padding: 20px 15px;
-        margin-bottom: 15px;
-    }
-
-    .settings {
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    .api-key-section {
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .api-input {
-        width: 100%;
-        min-width: 0;
-    }
-
-    .message-content {
-        max-width: 85%;
-    }
-
-    h1 {
-        font-size: 2em;
-        margin-bottom: 15px;
-    }
-
-    .chat-display {
-        max-height: 50vh;
-        min-height: 250px;
-    }
-
-    .message-input-container {
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-
-    .message-input {
-        min-width: 0;
-        flex: 1;
-    }
-}
-
-@media (max-width: 480px) {
-    .container {
-        padding: 5px;
-    }
-
-    header {
-        padding: 15px 10px;
-    }
-
-    h1 {
-        font-size: 1.5em;
-    }
-
-    .btn {
-        padding: 10px 16px;
-        font-size: 12px;
-    }
-
-    .api-input {
-        padding: 12px 16px;
-        font-size: 14px;
-    }
-
-    .chat-display {
-        padding: 15px;
-        max-height: 45vh;
-    }
-}
-
-/* Scrollbar Styling */
-::-webkit-scrollbar {
-    width: 8px;
-}
-
-::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -1500,6 +1383,8 @@ h1:hover {
     header {
         padding: 15px 10px;
         margin-bottom: 10px;
+        position: relative;
+        z-index: 100;
     }
 
     .settings {
@@ -1529,9 +1414,8 @@ h1:hover {
     }
 
     .chat-display {
-        height: calc(100vh - 450px);
-        min-height: 250px;
-        max-height: 50vh;
+        min-height: 200px;
+        max-height: calc(100vh - 400px);
         padding: 15px;
     }
 
