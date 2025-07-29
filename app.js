@@ -262,20 +262,13 @@ async function sendMessage() {
 
     try {
         let response = '';
-        
-        // Create enhanced prompt with game context
-        let enhancedMessage = message;
-        if (currentGame) {
-            const gameContext = getGameContext();
-            enhancedMessage = `${gameContext}\n\nUser message: ${message}`;
-        }
 
         if (apiProvider === 'gemini') {
-            response = await sendToGeminiAPI(enhancedMessage, currentApiKey);
+            response = await sendToGeminiAPI(message, currentApiKey);
         } else if (apiProvider === 'grok') {
-            response = await sendToGrokAPI(enhancedMessage, currentApiKey);
+            response = await sendToGrokAPI(message, currentApiKey);
         } else if (apiProvider === 'groq') {
-            response = await sendToGroqAPI(enhancedMessage, currentApiKey);
+            response = await sendToGroqAPI(message, currentApiKey);
         }
 
         // Remove typing indicator and add real response
@@ -413,7 +406,18 @@ async function sendToGeminiAPI(message, apiKey) {
     
     // Add game awareness if in a game
     if (currentGame) {
-        fullPrompt += `\n\nYou are currently playing ${currentGame} with the user. You can see all the game messages in the chat and should respond naturally while being engaged with the game. Be encouraging, react to their moves, and make the experience fun and interactive.`;
+        fullPrompt += `\n\nYou are currently playing ${currentGame} with the user. You can see all the game messages in the chat history and should respond naturally while being engaged with the game. Be encouraging, react to their moves, make comments about the game progress, and make the experience fun and interactive. Look at the recent game system messages to understand what's happening in the game.`;
+    }
+
+    // Include recent chat history for context
+    let conversationContext = '';
+    const recentMessages = chatHistory.slice(-10); // Get last 10 messages
+    if (recentMessages.length > 0) {
+        conversationContext = '\n\nRecent conversation history:\n';
+        recentMessages.forEach(msg => {
+            let sender = msg.sender === 'user' ? 'User' : msg.sender === 'ai' ? 'You' : 'Game System';
+            conversationContext += `${sender}: ${msg.message}\n`;
+        });
     }
 
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
@@ -424,7 +428,7 @@ async function sendToGeminiAPI(message, apiKey) {
         body: JSON.stringify({
             contents: [{
                 parts: [{
-                    text: `${fullPrompt}\n\nUser message: ${message}`
+                    text: `${fullPrompt}${conversationContext}\n\nUser's latest message: ${message}\n\nRespond as the AI girlfriend, acknowledging any game activity and responding naturally to both the user and any game developments.`
                 }]
             }],
             generationConfig: {
@@ -450,8 +454,31 @@ async function sendToGrokAPI(message, apiKey) {
     
     // Add game awareness if in a game
     if (currentGame) {
-        fullPrompt += `\n\nYou are currently playing ${currentGame} with the user. You can see all the game messages in the chat and should respond naturally while being engaged with the game. Be encouraging, react to their moves, and make the experience fun and interactive.`;
+        fullPrompt += `\n\nYou are currently playing ${currentGame} with the user. You can see all the game messages in the chat history and should respond naturally while being engaged with the game. Be encouraging, react to their moves, make comments about the game progress, and make the experience fun and interactive. Look at the recent game system messages to understand what's happening in the game.`;
     }
+
+    // Build messages array with recent chat history
+    const messages = [
+        {
+            role: "system",
+            content: fullPrompt
+        }
+    ];
+
+    // Add recent chat history for context
+    const recentMessages = chatHistory.slice(-8); // Get last 8 messages (excluding typing indicator)
+    recentMessages.forEach(msg => {
+        if (msg.sender === 'user') {
+            messages.push({ role: "user", content: msg.message });
+        } else if (msg.sender === 'ai') {
+            messages.push({ role: "assistant", content: msg.message });
+        } else if (msg.sender === 'game') {
+            messages.push({ role: "user", content: `[Game System]: ${msg.message}` });
+        }
+    });
+
+    // Add current message
+    messages.push({ role: "user", content: message });
 
     const response = await fetch('https://api.x.ai/v1/chat/completions', {
         method: 'POST',
@@ -460,16 +487,7 @@ async function sendToGrokAPI(message, apiKey) {
             'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-            messages: [
-                {
-                    role: "system",
-                    content: fullPrompt
-                },
-                {
-                    role: "user",
-                    content: message
-                }
-            ],
+            messages: messages,
             model: "grok-beta",
             stream: false,
             temperature: 0.7
@@ -490,8 +508,31 @@ async function sendToGroqAPI(message, apiKey) {
     
     // Add game awareness if in a game
     if (currentGame) {
-        fullPrompt += `\n\nYou are currently playing ${currentGame} with the user. You can see all the game messages in the chat and should respond naturally while being engaged with the game. Be encouraging, react to their moves, and make the experience fun and interactive.`;
+        fullPrompt += `\n\nYou are currently playing ${currentGame} with the user. You can see all the game messages in the chat history and should respond naturally while being engaged with the game. Be encouraging, react to their moves, make comments about the game progress, and make the experience fun and interactive. Look at the recent game system messages to understand what's happening in the game.`;
     }
+
+    // Build messages array with recent chat history
+    const messages = [
+        {
+            role: "system",
+            content: fullPrompt
+        }
+    ];
+
+    // Add recent chat history for context
+    const recentMessages = chatHistory.slice(-8); // Get last 8 messages (excluding typing indicator)
+    recentMessages.forEach(msg => {
+        if (msg.sender === 'user') {
+            messages.push({ role: "user", content: msg.message });
+        } else if (msg.sender === 'ai') {
+            messages.push({ role: "assistant", content: msg.message });
+        } else if (msg.sender === 'game') {
+            messages.push({ role: "user", content: `[Game System]: ${msg.message}` });
+        }
+    });
+
+    // Add current message
+    messages.push({ role: "user", content: message });
 
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
@@ -500,16 +541,7 @@ async function sendToGroqAPI(message, apiKey) {
             'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-            messages: [
-                {
-                    role: "system",
-                    content: fullPrompt
-                },
-                {
-                    role: "user",
-                    content: message
-                }
-            ],
+            messages: messages,
             model: "llama3-8b-8192",
             temperature: 0.7,
             max_tokens: 1024
