@@ -173,7 +173,7 @@ function saveApiKeys() {
 
 function clearChatHistory() {
     const choice = confirm('Clear chat history?\n\nClick OK to clear history only\nClick Cancel to clear EVERYTHING (history + attraction level)');
-    
+
     if (choice === true) {
         // Clear only chat history
         chatHistory = [];
@@ -331,7 +331,7 @@ function addMessageToHistory(sender, message) {
         message: message,
         timestamp: Date.now()
     });
-    
+
     // Add attraction points for AI messages, but significantly reduce for game AI messages
     if (sender === 'ai') {
         attraction += Math.floor(Math.random() * 3) + 1; // 1-3 points
@@ -343,7 +343,7 @@ function addMessageToHistory(sender, message) {
             updateAttractionDisplay();
         }
     }
-    
+
     localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
     localStorage.setItem('attraction', attraction.toString());
 }
@@ -464,7 +464,11 @@ async function sendToGeminiAPI(message, apiKey) {
 
     // Add game awareness if in a game
     if (currentGame) {
-        fullPrompt += `\n\nYou are currently playing ${currentGame} with the user. You can see all the game messages in the chat history and should respond naturally while being engaged with the game. Be encouraging, react to their moves, make comments about the game progress, and make the experience fun and interactive. Look at the recent game system messages to understand what's happening in the game.`;
+        if (currentGame === '20questions') {
+            fullPrompt += `\n\nYou are currently playing 20 Questions with the user. The GAME SYSTEM handles all the questions - DO NOT ask any yes/no questions yourself. Only react to their answers with encouragement and excitement. Let the game system do the questioning while you provide emotional support and commentary. Do not interfere with the game flow.`;
+        } else {
+            fullPrompt += `\n\nYou are currently playing ${currentGame} with the user. You can see all the game messages in the chat history and should respond naturally while being engaged with the game. Be encouraging, react to their moves, make comments about the game progress, and make the experience fun and interactive. Look at the recent game system messages to understand what's happening in the game.`;
+        }
     }
 
     // Include recent chat history for context
@@ -512,7 +516,11 @@ async function sendToGrokAPI(message, apiKey) {
 
     // Add game awareness if in a game
     if (currentGame) {
-        fullPrompt += `\n\nYou are currently playing ${currentGame} with the user. You can see all the game messages in the chat history and should respond naturally while being engaged with the game. Be encouraging, react to their moves, make comments about the game progress, and make the experience fun and interactive. Look at the recent game system messages to understand what's happening in the game.`;
+        if (currentGame === '20questions') {
+            fullPrompt += `\n\nYou are currently playing 20 Questions with the user. The GAME SYSTEM handles all the questions - DO NOT ask any yes/no questions yourself. Only react to their answers with encouragement and excitement. Let the game system do the questioning while you provide emotional support and commentary. Do not interfere with the game flow.`;
+        } else {
+            fullPrompt += `\n\nYou are currently playing ${currentGame} with the user. You can see all the game messages in the chat history and should respond naturally while being engaged with the game. Be encouraging, react to their moves, make comments about the game progress, and make the experience fun and interactive. Look at the recent game system messages to understand what's happening in the game.`;
+        }
     }
 
     // Build messages array with recent chat history
@@ -568,7 +576,11 @@ async function sendToGroqAPI(message, apiKey) {
 
     // Add game awareness if in a game
     if (currentGame) {
-        fullPrompt += `\n\nYou are currently playing ${currentGame} with the user. You can see all the game messages in the chat history and should respond naturally while being engaged with the game. Be encouraging, react to their moves, make comments about the game progress, and make the experience fun and interactive. Look at the recent game system messages to understand what's happening in the game.`;
+        if (currentGame === '20questions') {
+            fullPrompt += `\n\nYou are currently playing 20 Questions with the user. The GAME SYSTEM handles all the questions - DO NOT ask any yes/no questions yourself. Only react to their answers with encouragement and excitement. Let the game system do the questioning while you provide emotional support and commentary. Do not interfere with the game flow.`;
+        } else {
+            fullPrompt += `\n\nYou are currently playing ${currentGame} with the user. You can see all the game messages in the chat history and should respond naturally while being engaged with the game. Be encouraging, react to their moves, make comments about the game progress, and make the experience fun and interactive. Look at the recent game system messages to understand what's happening in the game.`;
+        }
     }
 
     // Build messages array with recent chat history
@@ -845,7 +857,7 @@ async function makeIntelligentGuess(questionHistory, answers) {
                 const data = await apiResponse.json();
                 response = data.choices[0].message.content.trim();
             }
-        }
+}
 
         // Clean up the response
         response = response.replace(/^["']|["']$/g, '').toLowerCase();
@@ -989,7 +1001,7 @@ const gameProcessors = {
             data.waitingForAnswer = true;
             data.answers = [];
             data.questionHistory = [];
-            
+
             // Start with the first intelligent question
             const firstQuestion = "Is it alive?";
             data.questionHistory.push(firstQuestion);
@@ -1000,7 +1012,7 @@ const gameProcessors = {
 
         if (data.gamePhase === 'questioning' && data.waitingForAnswer) {
             const response = message.toLowerCase().trim();
-            
+
             // Strict yes/no checking
             if (!response.includes('yes') && !response.includes('no')) {
                 appendGameAdminMessage("🎯 Please answer with 'YES' or 'NO' only!");
@@ -1055,7 +1067,7 @@ const gameProcessors = {
                 appendGameAdminMessage(`🎯 Hmm, let me ask more questions then...`);
                 data.gamePhase = 'questioning';
                 data.waitingForAnswer = true;
-                
+
                 // Continue with more questions
                 setTimeout(async () => {
                     const nextQuestion = await generateNextQuestion(data.questionHistory, data.answers);
@@ -1132,7 +1144,7 @@ const gameProcessors = {
             displayChatHistory();
             return false;
         }
-        
+
         return true;
     },
 
@@ -1156,7 +1168,7 @@ const gameProcessors = {
         // Add user's contribution to story
         data.story.push(message);
         data.turnCount++;
-        
+
         // Get AI's story contribution first
         data.waitingForAI = true;
         const aiContribution = await getAIStoryContribution(data.story);
@@ -1164,10 +1176,10 @@ const gameProcessors = {
         if (aiContribution) {
             data.story.push(aiContribution);
             data.turnCount++;
-            
+
             // Add the AI's contribution as "Her" message in yellow
             addMessageToHistory('game_ai', aiContribution);
-            
+
             // Then add the game system message
             appendGameAdminMessage(`📖 Updated story: "${data.story.join(' ')}" Your turn again!`);
         } else {
