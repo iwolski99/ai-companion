@@ -455,6 +455,10 @@ async function sendMessage() {
             errorMessage += 'I need to slow down a bit. Please wait 10-15 seconds before trying again.';
         } else if (error.message.includes('quota exceeded') || error.message.includes('invalid')) {
             errorMessage += 'Please check your API key in the settings. It might be invalid or out of quota.';
+        } else if (error.message.includes('temporarily unavailable')) {
+            errorMessage += 'The Gemini service is temporarily down on Google\'s end. Please wait a few minutes and try again.';
+        } else if (error.message.includes('server error')) {
+            errorMessage += 'There\'s a temporary server issue with Gemini. Please try again in a moment.';
         } else if (error.message.includes('network') || error.message.includes('fetch')) {
             errorMessage += 'There seems to be a connection issue. Please check your internet and try again.';
         } else {
@@ -683,6 +687,10 @@ async function sendToGeminiAPI(message, apiKey) {
                 throw new Error('API key invalid or quota exceeded. Please check your API key.');
             } else if (response.status === 400) {
                 throw new Error('Invalid request. Please check your message content.');
+            } else if (response.status === 503) {
+                throw new Error('Gemini service is temporarily unavailable. This is on Google\'s end - please try again in a few minutes.');
+            } else if (response.status >= 500) {
+                throw new Error('Gemini server error. This is temporary - please try again in a moment.');
             } else {
                 throw new Error(`Gemini API error (${response.status}): ${response.statusText}`);
             }
