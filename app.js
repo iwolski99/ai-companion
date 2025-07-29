@@ -169,13 +169,7 @@ async function loadSavedData() {
             if (response.ok) {
                 const data = await response.json();
                 if (data.progress) {
-                    console.log('Server data found, clearing local data and syncing...');
-                    
-                    // CLEAR ALL LOCAL DATA FIRST to ensure clean sync
-                    chatHistory = [];
-                    personality = 'sweet';
-                    companionGender = 'female';
-                    attraction = 0;
+                    console.log('Server data found, syncing...');
                     
                     // Load server data (this replaces local data completely)
                     if (data.progress.personality) personality = data.progress.personality;
@@ -188,7 +182,7 @@ async function loadSavedData() {
                         localStorage.setItem('profilePictureData', data.progress.profilePictureData);
                     }
                     
-                    // Update localStorage with server data
+                    // Clear any conflicting local data and update with server data
                     localStorage.setItem('personality', personality);
                     localStorage.setItem('companionGender', companionGender);
                     localStorage.setItem('attraction', attraction.toString());
@@ -251,8 +245,6 @@ async function loadSavedData() {
         }
     }
 
-    // Mark data as loaded
-    window.dataLoaded = true;
     console.log('Data loading complete. Final state:', {
         personality,
         companionGender,
@@ -286,14 +278,10 @@ async function saveApiKeys() {
             localStorage.setItem('groqApiKey', groqApiKey);
         }
 
-        // Immediately reload data from server to sync
-        console.log('API key saved, reloading data from server...');
+        // Immediately sync with server using the new API key
+        console.log('API key saved, syncing with server...');
         await loadSavedData();
-        
-        // Update UI with synced data
         updateUI();
-        
-        // Sync current state to server
         await syncToServer();
         
         alert('API key saved and data synced successfully!');
@@ -528,12 +516,6 @@ async function sendMessage() {
 
     const message = messageInput.value.trim();
     if (!message) return;
-
-    // Wait for data to be fully loaded before processing messages
-    if (!window.dataLoaded) {
-        console.log('Waiting for data to load...');
-        await loadSavedData();
-    }
 
     // Check for game exit command
     if (message.toLowerCase() === '/exit' && currentGame) {
