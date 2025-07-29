@@ -755,7 +755,7 @@ h1:hover {
     background: rgba(76, 175, 80, 0.9);
 }
 
-.notification.error {
+.notification.error{
     background: rgba(244, 67, 54, 0.9);
 }
 
@@ -825,10 +825,11 @@ h1:hover {
 
 /* Enhanced Attraction Display with Particle Effects */
 .attraction-display {
-    margin: 0;
+    margin: 20px 0;
     text-align: center;
     position: relative;
     flex-shrink: 0; /* Prevent shrinking */
+    z-index: 10; /* Ensure it stays above other content */
 }
 
 .progress-bar {
@@ -924,12 +925,13 @@ h1:hover {
 @media (max-width: 768px) {
     .container {
         padding: 10px;
-        gap: 15px;
+        gap: 10px;
+        min-height: 100vh;
     }
 
     header {
-        padding: 20px 15px;
-        margin-bottom: 15px;
+        padding: 15px 10px;
+        margin-bottom: 10px;
     }
 
     .settings {
@@ -949,16 +951,20 @@ h1:hover {
 
     .message-content {
         max-width: 85%;
+        padding: 12px 16px;
+        font-size: 14px;
     }
 
     h1 {
-        font-size: 2em;
-        margin-bottom: 15px;
+        font-size: 1.8em;
+        margin-bottom: 10px;
     }
 
     .chat-display {
-        max-height: 50vh;
+        height: calc(100vh - 450px);
         min-height: 250px;
+        max-height: 50vh;
+        padding: 15px;
     }
 
     .message-input-container {
@@ -969,25 +975,36 @@ h1:hover {
     .message-input {
         min-width: 0;
         flex: 1;
+        padding: 12px 16px;
+    }
+
+    .attraction-display {
+        margin: 10px 0;
+    }
+
+    .chat-container {
+        gap: 10px;
     }
 }
 
 @media (max-width: 480px) {
     .container {
         padding: 5px;
+        gap: 8px;
     }
 
     header {
-        padding: 15px 10px;
+        padding: 10px 8px;
     }
 
     h1 {
-        font-size: 1.5em;
+        font-size: 1.4em;
+        margin-bottom: 8px;
     }
 
     .btn {
-        padding: 10px 16px;
-        font-size: 12px;
+        padding: 8px 12px;
+        font-size: 11px;
     }
 
     .api-input {
@@ -1201,10 +1218,11 @@ h1:hover {
 
 /* Enhanced Attraction Display with Particle Effects */
 .attraction-display {
-    margin: 0;
+    margin: 20px 0;
     text-align: center;
     position: relative;
     flex-shrink: 0; /* Prevent shrinking */
+    z-index: 10; /* Ensure it stays above other content */
 }
 
 .progress-bar {
@@ -1475,12 +1493,13 @@ h1:hover {
 @media (max-width: 768px) {
     .container {
         padding: 10px;
-        gap: 15px;
+        gap: 10px;
+        min-height: 100vh;
     }
 
     header {
-        padding: 20px 15px;
-        margin-bottom: 15px;
+        padding: 15px 10px;
+        margin-bottom: 10px;
     }
 
     .settings {
@@ -1500,16 +1519,20 @@ h1:hover {
 
     .message-content {
         max-width: 85%;
+        padding: 12px 16px;
+        font-size: 14px;
     }
 
     h1 {
-        font-size: 2em;
-        margin-bottom: 15px;
+        font-size: 1.8em;
+        margin-bottom: 10px;
     }
 
     .chat-display {
-        max-height: 50vh;
+        height: calc(100vh - 450px);
         min-height: 250px;
+        max-height: 50vh;
+        padding: 15px;
     }
 
     .message-input-container {
@@ -1520,25 +1543,36 @@ h1:hover {
     .message-input {
         min-width: 0;
         flex: 1;
+        padding: 12px 16px;
+    }
+
+    .attraction-display {
+        margin: 10px 0;
+    }
+
+    .chat-container {
+        gap: 10px;
     }
 }
 
 @media (max-width: 480px) {
     .container {
         padding: 5px;
+        gap: 8px;
     }
 
     header {
-        padding: 15px 10px;
+        padding: 10px 8px;
     }
 
     h1 {
-        font-size: 1.5em;
+        font-size: 1.4em;
+        margin-bottom: 8px;
     }
 
     .btn {
-        padding: 10px 16px;
-        font-size: 12px;
+        padding: 8px 12px;
+        font-size: 11px;
     }
 
     .api-input {
@@ -1547,8 +1581,38 @@ h1:hover {
     }
 
     .chat-display {
-        padding: 15px;
+        padding: 12px;
+        height: calc(100vh - 400px);
+        min-height: 200px;
         max-height: 45vh;
+    }
+
+    .message-input {
+        padding: 10px 14px;
+        font-size: 14px;
+    }
+
+    .send-btn {
+        padding: 10px 16px;
+        font-size: 12px;
+    }
+
+    .profile-pic-large {
+        width: 80px;
+        height: 80px;
+        margin-bottom: 10px;
+    }
+
+    .attraction-display {
+        margin: 8px 0;
+    }
+
+    .settings {
+        gap: 6px;
+    }
+
+    .api-key-section {
+        gap: 8px;
     }
 }
 
@@ -1600,228 +1664,11 @@ h1:hover {
 
 /* Enhanced Attraction Display with Particle Effects */
 .attraction-display {
-    margin: 0;
+    margin: 20px 0;
     text-align: center;
     position: relative;
     flex-shrink: 0; /* Prevent shrinking */
-}
-
-.progress-bar {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border-radius: 25px;
-    height: 12px;
-    margin-bottom: 10px;
-    overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.2);
-}
-
-.progress-fill {
-    background: linear-gradient(90deg, var(--default-primary), var(--default-secondary));
-    height: 100%;
-    border-radius: 25px;
-    width: 0%;
-    transition: width 0.3s ease;
-}
-
-.progress-fill::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-    animation: shimmer 2s infinite;
-}
-
-@keyframes shimmer {
-    0% { left: -100%; }
-    100% { left: 100%; }
-}
-
-#levelText {
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.8);
-}
-
-/* Personality Theme Classes */
-.theme-sweet {
-    --primary: var(--sweet-primary);
-    --secondary: var(--sweet-secondary);
-    --gradient: var(--sweet-gradient);
-}
-
-.theme-playful {
-    --primary: var(--playful-primary);
-    --secondary: var(--playful-secondary);
-    --gradient: var(--playful-gradient);
-}
-
-.theme-sexy {
-    --primary: var(--sexy-primary);
-    --secondary: var(--sexy-secondary);
-    --gradient: var(--sexy-gradient);
-}
-
-.theme-goth {
-    --primary: var(--goth-primary);
-    --secondary: var(--goth-secondary);
-    --gradient: var(--goth-gradient);
-}
-
-/* Message Formatting Support */
-.message-content strong {
-    font-weight: 600;
-    color: #fff;
-}
-
-.message-content em {
-    font-style: italic;
-    color: rgba(255, 255, 255, 0.9);
-}
-
-.message-content code {
-    background: rgba(0, 0, 0, 0.3);
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-family: 'Courier New', monospace;
-    font-size: 0.9em;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .container {
-        padding: 10px;
-        gap: 15px;
-    }
-
-    header {
-        padding: 20px 15px;
-        margin-bottom: 15px;
-    }
-
-    .settings {
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    .api-key-section {
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .api-input {
-        width: 100%;
-        min-width: 0;
-    }
-
-    .message-content {
-        max-width: 85%;
-    }
-
-    h1 {
-        font-size: 2em;
-        margin-bottom: 15px;
-    }
-
-    .chat-display {
-        max-height: 50vh;
-        min-height: 250px;
-    }
-
-    .message-input-container {
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-
-    .message-input {
-        min-width: 0;
-        flex: 1;
-    }
-}
-
-@media (max-width: 480px) {
-    .container {
-        padding: 5px;
-    }
-
-    header {
-        padding: 15px 10px;
-    }
-
-    h1 {
-        font-size: 1.5em;
-    }
-
-    .btn {
-        padding: 10px 16px;
-        font-size: 12px;
-    }
-
-    .api-input {
-        padding: 12px 16px;
-        font-size: 14px;
-    }
-
-    .chat-display {
-        padding: 15px;
-        max-height: 45vh;
-    }
-}
-
-/* Scrollbar Styling */
-::-webkit-scrollbar {
-    width: 8px;
-}
-
-::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
-.quiz-question label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 500;
-}
-
-.quiz-question select {
-    width: 100%;
-    padding: 10px;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    border-radius: 8px;
-    color: #fff;
-    font-size: 14px;
-}
-
-.quiz-question select option {
-    background: #1a1a2e;
-    color: #fff;
-}
-
-.api-select option {
-    background: #1a1a2e;
-    color: #fff;
-}
-
-/* Enhanced Attraction Display with Particle Effects */
-.attraction-display {
-    margin: 0;
-    text-align: center;
-    position: relative;
-    flex-shrink: 0; /* Prevent shrinking */
+    z-index: 10; /* Ensure it stays above other content */
 }
 
 .progress-bar {
