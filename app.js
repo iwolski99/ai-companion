@@ -8,6 +8,7 @@ let grokApiKey = localStorage.getItem('grokApiKey') || '';
 let groqApiKey = localStorage.getItem('groqApiKey') || '';
 let personality = localStorage.getItem('personality') || 'sweet';
 let companionGender = localStorage.getItem('companionGender') || 'female';
+let companionName = localStorage.getItem('companionName') || (companionGender === 'female' ? 'Her' : 'Him');
 let attraction = parseInt(localStorage.getItem('attraction') || '0');
 let currentGame = null;
 
@@ -64,6 +65,31 @@ function initializeEventListeners() {
         setProfilePicBtn.addEventListener('click', openProfilePicModal);
     }
 
+    // Settings menu toggle
+    const settingsMenuBtn = document.getElementById('settingsMenuBtn');
+    const settingsMenu = document.getElementById('settingsMenu');
+    if (settingsMenuBtn && settingsMenu) {
+        settingsMenuBtn.addEventListener('click', function() {
+            settingsMenu.classList.toggle('active');
+        });
+    }
+
+    // Companion name functionality
+    const saveNameBtn = document.getElementById('saveCompanionName');
+    const nameInput = document.getElementById('companionNameInput');
+    if (saveNameBtn && nameInput) {
+        nameInput.value = companionName;
+        saveNameBtn.addEventListener('click', function() {
+            const newName = nameInput.value.trim();
+            if (newName) {
+                companionName = newName;
+                localStorage.setItem('companionName', companionName);
+                updateCompanionNameDisplay();
+                alert('Companion name updated successfully!');
+            }
+        });
+    }
+
     // Send message button
     const sendBtn = document.getElementById('sendMessage');
     if (sendBtn) {
@@ -97,7 +123,7 @@ function initializeEventListeners() {
             const targetId = this.getAttribute('data-target');
             const input = document.getElementById(targetId);
             const eyeIcon = this.querySelector('.eye-icon');
-            
+
             if (input && eyeIcon) {
                 if (input.type === 'password') {
                     input.type = 'text';
@@ -147,7 +173,7 @@ function loadSavedData() {
 
     // Load appropriate API key based on provider
     updateApiKeyInput();
-    
+
     // Load saved profile picture
     const savedProfilePic = localStorage.getItem('profilePictureData');
     if (savedProfilePic) {
@@ -156,11 +182,31 @@ function loadSavedData() {
             profilePic.src = savedProfilePic;
         }
     }
+
+    // Load companion name
+    const savedName = localStorage.getItem('companionName');
+    if (savedName) {
+        companionName = savedName;
+    }
+
+    // Update name input field
+    const nameInput = document.getElementById('companionNameInput');
+    if (nameInput) {
+        nameInput.value = companionName;
+    }
 }
 
 function updateUI() {
     updateAttractionDisplay();
     displayChatHistory();
+    updateCompanionNameDisplay();
+}
+
+function updateCompanionNameDisplay() {
+    const nameDisplay = document.getElementById('companionNameDisplay');
+    if (nameDisplay) {
+        nameDisplay.textContent = companionName;
+    }
 }
 
 function saveApiKeys() {
@@ -169,7 +215,7 @@ function saveApiKeys() {
     const apiKeyInput = document.getElementById('apiKey');
     if (apiKeyInput && apiKeyInput.value.trim()) {
         const keyValue = apiKeyInput.value.trim();
-        
+
         if (apiProvider === 'gemini') {
             geminiApiKey = keyValue;
             localStorage.setItem('geminiApiKey', geminiApiKey);
@@ -259,20 +305,20 @@ function openProfilePicModal() {
     const modal = document.getElementById('profilePicModal');
     if (modal) {
         modal.style.display = 'block';
-        
+
         // Set up event listeners for profile pic modal buttons
         const saveBtn = document.getElementById('saveProfilePic');
         const cancelBtn = document.getElementById('cancelProfilePic');
         const fileInput = document.getElementById('profilePicInput');
-        
+
         if (saveBtn) {
             saveBtn.onclick = saveProfilePicture;
         }
-        
+
         if (cancelBtn) {
             cancelBtn.onclick = closeProfilePicModal;
         }
-        
+
         if (fileInput) {
             fileInput.onchange = handleProfilePicSelect;
         }
@@ -289,7 +335,7 @@ function closeProfilePreviewModal() {
 function showProfilePreview(imageSrc) {
     const modal = document.getElementById('profilePreviewModal');
     const previewImage = document.getElementById('profilePreviewImage');
-    
+
     if (modal && previewImage) {
         previewImage.src = imageSrc;
         modal.style.display = 'block';
@@ -311,7 +357,7 @@ function handleProfilePicSelect(event) {
             alert('Please select an image file.');
             return;
         }
-        
+
         // Check file size (limit to 5MB)
         if (file.size > 5 * 1024 * 1024) {
             alert('File size must be less than 5MB.');
@@ -326,32 +372,32 @@ function saveProfilePicture() {
         alert('Please select an image file first.');
         return;
     }
-    
+
     const file = fileInput.files[0];
     const reader = new FileReader();
-    
+
     reader.onload = function(e) {
         const imageData = e.target.result;
-        
+
         // Update the profile picture display
         const profilePic = document.getElementById('profilePic');
         if (profilePic) {
             profilePic.src = imageData;
         }
-        
+
         // Store in localStorage
         localStorage.setItem('profilePictureData', imageData);
-        
+
         // Close modal
         closeProfilePicModal();
-        
+
         alert('Profile picture updated successfully!');
     };
-    
+
     reader.onerror = function() {
         alert('Error reading file. Please try again.');
     };
-    
+
     reader.readAsDataURL(file);
 }
 
@@ -371,7 +417,7 @@ async function sendMessage() {
     // Check if API key is configured
     let currentApiKey = '';
     const apiKeyInput = document.getElementById('apiKey');
-    
+
     if (apiProvider === 'gemini') {
         currentApiKey = geminiApiKey || (apiKeyInput ? apiKeyInput.value.trim() : '');
     } else if (apiProvider === 'grok') {
@@ -476,11 +522,11 @@ function displayChatHistory() {
 
         let senderName = 'You';
         if (msg.sender === 'ai') {
-            senderName = companionGender === 'female' ? 'Her' : 'Him';
+            senderName = companionName;
         } else if (msg.sender === 'game') {
             senderName = '🎮 Game System';
         } else if (msg.sender === 'game_ai') {
-            senderName = companionGender === 'female' ? 'Her' : 'Him';
+            senderName = companionName;
         }
 
         // Add special styling for game messages
@@ -521,7 +567,7 @@ function displayChatHistory() {
                 </div>
             `;
         }
-        
+
         chatDisplay.appendChild(messageDiv);
     });
 
@@ -844,907 +890,4 @@ async function generateNextQuestion(questionHistory, answers) {
             const apiResponse = await fetch('https://api.x.ai/v1/chat/completions', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${currentApiKey}`
-                },
-                body: JSON.stringify({
-                    messages: [
-                        { role: "system", content: "You are playing 20 questions. Generate the best next yes/no question." },
-                        { role: "user", content: context }
-                    ],
-                    model: "grok-beta",
-                    stream: false,
-                    temperature: 0.5,
-                    max_tokens: 50
-                })
-            });
-
-            if (apiResponse.ok) {
-                const data = await apiResponse.json();
-                response = data.choices[0].message.content.trim();
-            }
-        } else if (apiProvider === 'groq') {
-            const apiResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${currentApiKey}`
-                },
-                body: JSON.stringify({
-                    messages: [
-                        { role: "system", content: "You are playing 20 questions. Generate the best next yes/no question." },
-                        { role: "user", content: context }
-                    ],
-                    model: "llama3-8b-8192",
-                    temperature: 0.5,
-                    max_tokens: 50
-                })
-            });
-
-            if (apiResponse.ok) {
-                const data = await apiResponse.json();
-                response = data.choices[0].message.content.trim();
-            }
-        }
-
-        // Clean up the response
-        response = response.replace(/^["']|["']$/g, '');
-        return response || "Is it something you use every day?";
-
-    } catch (error) {
-        console.error('Error generating question:', error);
-        return "Is it something you use every day?";
-    }
-}
-
-// Make an intelligent guess based on all the answers
-async function makeIntelligentGuess(questionHistory, answers) {
-    let currentApiKey = '';
-    if (apiProvider === 'gemini') {
-        currentApiKey = geminiApiKey;
-    } else if (apiProvider === 'grok') {
-        currentApiKey = grokApiKey;
-    } else if (apiProvider === 'groq') {
-        currentApiKey = groqApiKey;
-    }
-
-    if (!currentApiKey) {
-        return null;
-    }
-
-    // Build context from all Q&A
-    let context = "Based on this 20 questions game, what do you think they're thinking of?\n";
-    for (let i = 0; i < questionHistory.length; i++) {
-        context += `Q: ${questionHistory[i]} A: ${answers[i]}\n`;
-    }
-    context += "\nWhat is your best guess? Respond with just the object/animal/thing name, nothing else.";
-
-    try {
-        let response = '';
-
-        if (apiProvider === 'gemini') {
-            const apiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${currentApiKey}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [{
-                            text: context
-                        }]
-                    }],
-                    generationConfig: {
-                        temperature: 0.3,
-                        topP: 0.8,
-                        topK: 40,
-                        maxOutputTokens: 20,
-                    }
-                })
-            });
-
-            if (apiResponse.ok) {
-                const data = await apiResponse.json();
-                response = data.candidates[0].content.parts[0].text.trim();
-            }
-        } else if (apiProvider === 'grok') {
-            const apiResponse = await fetch('https://api.x.ai/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${currentApiKey}`
-                },
-                body: JSON.stringify({
-                    messages: [
-                        { role: "system", content: "You are making a guess in 20 questions. Respond with just the object name." },
-                        { role: "user", content: context }
-                    ],
-                    model: "grok-beta",
-                    stream: false,
-                    temperature: 0.3,
-                    max_tokens: 20
-                })
-            });
-
-            if (apiResponse.ok) {
-                const data = await apiResponse.json();
-                response = data.choices[0].message.content.trim();
-            }
-        } else if (apiProvider === 'groq') {
-            const apiResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${currentApiKey}`
-                },
-                body: JSON.stringify({
-                    messages: [
-                        { role: "system", content: "You are making a guess in 20 questions. Respond with just the object name." },
-                        { role: "user", content: context }
-                    ],
-                    model: "llama3-8b-8192",
-                    temperature: 0.3,
-                    max_tokens: 20
-                })
-            });
-
-            if (apiResponse.ok) {
-                const data = await apiResponse.json();
-                response = data.choices[0].message.content.trim();
-            }
-}
-
-        // Clean up the response
-        response = response.replace(/^["']|["']$/g, '').toLowerCase();
-        return response || null;
-
-    } catch (error) {
-        console.error('Error making guess:', error);
-        return null;
-    }
-}
-
-// Get AI contribution for story building game
-async function getAIStoryContribution(currentStory) {
-    let currentApiKey = '';
-    if (apiProvider === 'gemini') {
-        currentApiKey = geminiApiKey;
-    } else if (apiProvider === 'grok') {
-        currentApiKey = grokApiKey;
-    } else if (apiProvider === 'groq') {
-        currentApiKey = groqApiKey;
-    }
-
-    if (!currentApiKey) {
-        return null;
-    }
-
-    const storyPrompt = `We're playing a collaborative story-building game. Here's our story so far: "${currentStory.join(' ')}"
-
-Please add exactly ONE sentence to continue this story. Make it engaging and creative, but keep it appropriate for the story's tone. Only respond with the single sentence to add - nothing else.`;
-
-    try {
-        let response = '';
-
-        if (apiProvider === 'gemini') {
-            const apiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${currentApiKey}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [{
-                            text: storyPrompt
-                        }]
-                    }],
-                    generationConfig: {
-                        temperature: 0.8,
-                        topP: 0.9,
-                        topK: 40,
-                        maxOutputTokens: 100,
-                    }
-                })
-            });
-
-            if (apiResponse.ok) {
-                const data = await apiResponse.json();
-                response = data.candidates[0].content.parts[0].text.trim();
-            }
-        } else if (apiProvider === 'grok') {
-            const apiResponse = await fetch('https://api.x.ai/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${currentApiKey}`
-                },
-                body: JSON.stringify({
-                    messages: [
-                        { role: "system", content: "You are helping build a collaborative story. Respond with exactly one sentence to continue the story." },
-                        { role: "user", content: storyPrompt }
-                    ],
-                    model: "grok-beta",
-                    stream: false,
-                    temperature: 0.8,
-                    max_tokens: 100
-                })
-            });
-
-            if (apiResponse.ok) {
-                const data = await apiResponse.json();
-                response = data.choices[0].message.content.trim();
-            }
-        } else if (apiProvider === 'groq') {
-            const apiResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${currentApiKey}`
-                },
-                body: JSON.stringify({
-                    messages: [
-                        { role: "system", content: "You are helping build a collaborative story. Respond with exactly one sentence to continue the story." },
-                        { role: "user", content: storyPrompt }
-                    ],
-                    model: "llama3-8b-8192",
-                    temperature: 0.8,
-                    max_tokens: 100
-                })
-            });
-
-            if (apiResponse.ok) {
-                const data = await apiResponse.json();
-                response = data.choices[0].message.content.trim();
-            }
-        }
-
-        // Clean up the response - remove quotes if they exist
-        response = response.replace(/^["']|["']$/g, '');
-
-        return response || null;
-    } catch (error) {
-        console.error('Error getting AI story contribution:', error);
-        return null;
-    }
-}
-
-// Game processors with full functionality
-const gameProcessors = {
-    '20questions': async (message) => {
-        if (!gameState.gameData['20questions']) {
-            gameState.gameData['20questions'] = {
-                questionsAsked: 0,
-                gamePhase: 'waiting', // waiting, ready, questioning, ended
-                waitingForAnswer: false,
-                answers: [], // Store all answers
-                questionHistory: [] // Store all questions asked
-            };
-        }
-
-        const data = gameState.gameData['20questions'];
-
-        if (message.toLowerCase().includes('start') && data.gamePhase === 'waiting') {
-            data.gamePhase = 'ready';
-            appendGameAdminMessage("🎯 Great! Think of something (an object, animal, person, etc.) and I'll try to guess it. Type 'ready' when you've thought of something!");
-            displayChatHistory();
-            return true; // Allow AI response to be encouraging
-        }
-
-        if (message.toLowerCase().includes('ready') && data.gamePhase === 'ready') {
-            data.gamePhase = 'questioning';
-            data.questionsAsked = 0;
-            data.waitingForAnswer = true;
-            data.answers = [];
-            data.questionHistory = [];
-
-            // Start with the first intelligent question
-            const firstQuestion = "Is it alive?";
-            data.questionHistory.push(firstQuestion);
-            appendGameAdminMessage(`🎯 Perfect! Question 1/20: ${firstQuestion} (Please answer YES or NO)`);
-            displayChatHistory();
-            return true; // Allow AI response to show excitement
-        }
-
-        if (data.gamePhase === 'questioning' && data.waitingForAnswer) {
-            const response = message.toLowerCase().trim();
-
-            // Strict yes/no checking
-            if (!response.includes('yes') && !response.includes('no')) {
-                appendGameAdminMessage("🎯 Please answer with 'YES' or 'NO' only!");
-                displayChatHistory();
-                return false; // Block AI response for invalid input
-            }
-
-            // Record the answer
-            const answer = response.includes('yes') ? 'yes' : 'no';
-            data.answers.push(answer);
-            data.questionsAsked++;
-            data.waitingForAnswer = false;
-
-            // Check if we should make a guess (after 15 questions or if confident)
-            if (data.questionsAsked >= 15) {
-                // Try to make an intelligent guess
-                const guess = await makeIntelligentGuess(data.questionHistory, data.answers);
-                if (guess && data.questionsAsked >= 18) {
-                    data.gamePhase = 'guessing';
-                    appendGameAdminMessage(`🎯 I think I know! Is it a ${guess}? (YES or NO)`);
-                    displayChatHistory();
-                    return false; // Block AI response during guessing
-                }
-            }
-
-            if (data.questionsAsked >= 20) {
-                data.gamePhase = 'ended';
-                appendGameAdminMessage("🎯 I've used all 20 questions! I give up. What were you thinking of?");
-                displayChatHistory();
-                return false; // Block AI response when game ends
-            }
-
-            // Generate next intelligent question
-            setTimeout(async () => {
-                data.waitingForAnswer = true;
-                const nextQuestion = await generateNextQuestion(data.questionHistory, data.answers);
-                data.questionHistory.push(nextQuestion);
-                appendGameAdminMessage(`🎯 Question ${data.questionsAsked + 1}/20: ${nextQuestion} (Please answer YES or NO)`);
-                displayChatHistory();
-            }, 1000);
-            return false; // Block AI response during questioning phase
-        }
-
-        if (data.gamePhase === 'guessing') {
-            const response = message.toLowerCase().trim();
-            if (response.includes('yes')) {
-                appendGameAdminMessage(`🎯 Yes! I guessed it! Thanks for playing! That was fun. Type '/exit' to leave the game.`);
-                data.gamePhase = 'ended';
-                displayChatHistory();
-                return false; // Block AI response during game end
-            } else if (response.includes('no')) {
-                appendGameAdminMessage(`🎯 Hmm, let me ask more questions then...`);
-                data.gamePhase = 'questioning';
-                data.waitingForAnswer = true;
-
-                // Continue with more questions
-                setTimeout(async () => {
-                    const nextQuestion = await generateNextQuestion(data.questionHistory, data.answers);
-                    data.questionHistory.push(nextQuestion);
-                    appendGameAdminMessage(`🎯 Question ${data.questionsAsked + 1}/20: ${nextQuestion} (Please answer YES or NO)`);
-                    displayChatHistory();
-                }, 1000);
-                return false; // Block AI response during questioning
-            } else {
-                appendGameAdminMessage("🎯 Please answer with 'YES' or 'NO' only!");
-                displayChatHistory();
-                return false;
-            }
-        }
-
-        if (data.gamePhase === 'ended' && !data.waitingForAnswer) {
-            appendGameAdminMessage(`🎯 "${message}" - interesting! I should have guessed that! Thanks for playing! Type '/exit' to leave the game.`);
-            displayChatHistory();
-            return false; // Block AI response during game end
-        }
-
-        // Allow AI response for general conversation during the game
-        return true;
-    },
-
-    'trivia': (message) => {
-        if (!gameState.gameData['trivia']) {
-            gameState.gameData['trivia'] = {
-                score: 0,
-                questionsAsked: 0,
-                currentQuestion: null,
-                currentAnswer: null,
-                questions: [
-                    { q: "What is the capital of France?", a: "paris" },
-                    { q: "What year did World War II end?", a: "1945" },
-                    { q: "What is the largest planet in our solar system?", a: "jupiter" },
-                    { q: "Who painted the Mona Lisa?", a: "leonardo da vinci" },
-                    { q: "What is 15 + 27?", a: "42" }
-                ]
-            };
-        }
-
-        const data = gameState.gameData['trivia'];
-
-        if (message.toLowerCase().includes('start') && !data.currentQuestion) {
-            data.questionsAsked = 0;
-            data.score = 0;
-            const question = data.questions[data.questionsAsked];
-            data.currentQuestion = question.q;
-            data.currentAnswer = question.a;
-            appendGameAdminMessage(`🧠 Question ${data.questionsAsked + 1}: ${data.currentQuestion}`);
-            displayChatHistory();
-            return false;
-        }
-
-        if (data.currentQuestion) {
-            const userAnswer = message.toLowerCase().trim();
-            if (userAnswer.includes(data.currentAnswer)) {
-                data.score++;
-                appendGameAdminMessage(`🧠 Correct! Score: ${data.score}/${data.questionsAsked + 1}`);
-            } else {
-                appendGameAdminMessage(`🧠 Wrong! The answer was: ${data.currentAnswer}. Score: ${data.score}/${data.questionsAsked + 1}`);
-            }
-
-            data.questionsAsked++;
-            if (data.questionsAsked < data.questions.length) {
-                const question = data.questions[data.questionsAsked];
-                data.currentQuestion = question.q;
-                data.currentAnswer = question.a;
-                appendGameAdminMessage(`🧠 Question ${data.questionsAsked + 1}: ${data.currentQuestion}`);
-            } else {
-                data.currentQuestion = null;
-                appendGameAdminMessage(`🧠 Game over! Final score: ${data.score}/${data.questions.length}. Type '/exit' to leave the game.`);
-            }
-            displayChatHistory();
-            return false;
-        }
-
-        return true;
-    },
-
-    'storybuilding': async (message) => {
-        if (!gameState.gameData['storybuilding']) {
-            gameState.gameData['storybuilding'] = {
-                story: ["Once upon a time, in a land far away..."],
-                turnCount: 1,
-                waitingForAI: false
-            };
-        }
-
-        const data = gameState.gameData['storybuilding'];
-
-        if (message.toLowerCase().includes('start')) {
-            appendGameAdminMessage("📖 Let's build a story together! I'll start: 'Once upon a time, in a land far away...' Now add your sentence!");
-            displayChatHistory();
-            return false;
-        }
-
-        // Add user's contribution to story
-        data.story.push(message);
-        data.turnCount++;
-
-        // Get AI's story contribution first
-        data.waitingForAI = true;
-        const aiContribution = await getAIStoryContribution(data.story);
-
-        if (aiContribution) {
-            data.story.push(aiContribution);
-            data.turnCount++;
-
-            // Add the AI's contribution as "Her" message in yellow
-            addMessageToHistory('game_ai', aiContribution);
-
-            // Then add the game system message
-            appendGameAdminMessage(`📖 Updated story: "${data.story.join(' ')}" Your turn again!`);
-        } else {
-            appendGameAdminMessage("📖 I'm having trouble thinking of what to add. Your turn again!");
-        }
-
-        data.waitingForAI = false;
-        displayChatHistory();
-        return false;
-    },
-
-    'wordassociation': (message) => {
-        if (!gameState.gameData['wordassociation']) {
-            gameState.gameData['wordassociation'] = {
-                currentWord: 'sunshine',
-                wordChain: ['sunshine'],
-                turnCount: 0
-            };
-        }
-
-        const data = gameState.gameData['wordassociation'];
-
-        if (message.toLowerCase().includes('start')) {
-            appendGameAdminMessage(`🔤 Word Association! Starting word: "${data.currentWord}". What word comes to mind?`);
-            displayChatHistory();
-            return false;
-        }
-
-        const userWord = message.toLowerCase().trim();
-        data.wordChain.push(userWord);
-        data.currentWord = userWord;
-        data.turnCount++;
-        appendGameAdminMessage(`🔤 "${userWord}" - good one! Chain: ${data.wordChain.join(' → ')}`);
-        displayChatHistory();
-        return true; // Allow AI response for this game
-    },
-
-    'wouldyourather': (message) => {
-        if (!gameState.gameData['wouldyourather']) {
-            gameState.gameData['wouldyourather'] = {
-                questionsAsked: 0,
-                questions: [
-                    "Would you rather have the ability to fly or be invisible?",
-                    "Would you rather always be 10 minutes late or 20 minutes early?",
-                    "Would you rather have unlimited money or unlimited time?",
-                    "Would you rather read minds or predict the future?",
-                    "Would you rather live in the past or the future?"
-                ]
-            };
-        }
-
-        const data = gameState.gameData['wouldyourather'];
-
-        if (message.toLowerCase().includes('start')) {
-            appendGameAdminMessage(`❓ ${data.questions[0]}`);
-            displayChatHistory();
-            return true; // Allow AI response for this game
-        }
-
-        appendGameAdminMessage(`❓ Interesting choice! I can see why you'd pick that.`);
-        data.questionsAsked++;
-
-        if (data.questionsAsked < data.questions.length) {
-            appendGameAdminMessage(`❓ Next question: ${data.questions[data.questionsAsked]}`);
-        } else {
-            appendGameAdminMessage(`❓ That was fun! We've gone through all my questions. Type '/exit' to leave the game.`);
-        }
-        displayChatHistory();
-        return true; // Allow AI response for this game
-    },
-
-    'songguess': (message) => {
-        if (!gameState.gameData['songguess']) {
-            gameState.gameData['songguess'] = {
-                currentSong: 0,
-                score: 0,
-                songs: [
-                    { clue: "🎵 'Is this the real life? Is this just fantasy?'", answer: "bohemian rhapsody", artist: "Queen" },
-                    { clue: "🎵 'Hello, is it me you're looking for?'", answer: "hello", artist: "Lionel Richie" },
-                    { clue: "🎵 'I see trees of green, red roses too'", answer: "what a wonderful world", artist: "Louis Armstrong" }
-                ]
-            };
-        }
-
-        const data = gameState.gameData['songguess'];
-
-        if (message.toLowerCase().includes('start')) {
-            appendGameAdminMessage(`🎵 Song Guessing Game! Here's your first clue: ${data.songs[0].clue}`);
-            displayChatHistory();
-            return false;
-        }
-
-        const guess = message.toLowerCase();
-        const currentSong = data.songs[data.currentSong];
-
-        if (guess.includes(currentSong.answer.toLowerCase()) || guess.includes(currentSong.artist.toLowerCase())) {
-            data.score++;
-            appendGameAdminMessage(`🎵 Correct! It was "${currentSong.answer}" by ${currentSong.artist}. Score: ${data.score}`);
-        } else {
-            appendGameAdminMessage(`🎵 Not quite! It was "${currentSong.answer}" by ${currentSong.artist}. Score: ${data.score}`);
-        }
-
-        data.currentSong++;
-        if (data.currentSong < data.songs.length) {
-            appendGameAdminMessage(`🎵 Next clue: ${data.songs[data.currentSong].clue}`);
-        } else {
-            appendGameAdminMessage(`🎵 Game over! Final score: ${data.score}/${data.songs.length}. Type '/exit' to leave the game.`);
-        }
-        displayChatHistory();
-        return false;
-    },
-
-    'movieguess': (message) => {
-        if (!gameState.gameData['movieguess']) {
-            gameState.gameData['movieguess'] = {
-                currentMovie: 0,
-                score: 0,
-                movies: [
-                    { clue: "🎬 A group of friends in New York, one's a paleontologist, another's a chef...", answer: "friends" },
-                    { clue: "🎬 A wizard boy attends a magical school and fights a dark lord", answer: "harry potter" },
-                    { clue: "🎬 'I'll be back' - Time traveling robots", answer: "terminator" }
-                ]
-            };
-        }
-
-        const data = gameState.gameData['movieguess'];
-
-        if (message.toLowerCase().includes('start')) {
-            appendGameAdminMessage(`🎬 Movie/TV Guessing! Here's your first clue: ${data.movies[0].clue}`);
-            displayChatHistory();
-            return false;
-        }
-
-        const guess = message.toLowerCase();
-        const currentMovie = data.movies[data.currentMovie];
-
-        if (guess.includes(currentMovie.answer.toLowerCase())) {
-            data.score++;
-            appendGameAdminMessage(`🎬 Correct! It was "${currentMovie.answer}". Score: ${data.score}`);
-        } else {
-            appendGameAdminMessage(`🎬 Not quite! It was "${currentMovie.answer}". Score: ${data.score}`);
-        }
-
-        data.currentMovie++;
-        if (data.currentMovie < data.movies.length) {
-            appendGameAdminMessage(`🎬 Next clue: ${data.movies[data.currentMovie].clue}`);
-        } else {
-            appendGameAdminMessage(`🎬 Game over! Final score: ${data.score}/${data.movies.length}. Type '/exit' to leave the game.`);
-        }
-        displayChatHistory();
-        return false;
-    },
-
-    'roleplay': (message) => {
-        if (!gameState.gameData['roleplay']) {
-            gameState.gameData['roleplay'] = {
-                scenario: null,
-                started: false
-            };
-        }
-
-        const data = gameState.gameData['roleplay'];
-
-        if (message.toLowerCase().includes('start') && !data.started) {
-            appendGameAdminMessage("🎭 Role Playing time! What scenario would you like to explore? (cafe date, adventure quest, mystery detective, etc.)");
-            displayChatHistory();
-            return false;
-        }
-
-        if (!data.started && !data.scenario) {
-            data.scenario = message;
-            data.started = true;
-            appendGameAdminMessage(`🎭 Great! Let's roleplay a ${message} scenario. I'll play along with whatever character fits the scene!`);
-            displayChatHistory();
-            return true; // Allow AI response for roleplay
-        }
-
-        appendGameAdminMessage(`🎭 *Playing along in the ${data.scenario} scenario* This is so much fun!`);
-        displayChatHistory();
-        return true; // Allow AI response for roleplay
-    },
-
-    'lovequiz': (message) => {
-        if (!gameState.gameData['lovequiz']) {
-            gameState.gameData['lovequiz'] = {
-                currentQuestion: 0,
-                questions: [
-                    "What's your ideal date activity?",
-                    "What's most important in a relationship?",
-                    "How do you prefer to show affection?",
-                    "What's your love language?",
-                    "What makes you feel most loved?"
-                ]
-            };
-        }
-
-        const data = gameState.gameData['lovequiz'];
-
-        if (message.toLowerCase().includes('start')) {
-            appendGameAdminMessage(`💕 Love Language Quiz! Question 1: ${data.questions[0]}`);
-            displayChatHistory();
-            return true; // Allow AI response for love quiz
-        }
-
-        appendGameAdminMessage(`💕 Interesting answer! That tells me a lot about you.`);
-        data.currentQuestion++;
-
-        if (data.currentQuestion < data.questions.length) {
-            appendGameAdminMessage(`💕 Question ${data.currentQuestion + 1}: ${data.questions[data.currentQuestion]}`);
-        } else {
-            appendGameAdminMessage(`💕 Thanks for sharing! I feel like I know you better now. We're very compatible! Type '/exit' to leave the game.`);
-        }
-        displayChatHistory();
-        return true; // Allow AI response for love quiz
-    }
-};
-
-// Game initialization functions
-const gameInitializers = {
-    '20questions': () => {
-        appendGameAdminMessage("🎯 Welcome to 20 Questions! Think of something and I'll try to guess it in 20 questions or less. Type 'start' when you're ready!");
-    },
-    'trivia': () => {
-        appendGameAdminMessage("🧠 Welcome to Trivia Challenge! I'll ask you questions and keep track of your score. Ready to begin?");
-    },
-    'storybuilding': () => {
-        appendGameAdminMessage("📖 Let's build a story together! I'll start with the first sentence, then we'll take turns adding to it. Here we go: 'Once upon a time, in a land far away...' Add your sentence!");
-    },
-    'wordassociation': () => {
-        appendGameAdminMessage("🔤 Word Association time! I'll say a word, and you respond with the first word that comes to mind. Here's your starting word: 'Sunshine'");
-    },
-    'wouldyourather': () => {
-        appendGameAdminMessage("❓ Would You Rather! I'll give you two choices and you pick one. Here's your first: Would you rather have the ability to fly or be invisible?");
-    },
-    'songguess': () => {
-        appendGameAdminMessage("🎵 Song Guessing Game! I'll give you lyrics or clues, and you guess the song and artist. Ready for your first clue?");
-    },
-    'movieguess': () => {
-        appendGameAdminMessage("🎬 Movie/TV Guessing! I'll describe a movie or show, and you guess what it is. Here's your first clue: 'A group of friends in New York, one's a paleontologist, another's a chef...'");
-    },
-    'roleplay': () => {
-        appendGameAdminMessage("🎭 Role Playing time! Let's act out a fun scenario. What kind of scenario would you like to explore?");
-    },
-    'lovequiz': () => {
-        appendGameAdminMessage("💕 Love Language Quiz! Let's discover how compatible we are. I'll ask you questions about preferences and feelings. Ready?");
-    }
-};
-
-// Game context for AI integration
-function getGameContext() {
-    if (!currentGame || !gameState.isActive) {
-        return '';
-    }
-
-    const gameName = currentGame;
-    const data = gameState.gameData[gameName] || {};
-
-    let context = `\n\n[GAME CONTEXT - DO NOT MENTION THIS TO USER]\n`;
-    context += `Currently playing: ${gameName}\n`;
-    context += `Game state: ${JSON.stringify(data)}\n`;
-    context += `You are participating in this ${gameName} game. Respond as the AI girlfriend while being engaged with the game. The user can see all game messages in the chat history, so you can reference them naturally.\n`;
-    context += `You can comment on their game performance, encourage them, or react to their moves. Type '/exit' exits the game.\n`;
-    context += `[END GAME CONTEXT]\n\n`;
-
-    return context;
-}
-
-function startGame(gameName) {
-    currentGame = gameName;
-    gameState.isActive = true;
-    gameState.currentGame = gameName;
-
-    const gamesModal = document.getElementById('gamesModal');
-    if (gamesModal) {
-        gamesModal.style.display = 'none';
-    }
-    updateGameUI();
-
-    // Show game start message
-    appendGameAdminMessage(`🎮 Starting ${gameName}... (Type '/exit' anytime to quit the game)`);
-
-    if (gameInitializers[gameName]) {
-        gameInitializers[gameName]();
-    }
-
-    displayChatHistory();
-}
-
-function endGame() {
-    if (currentGame) {
-        appendGameAdminMessage(`🎮 Exiting ${currentGame}. Thanks for playing!`);
-        currentGame = null;
-        gameState.isActive = false;
-        gameState.currentGame = null;
-        gameState.gameData = {}; // Reset game data
-        updateGameUI();
-
-        // Add user message for the exit command
-        addMessageToHistory('user', '/exit');
-        displayChatHistory();
-    }
-}
-
-function updateGameUI() {
-    const gameStatus = document.getElementById('gameStatus');
-    if (gameStatus) {
-        if (currentGame) {
-            gameStatus.innerHTML = `<span class="game-indicator">🎮 Playing: ${currentGame}</span>`;
-            gameStatus.style.display = 'block';
-        } else {
-            gameStatus.style.display = 'none';
-        }
-    }
-
-    // Update game cards to show active state
-    document.querySelectorAll('.game-card').forEach(card => {
-        if (currentGame && card.getAttribute('data-game') === currentGame) {
-            card.classList.add('game-active');
-        } else {
-            card.classList.remove('game-active');
-        }
-    });
-}
-
-// Initialize immediately if DOM is already loaded
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        console.log('DOM loaded via event listener');
-        initializeEventListeners();
-        loadSavedData();
-        updateUI();
-
-        const chatContainer = document.getElementById('chatDisplay');
-        if (chatContainer) {
-            document.getElementById('scrollToBottom').addEventListener('click', () => {
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-            });
-        }
-
-        // Games modal functionality
-        const gamesBtn = document.getElementById('gamesButton');
-        const gamesModal = document.getElementById('gamesModal');
-        const closeGames = document.getElementById('closeGames');
-
-        if (gamesBtn && gamesModal) {
-            gamesBtn.addEventListener('click', () => {
-                gamesModal.style.display = 'block';
-            });
-        }
-
-        if (closeGames && gamesModal) {
-            closeGames.addEventListener('click', () => {
-                gamesModal.style.display = 'none';
-            });
-        }
-
-        // Game card event listeners
-        document.querySelectorAll('.game-card').forEach(card => {
-            card.addEventListener('click', () => {
-                const gameName = card.getAttribute('data-game');
-                if (gameName) {
-                    startGame(gameName);
-                }
-            });
-        });
-
-        // Close modals when clicking outside
-        window.addEventListener('click', (event) => {
-            if (event.target === gamesModal) {
-                gamesModal.style.display = 'none';
-            }
-            
-            const profilePicModal = document.getElementById('profilePicModal');
-            if (event.target === profilePicModal) {
-                profilePicModal.style.display = 'none';
-            }
-            
-            const profilePreviewModal = document.getElementById('profilePreviewModal');
-            if (event.target === profilePreviewModal) {
-                profilePreviewModal.style.display = 'none';
-            }
-        });
-    });
-} else {
-    console.log('DOM already loaded, initializing immediately');
-    setTimeout(() => {
-        initializeEventListeners();
-        loadSavedData();
-        updateUI();
-
-        const chatContainer = document.getElementById('chatDisplay');
-        if (chatContainer) {
-            document.getElementById('scrollToBottom').addEventListener('click', () => {
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-            });
-        }
-
-         // Games modal functionality
-         const gamesBtn = document.getElementById('gamesButton');
-         const gamesModal = document.getElementById('gamesModal');
-         const closeGames = document.getElementById('closeGames');
-
-         if (gamesBtn && gamesModal) {
-             gamesBtn.addEventListener('click', () => {
-                 gamesModal.style.display = 'block';
-             });
-         }
-
-         if (closeGames && gamesModal) {
-             closeGames.addEventListener('click', () => {
-                 gamesModal.style.display = 'none';
-             });
-         }
-
-         // Game card event listeners
-         document.querySelectorAll('.game-card').forEach(card => {
-             card.addEventListener('click', () => {
-                 const gameName = card.getAttribute('data-game');
-                 if (gameName) {
-                     startGame(gameName);
-                 }
-             });
-         });
-
-         // Close modals when clicking outside
-         window.addEventListener('click', (event) => {
-             if (event.target === gamesModal) {
-                 gamesModal.style.display = 'none';
-             }
-         });
-    }, 100);
-}
+                    '
