@@ -86,6 +86,27 @@ function initializeEventListeners() {
         apiSelect.addEventListener('change', function() {
             apiProvider = this.value;
             localStorage.setItem('apiProvider', apiProvider);
+            updateApiKeyInput();
+        });
+    }
+
+    // API Key visibility toggle
+    const toggleBtn = document.querySelector('.toggle-visibility');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function() {
+            const targetId = this.getAttribute('data-target');
+            const input = document.getElementById(targetId);
+            const eyeIcon = this.querySelector('.eye-icon');
+            
+            if (input && eyeIcon) {
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    eyeIcon.textContent = '🙈';
+                } else {
+                    input.type = 'password';
+                    eyeIcon.textContent = '👁️';
+                }
+            }
         });
     }
 
@@ -116,29 +137,16 @@ function setupModalCloseButtons() {
 }
 
 function loadSavedData() {
-    // Load API keys
-    if (geminiApiKey) {
-        const geminiInput = document.getElementById('geminiApiKey');
-        if (geminiInput) geminiInput.value = geminiApiKey;
-    }
-
-    if (grokApiKey) {
-        const grokInput = document.getElementById('grokApiKey');
-        if (grokInput) grokInput.value = grokApiKey;
-    }
-
-    if (groqApiKey) {
-        const groqInput = document.getElementById('groqApiKey');
-        if (groqInput) groqInput.value = groqApiKey;
-    }
-
-    // Load API provider
+    // Load API provider first
     const savedProvider = localStorage.getItem('apiProvider');
     if (savedProvider) {
         apiProvider = savedProvider;
         const apiSelect = document.getElementById('apiProvider');
         if (apiSelect) apiSelect.value = apiProvider;
     }
+
+    // Load appropriate API key based on provider
+    updateApiKeyInput();
 }
 
 function updateUI() {
@@ -149,49 +157,55 @@ function updateUI() {
 function saveApiKeys() {
     console.log('Saving API keys...');
 
-    const geminiInput = document.getElementById('geminiApiKey');
-    const grokInput = document.getElementById('grokApiKey');
-    const groqInput = document.getElementById('groqApiKey');
+    const apiKeyInput = document.getElementById('apiKey');
+    if (apiKeyInput && apiKeyInput.value.trim()) {
+        const keyValue = apiKeyInput.value.trim();
+        
+        if (apiProvider === 'gemini') {
+            geminiApiKey = keyValue;
+            localStorage.setItem('geminiApiKey', geminiApiKey);
+        } else if (apiProvider === 'grok') {
+            grokApiKey = keyValue;
+            localStorage.setItem('grokApiKey', grokApiKey);
+        } else if (apiProvider === 'groq') {
+            groqApiKey = keyValue;
+            localStorage.setItem('groqApiKey', groqApiKey);
+        }
 
-    if (geminiInput) {
-        geminiApiKey = geminiInput.value;
-        localStorage.setItem('geminiApiKey', geminiApiKey);
+        alert('API key saved successfully!');
+    } else {
+        alert('Please enter an API key');
+    }
+}
+
+function updateApiKeyInput() {
+    const apiKeyInput = document.getElementById('apiKey');
+    if (!apiKeyInput) return;
+
+    let currentKey = '';
+    let placeholder = 'Enter API Key';
+
+    if (apiProvider === 'gemini') {
+        currentKey = geminiApiKey;
+        placeholder = 'Enter Gemini API Key';
+    } else if (apiProvider === 'grok') {
+        currentKey = grokApiKey;
+        placeholder = 'Enter Grok API Key';
+    } else if (apiProvider === 'groq') {
+        currentKey = groqApiKey;
+        placeholder = 'Enter Groq API Key';
     }
 
-    if (grokInput) {
-        grokApiKey = grokInput.value;
-        localStorage.setItem('grokApiKey', grokApiKey);
-    }
-
-    if (groqInput) {
-        groqApiKey = groqInput.value;
-        localStorage.setItem('groqApiKey', groqApiKey);
-    }
-
-    alert('API keys saved successfully!');
+    apiKeyInput.value = currentKey;
+    apiKeyInput.placeholder = placeholder;
 }
 
 function clearChatHistory() {
-    const choice = confirm('Clear chat history?\n\nClick OK to clear history only\nClick Cancel to clear EVERYTHING (history + attraction level)');
-
-    if (choice === true) {
-        // Clear only chat history
+    if (confirm('Are you sure you want to clear all chat history? This cannot be undone.')) {
         chatHistory = [];
         localStorage.removeItem('chatHistory');
         displayChatHistory();
         alert('Chat history cleared!');
-    } else if (choice === false) {
-        // User clicked Cancel, ask if they want to reset everything
-        const resetAll = confirm('This will reset EVERYTHING:\n• Chat history\n• Attraction level\n• Relationship progress\n\nAre you sure?');
-        if (resetAll) {
-            chatHistory = [];
-            attraction = 0;
-            localStorage.removeItem('chatHistory');
-            localStorage.removeItem('attraction');
-            displayChatHistory();
-            updateAttractionDisplay();
-            alert('Everything has been reset!');
-        }
     }
 }
 
@@ -261,12 +275,14 @@ async function sendMessage() {
 
     // Check if API key is configured
     let currentApiKey = '';
+    const apiKeyInput = document.getElementById('apiKey');
+    
     if (apiProvider === 'gemini') {
-        currentApiKey = geminiApiKey;
+        currentApiKey = geminiApiKey || (apiKeyInput ? apiKeyInput.value.trim() : '');
     } else if (apiProvider === 'grok') {
-        currentApiKey = grokApiKey;
+        currentApiKey = grokApiKey || (apiKeyInput ? apiKeyInput.value.trim() : '');
     } else if (apiProvider === 'groq') {
-        currentApiKey = groqApiKey;
+        currentApiKey = groqApiKey || (apiKeyInput ? apiKeyInput.value.trim() : '');
     }
 
     if (!currentApiKey) {

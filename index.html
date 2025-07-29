@@ -21,29 +21,19 @@
                 <button id="gamesButton" class="btn">🎮 Games</button>
             </div>
             <div class="api-key-section">
-    <select id="apiProvider" class="api-select">
-        <option value="gemini">Gemini</option>
-        <option value="grok">Grok</option>
-        <option value="groq">Groq</option>
-    </select>
-    <div class="api-input-container">
-                    <input type="password" id="geminiApiKey" placeholder="Gemini API Key" class="api-input">
-                    <button type="button" class="toggle-visibility" data-target="geminiApiKey">
-                        <span class="eye-icon">👁️</span>
-                    </button>
-                </div>
-            </div>
-            <div class="api-key-section">
-                <label for="grokApiKey">Grok API Key:</label>
+                <select id="apiProvider" class="api-select">
+                    <option value="gemini">Gemini</option>
+                    <option value="grok">Grok</option>
+                    <option value="groq">Groq</option>
+                </select>
                 <div class="api-input-container">
-                    <input type="password" id="grokApiKey" placeholder="Grok API Key" class="api-input">
-                    <button type="button" class="toggle-visibility" data-target="grokApiKey">
+                    <input type="password" id="apiKey" placeholder="Enter API Key" class="api-input">
+                    <button type="button" class="toggle-visibility" data-target="apiKey">
                         <span class="eye-icon">👁️</span>
                     </button>
                 </div>
-    <input type="password" id="groqApiKey" placeholder="Groq API Key" class="api-input">
-    <button id="saveKeys" class="btn">Save Keys</button>
-</div>
+                <button id="saveKeys" class="btn">Save Keys</button>
+            </div>
         </header>
 
         <div id="attractionDisplay" class="attraction-display">
