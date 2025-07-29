@@ -179,7 +179,12 @@ async function loadSavedData() {
                     localStorage.setItem('attraction', attraction.toString());
                     localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
                     
-                    console.log('Loaded data from server successfully');
+                    console.log('Loaded data from server successfully', {
+                        personality,
+                        companionGender,
+                        attraction,
+                        chatHistoryLength: chatHistory.length
+                    });
                 }
             }
         } catch (error) {
@@ -195,6 +200,15 @@ async function loadSavedData() {
             profilePic.src = savedProfilePic;
         }
     }
+
+    // Mark data as loaded
+    window.dataLoaded = true;
+    console.log('Data loading complete. Current state:', {
+        personality,
+        companionGender,
+        attraction,
+        apiProvider
+    });
 }
 
 function updateUI() {
@@ -443,6 +457,12 @@ async function sendMessage() {
     const message = messageInput.value.trim();
     if (!message) return;
 
+    // Wait for data to be fully loaded before processing messages
+    if (!window.dataLoaded) {
+        console.log('Waiting for data to load...');
+        await loadSavedData();
+    }
+
     // Check for game exit command
     if (message.toLowerCase() === '/exit' && currentGame) {
         endGame();
@@ -672,6 +692,14 @@ function getSystemPrompt() {
 
     const prompt = systemPrompts[personality]?.[level] || systemPrompts.sweet.stranger;
     const genderTerm = companionGender === 'female' ? 'girlfriend' : 'boyfriend';
+
+    console.log('System prompt generated:', {
+        personality,
+        attraction,
+        level,
+        companionGender,
+        promptUsed: systemPrompts[personality]?.[level] ? `${personality}.${level}` : 'sweet.stranger (fallback)'
+    });
 
     return prompt.replace('girlfriend/boyfriend', genderTerm);
 }
