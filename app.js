@@ -10,7 +10,6 @@ let personality = localStorage.getItem('personality') || 'sweet';
 let companionGender = localStorage.getItem('companionGender') || 'female';
 let attraction = parseInt(localStorage.getItem('attraction') || '0');
 let currentGame = null;
-let companionName = localStorage.getItem('companionName') || 'Her';
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
@@ -63,70 +62,6 @@ function initializeEventListeners() {
     const setProfilePicBtn = document.getElementById('setProfilePic');
     if (setProfilePicBtn) {
         setProfilePicBtn.addEventListener('click', openProfilePicModal);
-    }
-
-    // Settings menu toggle
-    const settingsBtn = document.getElementById('settingsBtn');
-    const settingsMenu = document.getElementById('settingsMenu');
-    if (settingsBtn && settingsMenu) {
-        settingsBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            settingsMenu.classList.toggle('show');
-        });
-    }
-
-    // Close settings menu when clicking outside
-    document.addEventListener('click', function() {
-        if (settingsMenu && settingsMenu.classList.contains('show')) {
-            settingsMenu.classList.remove('show');
-        }
-    });
-
-    // Name change functionality
-    const setNameBtn = document.getElementById('setNameBtn');
-    if (setNameBtn) {
-        setNameBtn.addEventListener('click', openNameModal);
-    }
-
-    // Personality quiz button (updated ID)
-    const personalityQuizBtn = document.getElementById('personalityQuizBtn');
-    if (personalityQuizBtn) {
-        personalityQuizBtn.addEventListener('click', openQuizModal);
-    }
-
-    // Top action buttons
-    const quickChatBtn = document.getElementById('quickChatBtn');
-    const moodBoostBtn = document.getElementById('moodBoostBtn');
-    const dailyCheckInBtn = document.getElementById('dailyCheckInBtn');
-
-    if (quickChatBtn) {
-        quickChatBtn.addEventListener('click', function() {
-            const messageInput = document.getElementById('messageInput');
-            if (messageInput) {
-                messageInput.value = "Hey! How are you doing today?";
-                messageInput.focus();
-            }
-        });
-    }
-
-    if (moodBoostBtn) {
-        moodBoostBtn.addEventListener('click', function() {
-            const messageInput = document.getElementById('messageInput');
-            if (messageInput) {
-                messageInput.value = "I could use some encouragement and positivity right now";
-                messageInput.focus();
-            }
-        });
-    }
-
-    if (dailyCheckInBtn) {
-        dailyCheckInBtn.addEventListener('click', function() {
-            const messageInput = document.getElementById('messageInput');
-            if (messageInput) {
-                messageInput.value = "Let's do our daily check-in! How was your day?";
-                messageInput.focus();
-            }
-        });
     }
 
     // Send message button
@@ -198,12 +133,6 @@ function setupModalCloseButtons() {
     const closeProfilePreview = document.getElementById('closeProfilePreview');
     if (closeProfilePreview) {
         closeProfilePreview.addEventListener('click', closeProfilePreviewModal);
-    }
-
-    // Name modal close
-    const closeNameModal = document.getElementById('closeNameModal');
-    if (closeNameModal) {
-        closeNameModal.addEventListener('click', closeNameModal);
     }
 }
 
@@ -354,74 +283,6 @@ function closeProfilePreviewModal() {
     const modal = document.getElementById('profilePreviewModal');
     if (modal) {
         modal.style.display = 'none';
-    }
-}
-
-function openNameModal() {
-    const modal = document.getElementById('nameModal');
-    const nameInput = document.getElementById('companionNameInput');
-    const namePreview = document.getElementById('namePreview');
-    const saveNameBtn = document.getElementById('saveNameBtn');
-    const resetNameBtn = document.getElementById('resetNameBtn');
-    
-    if (modal) {
-        modal.style.display = 'block';
-        
-        // Set current name
-        if (nameInput) {
-            nameInput.value = companionName;
-            nameInput.addEventListener('input', function() {
-                const newName = this.value.trim() || 'Her';
-                if (namePreview) {
-                    namePreview.textContent = newName;
-                }
-            });
-        }
-        
-        // Update preview
-        if (namePreview) {
-            namePreview.textContent = companionName;
-        }
-        
-        // Save button
-        if (saveNameBtn) {
-            saveNameBtn.onclick = saveCompanionName;
-        }
-        
-        // Reset button
-        if (resetNameBtn) {
-            resetNameBtn.onclick = function() {
-                companionName = 'Her';
-                localStorage.setItem('companionName', companionName);
-                if (nameInput) nameInput.value = 'Her';
-                if (namePreview) namePreview.textContent = 'Her';
-                displayChatHistory(); // Refresh chat to show new name
-                alert('Name reset to default!');
-            };
-        }
-    }
-}
-
-function closeNameModal() {
-    const modal = document.getElementById('nameModal');
-    if (modal) {
-        modal.style.display = 'none';
-    }
-}
-
-function saveCompanionName() {
-    const nameInput = document.getElementById('companionNameInput');
-    if (nameInput) {
-        const newName = nameInput.value.trim();
-        if (newName && newName.length > 0) {
-            companionName = newName;
-            localStorage.setItem('companionName', companionName);
-            displayChatHistory(); // Refresh chat to show new name
-            closeNameModal();
-            alert(`Name changed to "${companionName}"!`);
-        } else {
-            alert('Please enter a valid name.');
-        }
     }
 }
 
@@ -615,11 +476,11 @@ function displayChatHistory() {
 
         let senderName = 'You';
         if (msg.sender === 'ai') {
-            senderName = companionName;
+            senderName = companionGender === 'female' ? 'Her' : 'Him';
         } else if (msg.sender === 'game') {
             senderName = '🎮 Game System';
         } else if (msg.sender === 'game_ai') {
-            senderName = companionName;
+            senderName = companionGender === 'female' ? 'Her' : 'Him';
         }
 
         // Add special styling for game messages
