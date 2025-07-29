@@ -281,17 +281,7 @@ async function sendMessage() {
     // Process game input if a game is active
     let shouldGetAIResponse = true;
     if (currentGame && gameProcessors[currentGame]) {
-        // Check if this is a game command (start, ready, yes, no, etc.)
-        const gameCommands = ['start', 'ready', 'yes', 'no'];
-        const isGameCommand = gameCommands.some(cmd => message.toLowerCase().includes(cmd));
-        
-        if (isGameCommand) {
-            shouldGetAIResponse = gameProcessors[currentGame](message);
-        } else {
-            // Regular chat during game - process game but allow AI response
-            gameProcessors[currentGame](message);
-            shouldGetAIResponse = true;
-        }
+        shouldGetAIResponse = gameProcessors[currentGame](message);
     }
 
     // Display updated chat
