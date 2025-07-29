@@ -808,26 +808,58 @@ async function sendToGroqAPI(message, apiKey) {
     // Add current message
     messages.push({ role: "user", content: message });
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-            messages: messages,
-            model: "llama3-8b-8192",
-            temperature: 0.7,
-            max_tokens: 1024
-        })
-    });
+    try {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                messages: messages,
+                model: "llama-3.1-8b-instant",
+                temperature: 0.7,
+                max_tokens: 1024,
+                stream: false
+            })
+        });
 
-    if (!response.ok) {
-        throw new Error(`Groq API error: ${response.status}`);
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Groq API Error Details:', {
+                status: response.status,
+                statusText: response.statusText,
+                error: errorText
+            });
+
+            // Handle specific error types
+            if (response.status === 429) {
+                throw new Error('Rate limit exceeded. Please wait a moment before sending another message.');
+            } else if (response.status === 401) {
+                throw new Error('Invalid Groq API key. Please check your API key in settings.');
+            } else if (response.status === 400) {
+                throw new Error('Invalid request. Please check your message content.');
+            } else if (response.status === 503) {
+                throw new Error('Groq service is temporarily unavailable. Please try again in a few minutes.');
+            } else if (response.status >= 500) {
+                throw new Error('Groq server error. This is temporary - please try again in a moment.');
+            } else {
+                throw new Error(`Groq API error (${response.status}): ${response.statusText}`);
+            }
+        }
+
+        const data = await response.json();
+        
+        if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+            console.error('Unexpected Groq API response structure:', data);
+            throw new Error('Unexpected response from Groq API');
+        }
+
+        return data.choices[0].message.content;
+    } catch (error) {
+        console.error('Groq API request failed:', error);
+        throw error;
     }
-
-    const data = await response.json();
-    return data.choices[0].message.content;
 }
 
 // Game state management
