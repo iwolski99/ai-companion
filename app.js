@@ -137,6 +137,8 @@ function setupModalCloseButtons() {
 }
 
 async function loadSavedData() {
+    console.log('Starting data load process...');
+    
     // Load API provider first
     const savedProvider = localStorage.getItem('apiProvider');
     if (savedProvider) {
@@ -158,17 +160,30 @@ async function loadSavedData() {
         currentApiKey = groqApiKey;
     }
 
+    let serverDataLoaded = false;
+
     if (currentApiKey) {
         try {
+            console.log('Attempting to load data from server...');
             const response = await fetch(`/load-progress?apiKey=${encodeURIComponent(currentApiKey)}`);
             if (response.ok) {
                 const data = await response.json();
                 if (data.progress) {
-                    // Load server data
+                    console.log('Server data found, clearing local data and syncing...');
+                    
+                    // CLEAR ALL LOCAL DATA FIRST to ensure clean sync
+                    chatHistory = [];
+                    personality = 'sweet';
+                    companionGender = 'female';
+                    attraction = 0;
+                    
+                    // Load server data (this replaces local data completely)
                     if (data.progress.personality) personality = data.progress.personality;
                     if (data.progress.companionGender) companionGender = data.progress.companionGender;
                     if (data.progress.attraction !== undefined) attraction = data.progress.attraction;
-                    if (data.progress.chatHistory) chatHistory = data.progress.chatHistory;
+                    if (data.progress.chatHistory && Array.isArray(data.progress.chatHistory)) {
+                        chatHistory = data.progress.chatHistory;
+                    }
                     if (data.progress.profilePictureData) {
                         localStorage.setItem('profilePictureData', data.progress.profilePictureData);
                     }
@@ -179,17 +194,52 @@ async function loadSavedData() {
                     localStorage.setItem('attraction', attraction.toString());
                     localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
                     
-                    console.log('Loaded data from server successfully', {
+                    serverDataLoaded = true;
+                    console.log('Successfully synced from server:', {
                         personality,
                         companionGender,
                         attraction,
                         chatHistoryLength: chatHistory.length
                     });
+                } else {
+                    console.log('No server data found, will use local data');
                 }
+            } else {
+                console.log('Server response not ok:', response.status);
             }
         } catch (error) {
-            console.log('Could not load from server, using local data:', error);
+            console.log('Could not load from server:', error);
         }
+    }
+    
+    // Only load from localStorage if no server data was found
+    if (!serverDataLoaded) {
+        console.log('Loading from localStorage...');
+        
+        // Load from localStorage only if server sync failed
+        const localPersonality = localStorage.getItem('personality');
+        const localCompanionGender = localStorage.getItem('companionGender');
+        const localAttraction = localStorage.getItem('attraction');
+        const localChatHistory = localStorage.getItem('chatHistory');
+        
+        if (localPersonality) personality = localPersonality;
+        if (localCompanionGender) companionGender = localCompanionGender;
+        if (localAttraction) attraction = parseInt(localAttraction);
+        if (localChatHistory) {
+            try {
+                chatHistory = JSON.parse(localChatHistory);
+            } catch (e) {
+                console.error('Error parsing local chat history:', e);
+                chatHistory = [];
+            }
+        }
+        
+        console.log('Loaded from localStorage:', {
+            personality,
+            companionGender,
+            attraction,
+            chatHistoryLength: chatHistory.length
+        });
     }
     
     // Load saved profile picture
@@ -203,11 +253,13 @@ async function loadSavedData() {
 
     // Mark data as loaded
     window.dataLoaded = true;
-    console.log('Data loading complete. Current state:', {
+    console.log('Data loading complete. Final state:', {
         personality,
         companionGender,
         attraction,
-        apiProvider
+        apiProvider,
+        serverDataLoaded,
+        chatHistoryLength: chatHistory.length
     });
 }
 
@@ -216,7 +268,7 @@ function updateUI() {
     displayChatHistory();
 }
 
-function saveApiKeys() {
+async function saveApiKeys() {
     console.log('Saving API keys...');
 
     const apiKeyInput = document.getElementById('apiKey');
@@ -234,9 +286,17 @@ function saveApiKeys() {
             localStorage.setItem('groqApiKey', groqApiKey);
         }
 
-        // Sync to server immediately after saving API key
-        syncToServer();
-        alert('API key saved successfully!');
+        // Immediately reload data from server to sync
+        console.log('API key saved, reloading data from server...');
+        await loadSavedData();
+        
+        // Update UI with synced data
+        updateUI();
+        
+        // Sync current state to server
+        await syncToServer();
+        
+        alert('API key saved and data synced successfully!');
     } else {
         alert('Please enter an API key');
     }
@@ -252,7 +312,10 @@ async function syncToServer() {
         currentApiKey = groqApiKey;
     }
 
-    if (!currentApiKey) return;
+    if (!currentApiKey) {
+        console.log('No API key available for syncing');
+        return;
+    }
 
     const progress = {
         personality,
@@ -265,6 +328,13 @@ async function syncToServer() {
     };
 
     try {
+        console.log('Syncing to server...', {
+            apiProvider,
+            chatHistoryLength: chatHistory.length,
+            attraction,
+            personality
+        });
+        
         const response = await fetch('/save-progress', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -272,7 +342,9 @@ async function syncToServer() {
         });
         
         if (response.ok) {
-            console.log('Synced to server successfully');
+            console.log('Successfully synced to server');
+        } else {
+            console.error('Server sync failed with status:', response.status);
         }
     } catch (error) {
         console.error('Error syncing to server:', error);
