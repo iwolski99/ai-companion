@@ -136,7 +136,7 @@ function setupModalCloseButtons() {
     }
 }
 
-function loadSavedData() {
+async function loadSavedData() {
     // Load API provider first
     const savedProvider = localStorage.getItem('apiProvider');
     if (savedProvider) {
@@ -147,6 +147,45 @@ function loadSavedData() {
 
     // Load appropriate API key based on provider
     updateApiKeyInput();
+    
+    // Try to load from server first if API key exists
+    let currentApiKey = '';
+    if (apiProvider === 'gemini' && geminiApiKey) {
+        currentApiKey = geminiApiKey;
+    } else if (apiProvider === 'grok' && grokApiKey) {
+        currentApiKey = grokApiKey;
+    } else if (apiProvider === 'groq' && groqApiKey) {
+        currentApiKey = groqApiKey;
+    }
+
+    if (currentApiKey) {
+        try {
+            const response = await fetch(`/load-progress?apiKey=${encodeURIComponent(currentApiKey)}`);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.progress) {
+                    // Load server data
+                    if (data.progress.personality) personality = data.progress.personality;
+                    if (data.progress.companionGender) companionGender = data.progress.companionGender;
+                    if (data.progress.attraction !== undefined) attraction = data.progress.attraction;
+                    if (data.progress.chatHistory) chatHistory = data.progress.chatHistory;
+                    if (data.progress.profilePictureData) {
+                        localStorage.setItem('profilePictureData', data.progress.profilePictureData);
+                    }
+                    
+                    // Update localStorage with server data
+                    localStorage.setItem('personality', personality);
+                    localStorage.setItem('companionGender', companionGender);
+                    localStorage.setItem('attraction', attraction.toString());
+                    localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+                    
+                    console.log('Loaded data from server successfully');
+                }
+            }
+        } catch (error) {
+            console.log('Could not load from server, using local data:', error);
+        }
+    }
     
     // Load saved profile picture
     const savedProfilePic = localStorage.getItem('profilePictureData');
@@ -181,9 +220,48 @@ function saveApiKeys() {
             localStorage.setItem('groqApiKey', groqApiKey);
         }
 
+        // Sync to server immediately after saving API key
+        syncToServer();
         alert('API key saved successfully!');
     } else {
         alert('Please enter an API key');
+    }
+}
+
+async function syncToServer() {
+    let currentApiKey = '';
+    if (apiProvider === 'gemini' && geminiApiKey) {
+        currentApiKey = geminiApiKey;
+    } else if (apiProvider === 'grok' && grokApiKey) {
+        currentApiKey = grokApiKey;
+    } else if (apiProvider === 'groq' && groqApiKey) {
+        currentApiKey = groqApiKey;
+    }
+
+    if (!currentApiKey) return;
+
+    const progress = {
+        personality,
+        companionGender,
+        attraction,
+        chatHistory,
+        profilePictureData: localStorage.getItem('profilePictureData'),
+        apiProvider,
+        lastSynced: Date.now()
+    };
+
+    try {
+        const response = await fetch('/save-progress', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ apiKey: currentApiKey, progress })
+        });
+        
+        if (response.ok) {
+            console.log('Synced to server successfully');
+        }
+    } catch (error) {
+        console.error('Error syncing to server:', error);
     }
 }
 
@@ -342,6 +420,9 @@ function saveProfilePicture() {
         // Store in localStorage
         localStorage.setItem('profilePictureData', imageData);
         
+        // Sync to server
+        syncToServer();
+        
         // Close modal
         closeProfilePicModal();
         
@@ -457,6 +538,9 @@ function addMessageToHistory(sender, message) {
 
     localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
     localStorage.setItem('attraction', attraction.toString());
+    
+    // Auto-sync to server after each message
+    syncToServer();
 }
 
 function displayChatHistory() {

@@ -58,11 +58,20 @@ class ProgressHandler(http.server.SimpleHTTPRequestHandler):
             api_key = query_params.get('apiKey', [''])[0]
 
             if api_key:
-                # Initialize API key manager
+                # Try direct API key first (for backward compatibility)
+                progress_file = f'data/{api_key}.json'
+                if os.path.exists(progress_file):
+                    with open(progress_file, 'r') as f:
+                        progress_data = json.load(f)
+                        self.send_response(200)
+                        self.send_header('Content-type', 'application/json')
+                        self.end_headers()
+                        self.wfile.write(json.dumps({'progress': progress_data}).encode())
+                        return
+                
+                # Try encrypted version
                 api_key_manager = APIKeyManager()
-                # Decrypt the API key
                 decrypted_api_key = api_key_manager.decrypt_key(api_key)
-
                 if decrypted_api_key:
                     progress_file = f'data/{decrypted_api_key}.json'
                     if os.path.exists(progress_file):
