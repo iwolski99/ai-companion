@@ -97,7 +97,7 @@ function initializeEventListeners() {
             const targetId = this.getAttribute('data-target');
             const input = document.getElementById(targetId);
             const eyeIcon = this.querySelector('.eye-icon');
-            
+
             if (input && eyeIcon) {
                 if (input.type === 'password') {
                     input.type = 'text';
@@ -138,7 +138,7 @@ function setupModalCloseButtons() {
 
 async function loadSavedData() {
     console.log('Starting data load process...');
-    
+
     // Load API provider first
     const savedProvider = localStorage.getItem('apiProvider');
     if (savedProvider) {
@@ -149,7 +149,7 @@ async function loadSavedData() {
 
     // Load appropriate API key based on provider
     updateApiKeyInput();
-    
+
     // Try to load from server first if API key exists
     let currentApiKey = '';
     if (apiProvider === 'gemini' && geminiApiKey) {
@@ -170,7 +170,7 @@ async function loadSavedData() {
                 const data = await response.json();
                 if (data.progress) {
                     console.log('Server data found, syncing...');
-                    
+
                     // Load server data (this replaces local data completely)
                     if (data.progress.personality) personality = data.progress.personality;
                     if (data.progress.companionGender) companionGender = data.progress.companionGender;
@@ -181,13 +181,13 @@ async function loadSavedData() {
                     if (data.progress.profilePictureData) {
                         localStorage.setItem('profilePictureData', data.progress.profilePictureData);
                     }
-                    
+
                     // Clear any conflicting local data and update with server data
                     localStorage.setItem('personality', personality);
                     localStorage.setItem('companionGender', companionGender);
                     localStorage.setItem('attraction', attraction.toString());
                     localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-                    
+
                     serverDataLoaded = true;
                     console.log('Successfully synced from server:', {
                         personality,
@@ -205,17 +205,17 @@ async function loadSavedData() {
             console.log('Could not load from server:', error);
         }
     }
-    
+
     // Only load from localStorage if no server data was found
     if (!serverDataLoaded) {
         console.log('Loading from localStorage...');
-        
+
         // Load from localStorage only if server sync failed
         const localPersonality = localStorage.getItem('personality');
         const localCompanionGender = localStorage.getItem('companionGender');
         const localAttraction = localStorage.getItem('attraction');
         const localChatHistory = localStorage.getItem('chatHistory');
-        
+
         if (localPersonality) personality = localPersonality;
         if (localCompanionGender) companionGender = localCompanionGender;
         if (localAttraction) attraction = parseInt(localAttraction);
@@ -227,7 +227,7 @@ async function loadSavedData() {
                 chatHistory = [];
             }
         }
-        
+
         console.log('Loaded from localStorage:', {
             personality,
             companionGender,
@@ -235,7 +235,7 @@ async function loadSavedData() {
             chatHistoryLength: chatHistory.length
         });
     }
-    
+
     // Load saved profile picture
     const savedProfilePic = localStorage.getItem('profilePictureData');
     if (savedProfilePic) {
@@ -266,7 +266,7 @@ async function saveApiKeys() {
     const apiKeyInput = document.getElementById('apiKey');
     if (apiKeyInput && apiKeyInput.value.trim()) {
         const keyValue = apiKeyInput.value.trim();
-        
+
         if (apiProvider === 'gemini') {
             geminiApiKey = keyValue;
             localStorage.setItem('geminiApiKey', geminiApiKey);
@@ -283,7 +283,7 @@ async function saveApiKeys() {
         await loadSavedData();
         updateUI();
         await syncToServer();
-        
+
         alert('API key saved and data synced successfully!');
     } else {
         alert('Please enter an API key');
@@ -322,13 +322,13 @@ async function syncToServer() {
             attraction,
             personality
         });
-        
+
         const response = await fetch('/save-progress', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ apiKey: currentApiKey, progress })
         });
-        
+
         if (response.ok) {
             console.log('Successfully synced to server');
         } else {
@@ -411,20 +411,20 @@ function openProfilePicModal() {
     const modal = document.getElementById('profilePicModal');
     if (modal) {
         modal.style.display = 'block';
-        
+
         // Set up event listeners for profile pic modal buttons
         const saveBtn = document.getElementById('saveProfilePic');
         const cancelBtn = document.getElementById('cancelProfilePic');
         const fileInput = document.getElementById('profilePicInput');
-        
+
         if (saveBtn) {
             saveBtn.onclick = saveProfilePicture;
         }
-        
+
         if (cancelBtn) {
             cancelBtn.onclick = closeProfilePicModal;
         }
-        
+
         if (fileInput) {
             fileInput.onchange = handleProfilePicSelect;
         }
@@ -441,7 +441,7 @@ function closeProfilePreviewModal() {
 function showProfilePreview(imageSrc) {
     const modal = document.getElementById('profilePreviewModal');
     const previewImage = document.getElementById('profilePreviewImage');
-    
+
     if (modal && previewImage) {
         previewImage.src = imageSrc;
         modal.style.display = 'block';
@@ -463,7 +463,7 @@ function handleProfilePicSelect(event) {
             alert('Please select an image file.');
             return;
         }
-        
+
         // Check file size (limit to 5MB)
         if (file.size > 5 * 1024 * 1024) {
             alert('File size must be less than 5MB.');
@@ -478,35 +478,35 @@ function saveProfilePicture() {
         alert('Please select an image file first.');
         return;
     }
-    
+
     const file = fileInput.files[0];
     const reader = new FileReader();
-    
+
     reader.onload = function(e) {
         const imageData = e.target.result;
-        
+
         // Update the profile picture display
         const profilePic = document.getElementById('profilePic');
         if (profilePic) {
             profilePic.src = imageData;
         }
-        
+
         // Store in localStorage
         localStorage.setItem('profilePictureData', imageData);
-        
+
         // Sync to server
         syncToServer();
-        
+
         // Close modal
         closeProfilePicModal();
-        
+
         alert('Profile picture updated successfully!');
     };
-    
+
     reader.onerror = function() {
         alert('Error reading file. Please try again.');
     };
-    
+
     reader.readAsDataURL(file);
 }
 
@@ -526,7 +526,7 @@ async function sendMessage() {
     // Check if API key is configured
     let currentApiKey = '';
     const apiKeyInput = document.getElementById('apiKey');
-    
+
     if (apiProvider === 'gemini') {
         currentApiKey = geminiApiKey || (apiKeyInput ? apiKeyInput.value.trim() : '');
     } else if (apiProvider === 'grok') {
@@ -612,7 +612,7 @@ function addMessageToHistory(sender, message) {
 
     localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
     localStorage.setItem('attraction', attraction.toString());
-    
+
     // Auto-sync to server after each message
     syncToServer();
 }
@@ -679,7 +679,7 @@ function displayChatHistory() {
                 </div>
             `;
         }
-        
+
         chatDisplay.appendChild(messageDiv);
     });
 
@@ -766,9 +766,9 @@ async function sendToGeminiAPI(message, apiKey) {
     // Add game awareness if in a game
     if (currentGame) {
         if (currentGame === '20questions') {
-            fullPrompt += `\n\nYou are currently playing 20 Questions with the user. The GAME SYSTEM handles all the questions - DO NOT ask any yes/no questions yourself. Only react to their answers with encouragement and excitement. Let the game system do the questioning while you provide emotional support and commentary. Do not interfere with the game flow.`;
+            fullPrompt += `\n\nYou are currently playing 20 Questions with the user. The game system handles all the questions - you should only react to their answers with encouragement and excitement. Provide emotional support and commentary naturally as their girlfriend would. Stay in character and don't break immersion.`;
         } else {
-            fullPrompt += `\n\nYou are currently playing ${currentGame} with the user. You can see all the game messages in the chat history and should respond naturally while being engaged with the game. Be encouraging, react to their moves, make comments about the game progress, and make the experience fun and interactive. Look at the recent game system messages to understand what's happening in the game.`;
+            fullPrompt += `\n\nYou are currently playing ${currentGame} with the user. React naturally to the game as their girlfriend would - be encouraging, comment on their moves, and make the experience fun and interactive. Stay in character throughout the game.`;
         }
     }
 
@@ -818,9 +818,9 @@ async function sendToGrokAPI(message, apiKey) {
     // Add game awareness if in a game
     if (currentGame) {
         if (currentGame === '20questions') {
-            fullPrompt += `\n\nYou are currently playing 20 Questions with the user. The GAME SYSTEM handles all the questions - DO NOT ask any yes/no questions yourself. Only react to their answers with encouragement and excitement. Let the game system do the questioning while you provide emotional support and commentary. Do not interfere with the game flow.`;
+            fullPrompt += `\n\nYou are currently playing 20 Questions with the user. The game system handles all the questions - you should only react to their answers with encouragement and excitement. Provide emotional support and commentary naturally as their girlfriend would. Stay in character and don't break immersion.`;
         } else {
-            fullPrompt += `\n\nYou are currently playing ${currentGame} with the user. You can see all the game messages in the chat history and should respond naturally while being engaged with the game. Be encouraging, react to their moves, make comments about the game progress, and make the experience fun and interactive. Look at the recent game system messages to understand what's happening in the game.`;
+            fullPrompt += `\n\nYou are currently playing ${currentGame} with the user. React naturally to the game as their girlfriend would - be encouraging, comment on their moves, and make the experience fun and interactive. Stay in character throughout the game.`;
         }
     }
 
@@ -878,9 +878,9 @@ async function sendToGroqAPI(message, apiKey) {
     // Add game awareness if in a game
     if (currentGame) {
         if (currentGame === '20questions') {
-            fullPrompt += `\n\nYou are currently playing 20 Questions with the user. The GAME SYSTEM handles all the questions - DO NOT ask any yes/no questions yourself. Only react to their answers with encouragement and excitement. Let the game system do the questioning while you provide emotional support and commentary. Do not interfere with the game flow.`;
+            fullPrompt += `\n\nYou are currently playing 20 Questions with the user. The game system handles all the questions - you should only react to their answers with encouragement and excitement. Provide emotional support and commentary naturally as their girlfriend would. Stay in character and don't break immersion.`;
         } else {
-            fullPrompt += `\n\nYou are currently playing ${currentGame} with the user. You can see all the game messages in the chat history and should respond naturally while being engaged with the game. Be encouraging, react to their moves, make comments about the game progress, and make the experience fun and interactive. Look at the recent game system messages to understand what's happening in the game.`;
+            fullPrompt += `\n\nYou are currently playing ${currentGame} with the user. React naturally to the game as their girlfriend would - be encouraging, comment on their moves, and make the experience fun and interactive. Stay in character throughout the game.`;
         }
     }
 
@@ -1853,12 +1853,12 @@ if (document.readyState === 'loading') {
             if (event.target === gamesModal) {
                 gamesModal.style.display = 'none';
             }
-            
+
             const profilePicModal = document.getElementById('profilePicModal');
             if (event.target === profilePicModal) {
                 profilePicModal.style.display = 'none';
             }
-            
+
             const profilePreviewModal = document.getElementById('profilePreviewModal');
             if (event.target === profilePreviewModal) {
                 profilePreviewModal.style.display = 'none';
