@@ -1,0 +1,8 @@
+
+<svg width="150" height="150" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="75" cy="75" r="70" fill="#ffb3d9" stroke="#ff69b4" stroke-width="5"/>
+  <circle cx="60" cy="60" r="8" fill="#000"/>
+  <circle cx="90" cy="60" r="8" fill="#000"/>
+  <path d="M 50 90 Q 75 110 100 90" stroke="#000" stroke-width="3" fill="none"/>
+  <text x="75" y="130" text-anchor="middle" font-family="Arial" font-size="12" fill="#ff1493">AI Companion</text>
+</svg>
