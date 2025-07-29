@@ -512,11 +512,13 @@ function displayChatHistory() {
             `;
         } else {
             messageDiv.innerHTML = `
-                <div class="message-content">
-                    <strong>${senderName}:</strong>
-                    <span>${messageContent}</span>
+                <div style="flex: 1;">
+                    <div class="message-content">
+                        <strong>${senderName}:</strong>
+                        <span>${messageContent}</span>
+                    </div>
+                    <div class="message-time">${new Date(msg.timestamp).toLocaleTimeString()}</div>
                 </div>
-                <div class="message-time">${new Date(msg.timestamp).toLocaleTimeString()}</div>
             `;
         }
         
