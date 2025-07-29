@@ -281,7 +281,17 @@ async function sendMessage() {
     // Process game input if a game is active
     let shouldGetAIResponse = true;
     if (currentGame && gameProcessors[currentGame]) {
-        shouldGetAIResponse = gameProcessors[currentGame](message);
+        // Check if this is a game command (start, ready, yes, no, etc.)
+        const gameCommands = ['start', 'ready', 'yes', 'no'];
+        const isGameCommand = gameCommands.some(cmd => message.toLowerCase().includes(cmd));
+        
+        if (isGameCommand) {
+            shouldGetAIResponse = gameProcessors[currentGame](message);
+        } else {
+            // Regular chat during game - process game but allow AI response
+            gameProcessors[currentGame](message);
+            shouldGetAIResponse = true;
+        }
     }
 
     // Display updated chat
@@ -1089,7 +1099,8 @@ const gameProcessors = {
             return false; // Block AI response during game end
         }
 
-        return true; // Allow AI response for other cases
+        // Allow AI response for general conversation during the game
+        return true;
     },
 
     'trivia': (message) => {
