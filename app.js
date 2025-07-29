@@ -91,7 +91,8 @@ function initializeEventListeners() {
     }
 
     // API Key visibility toggle
-    document.querySelectorAll('.toggle-visibility').forEach(toggleBtn => {
+    const toggleBtn = document.querySelector('.toggle-visibility');
+    if (toggleBtn) {
         toggleBtn.addEventListener('click', function() {
             const targetId = this.getAttribute('data-target');
             const input = document.getElementById(targetId);
@@ -107,7 +108,7 @@ function initializeEventListeners() {
                 }
             }
         });
-    });
+    }
 
     // Close buttons for modals
     setupModalCloseButtons();
