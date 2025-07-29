@@ -147,6 +147,15 @@ function loadSavedData() {
 
     // Load appropriate API key based on provider
     updateApiKeyInput();
+    
+    // Load saved profile picture
+    const savedProfilePic = localStorage.getItem('profilePictureData');
+    if (savedProfilePic) {
+        const profilePic = document.getElementById('profilePic');
+        if (profilePic) {
+            profilePic.src = savedProfilePic;
+        }
+    }
 }
 
 function updateUI() {
@@ -250,6 +259,23 @@ function openProfilePicModal() {
     const modal = document.getElementById('profilePicModal');
     if (modal) {
         modal.style.display = 'block';
+        
+        // Set up event listeners for profile pic modal buttons
+        const saveBtn = document.getElementById('saveProfilePic');
+        const cancelBtn = document.getElementById('cancelProfilePic');
+        const fileInput = document.getElementById('profilePicInput');
+        
+        if (saveBtn) {
+            saveBtn.onclick = saveProfilePicture;
+        }
+        
+        if (cancelBtn) {
+            cancelBtn.onclick = closeProfilePicModal;
+        }
+        
+        if (fileInput) {
+            fileInput.onchange = handleProfilePicSelect;
+        }
     }
 }
 
@@ -258,6 +284,65 @@ function closeProfilePreviewModal() {
     if (modal) {
         modal.style.display = 'none';
     }
+}
+
+function closeProfilePicModal() {
+    const modal = document.getElementById('profilePicModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function handleProfilePicSelect(event) {
+    const file = event.target.files[0];
+    if (file) {
+        // Check if it's an image file
+        if (!file.type.startsWith('image/')) {
+            alert('Please select an image file.');
+            return;
+        }
+        
+        // Check file size (limit to 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('File size must be less than 5MB.');
+            return;
+        }
+    }
+}
+
+function saveProfilePicture() {
+    const fileInput = document.getElementById('profilePicInput');
+    if (!fileInput || !fileInput.files[0]) {
+        alert('Please select an image file first.');
+        return;
+    }
+    
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+    
+    reader.onload = function(e) {
+        const imageData = e.target.result;
+        
+        // Update the profile picture display
+        const profilePic = document.getElementById('profilePic');
+        if (profilePic) {
+            profilePic.src = imageData;
+        }
+        
+        // Store in localStorage
+        localStorage.setItem('profilePictureData', imageData);
+        
+        // Close modal
+        closeProfilePicModal();
+        
+        alert('Profile picture updated successfully!');
+    };
+    
+    reader.onerror = function() {
+        alert('Error reading file. Please try again.');
+    };
+    
+    reader.readAsDataURL(file);
 }
 
 async function sendMessage() {
@@ -1567,6 +1652,16 @@ if (document.readyState === 'loading') {
         window.addEventListener('click', (event) => {
             if (event.target === gamesModal) {
                 gamesModal.style.display = 'none';
+            }
+            
+            const profilePicModal = document.getElementById('profilePicModal');
+            if (event.target === profilePicModal) {
+                profilePicModal.style.display = 'none';
+            }
+            
+            const profilePreviewModal = document.getElementById('profilePreviewModal');
+            if (event.target === profilePreviewModal) {
+                profilePreviewModal.style.display = 'none';
             }
         });
     });
