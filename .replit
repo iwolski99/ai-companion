@@ -11,3 +11,15 @@ run = ["sh", "-c", "npm start"]
 [[ports]]
 localPort = 3000
 externalPort = 80
+
+[workflows]
+runButton = "Run Python Server"
+
+[[workflows.workflow]]
+name = "Run Python Server"
+author = 39713821
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python server.py"
