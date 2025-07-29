@@ -10,6 +10,7 @@ let personality = localStorage.getItem('personality') || 'sweet';
 let companionGender = localStorage.getItem('companionGender') || 'female';
 let attraction = parseInt(localStorage.getItem('attraction') || '0');
 let currentGame = null;
+let companionName = localStorage.getItem('companionName') || (companionGender === 'female' ? 'Her' : 'Him');
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
@@ -90,6 +91,32 @@ function initializeEventListeners() {
         });
     }
 
+    // Settings dropdown
+    const settingsDropdownBtn = document.getElementById('settingsDropdownBtn');
+    const settingsDropdownMenu = document.getElementById('settingsDropdownMenu');
+    if (settingsDropdownBtn && settingsDropdownMenu) {
+        settingsDropdownBtn.addEventListener('click', toggleSettingsDropdown);
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!settingsDropdownBtn.contains(event.target) && !settingsDropdownMenu.contains(event.target)) {
+                settingsDropdownMenu.classList.remove('show');
+            }
+        });
+    }
+
+    // Change name button
+    const changeNameBtn = document.getElementById('changeNameBtn');
+    if (changeNameBtn) {
+        changeNameBtn.addEventListener('click', openNameChangeModal);
+    }
+
+    // Quick chat button
+    const quickChatBtn = document.getElementById('quickChatBtn');
+    if (quickChatBtn) {
+        quickChatBtn.addEventListener('click', sendQuickChat);
+    }
+
     // API Key visibility toggle
     const toggleBtns = document.querySelectorAll('.toggle-visibility');
     toggleBtns.forEach(toggleBtn => {
@@ -134,6 +161,12 @@ function setupModalCloseButtons() {
     if (closeProfilePreview) {
         closeProfilePreview.addEventListener('click', closeProfilePreviewModal);
     }
+
+    // Name change modal close
+    const closeNameChange = document.getElementById('closeNameChange');
+    if (closeNameChange) {
+        closeNameChange.addEventListener('click', closeNameChangeModal);
+    }
 }
 
 function loadSavedData() {
@@ -161,6 +194,106 @@ function loadSavedData() {
 function updateUI() {
     updateAttractionDisplay();
     displayChatHistory();
+    updateTopInfoBar();
+}
+
+function updateTopInfoBar() {
+    const companionNameDisplay = document.getElementById('companionNameDisplay');
+    const personalityDisplay = document.getElementById('personalityDisplay');
+    const quickAttractionLevel = document.getElementById('quickAttractionLevel');
+    const messageCount = document.getElementById('messageCount');
+
+    if (companionNameDisplay) {
+        companionNameDisplay.textContent = companionName;
+    }
+
+    if (personalityDisplay) {
+        personalityDisplay.textContent = personality;
+    }
+
+    if (quickAttractionLevel) {
+        let level = 'Stranger';
+        if (attraction >= 80) level = 'Soulmate';
+        else if (attraction >= 60) level = 'Lover';
+        else if (attraction >= 40) level = 'Girlfriend/Boyfriend';
+        else if (attraction >= 20) level = 'Friend';
+        quickAttractionLevel.textContent = level;
+    }
+
+    if (messageCount) {
+        messageCount.textContent = chatHistory.length;
+    }
+}
+
+function toggleSettingsDropdown() {
+    const settingsDropdownMenu = document.getElementById('settingsDropdownMenu');
+    if (settingsDropdownMenu) {
+        settingsDropdownMenu.classList.toggle('show');
+    }
+}
+
+function openNameChangeModal() {
+    const modal = document.getElementById('nameChangeModal');
+    const input = document.getElementById('companionNameInput');
+    if (modal && input) {
+        input.value = companionName;
+        modal.style.display = 'block';
+        
+        // Close settings dropdown
+        const settingsDropdownMenu = document.getElementById('settingsDropdownMenu');
+        if (settingsDropdownMenu) {
+            settingsDropdownMenu.classList.remove('show');
+        }
+
+        // Set up event listeners
+        const saveBtn = document.getElementById('saveCompanionName');
+        const cancelBtn = document.getElementById('cancelNameChange');
+        
+        if (saveBtn) {
+            saveBtn.onclick = saveCompanionName;
+        }
+        
+        if (cancelBtn) {
+            cancelBtn.onclick = closeNameChangeModal;
+        }
+    }
+}
+
+function closeNameChangeModal() {
+    const modal = document.getElementById('nameChangeModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function saveCompanionName() {
+    const input = document.getElementById('companionNameInput');
+    if (input && input.value.trim()) {
+        companionName = input.value.trim();
+        localStorage.setItem('companionName', companionName);
+        updateTopInfoBar();
+        closeNameChangeModal();
+        alert(`Companion name changed to "${companionName}"!`);
+    } else {
+        alert('Please enter a valid name.');
+    }
+}
+
+function sendQuickChat() {
+    const quickMessages = [
+        "How are you feeling today?",
+        "What's on your mind?",
+        "Tell me something interesting!",
+        "What would you like to talk about?",
+        "How was your day?"
+    ];
+    
+    const randomMessage = quickMessages[Math.floor(Math.random() * quickMessages.length)];
+    const messageInput = document.getElementById('messageInput');
+    if (messageInput) {
+        messageInput.value = randomMessage;
+        messageInput.focus();
+    }
 }
 
 function saveApiKeys() {
@@ -476,11 +609,11 @@ function displayChatHistory() {
 
         let senderName = 'You';
         if (msg.sender === 'ai') {
-            senderName = companionGender === 'female' ? 'Her' : 'Him';
+            senderName = companionName;
         } else if (msg.sender === 'game') {
             senderName = '🎮 Game System';
         } else if (msg.sender === 'game_ai') {
-            senderName = companionGender === 'female' ? 'Her' : 'Him';
+            senderName = companionName;
         }
 
         // Add special styling for game messages
