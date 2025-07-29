@@ -242,6 +242,11 @@ async function sendMessage() {
     addMessageToHistory('user', message);
     messageInput.value = '';
 
+    // Process game input if a game is active
+    if (currentGame && gameProcessors[currentGame]) {
+        gameProcessors[currentGame](message);
+    }
+
     // Display updated chat
     displayChatHistory();
 
@@ -251,7 +256,7 @@ async function sendMessage() {
 
     try {
         let response = '';
-        
+
         if (apiProvider === 'gemini') {
             response = await sendToGeminiAPI(message, currentApiKey);
         } else if (apiProvider === 'grok') {
@@ -297,7 +302,21 @@ function displayChatHistory() {
     chatHistory.forEach(msg => {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${msg.sender}-message`;
-        messageDiv.innerHTML = `<p>${msg.message}</p>`;
+
+        let senderName = 'You';
+        if (msg.sender === 'ai') {
+            senderName = companionGender === 'female' ? 'Her' : 'Him';
+        } else if (msg.sender === 'game') {
+            senderName = '🎮 Game';
+        }
+
+        messageDiv.innerHTML = `
+            <div class="message-content">
+                <strong>${senderName}:</strong>
+                <span>${msg.message}</span>
+            </div>
+            <div class="message-time">${new Date().toLocaleTimeString()}</div>
+        `;
         chatDisplay.appendChild(messageDiv);
     });
 
@@ -364,14 +383,14 @@ function getSystemPrompt() {
 
     const prompt = systemPrompts[personality]?.[level] || systemPrompts.sweet.stranger;
     const genderTerm = companionGender === 'female' ? 'girlfriend' : 'boyfriend';
-    
+
     return prompt.replace('girlfriend/boyfriend', genderTerm);
 }
 
 // AI API Functions
 async function sendToGeminiAPI(message, apiKey) {
     const systemPrompt = getSystemPrompt();
-    
+
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: {
@@ -402,7 +421,7 @@ async function sendToGeminiAPI(message, apiKey) {
 
 async function sendToGrokAPI(message, apiKey) {
     const systemPrompt = getSystemPrompt();
-    
+
     const response = await fetch('https://api.x.ai/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -436,7 +455,7 @@ async function sendToGrokAPI(message, apiKey) {
 
 async function sendToGroqAPI(message, apiKey) {
     const systemPrompt = getSystemPrompt();
-    
+
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -468,10 +487,169 @@ async function sendToGroqAPI(message, apiKey) {
     return data.choices[0].message.content;
 }
 
+// Helper function to add game messages
+function appendGameAdminMessage(message) {
+    addMessageToHistory('game', message);
+}
+
+// Game processors
+const gameProcessors = {
+    '20questions': (message) => {
+        // Implement 20 questions logic here
+        appendGameAdminMessage(`You said: ${message}.  (20 Questions in progress...)`);
+    },
+    'trivia': (message) => {
+        // Implement trivia logic here
+        appendGameAdminMessage(`You said: ${message}. (Trivia in progress...)`);
+    },
+    'storybuilding': (message) => {
+        // Implement story building logic here
+        appendGameAdminMessage(`You added: ${message}. (Storybuilding in progress...)`);
+    },
+    'wordassociation': (message) => {
+        // Implement word association logic here
+        appendGameAdminMessage(`Your word: ${message}. (Word Association in progress...)`);
+    },
+    'wouldyourather': (message) => {
+        // Implement would you rather logic here
+        appendGameAdminMessage(`You chose: ${message}. (Would You Rather in progress...)`);
+    },
+    'songguess': (message) => {
+        // Implement song guessing logic here
+        appendGameAdminMessage(`You guessed: ${message}. (Song Guessing in progress...)`);
+    },
+    'movieguess': (message) => {
+        // Implement movie guessing logic here
+        appendGameAdminMessage(`You guessed: ${message}. (Movie Guessing in progress...)`);
+    },
+    'roleplay': (message) => {
+        // Implement roleplay logic here
+        appendGameAdminMessage(`You said: ${message}. (Roleplay in progress...)`);
+    },
+    'lovequiz': (message) => {
+        // Implement love quiz logic here
+        appendGameAdminMessage(`Your answer: ${message}. (Love Quiz in progress...)`);
+    }
+};
+
+// Game initialization functions
+const gameInitializers = {
+    '20questions': () => {
+        appendGameAdminMessage("🎯 Welcome to 20 Questions! Think of something and I'll try to guess it in 20 questions or less. Type 'start' when you're ready!");
+    },
+    'trivia': () => {
+        appendGameAdminMessage("🧠 Welcome to Trivia Challenge! I'll ask you questions and keep track of your score. Ready to begin?");
+    },
+    'storybuilding': () => {
+        appendGameAdminMessage("📖 Let's build a story together! I'll start with the first sentence, then we'll take turns adding to it. Here we go: 'Once upon a time, in a land far away...'");
+    },
+    'wordassociation': () => {
+        appendGameAdminMessage("🔤 Word Association time! I'll say a word, and you respond with the first word that comes to mind. Here's your starting word: 'Sunshine'");
+    },
+    'wouldyourather': () => {
+        appendGameAdminMessage("❓ Would You Rather! I'll give you two choices and you pick one. Here's your first: Would you rather have the ability to fly or be invisible?");
+    },
+    'songguess': () => {
+        appendGameAdminMessage("🎵 Song Guessing Game! I'll give you lyrics or clues, and you guess the song and artist. Ready for your first clue?");
+    },
+    'movieguess': () => {
+        appendGameAdminMessage("🎬 Movie/TV Guessing! I'll describe a movie or show, and you guess what it is. Here's your first clue: 'A group of friends in New York, one's a paleontologist, another's a chef...'");
+    },
+    'roleplay': () => {
+        appendGameAdminMessage("🎭 Role Playing time! Let's act out a fun scenario. What kind of scenario would you like to explore?");
+    },
+    'lovequiz': () => {
+        appendGameAdminMessage("💕 Love Language Quiz! Let's discover how compatible we are. I'll ask you questions about preferences and feelings. Ready?");
+    }
+};
+
+function startGame(gameName) {
+    currentGame = gameName;
+    const gamesModal = document.getElementById('gamesModal');
+    if (gamesModal) {
+        gamesModal.style.display = 'none';
+    }
+    updateGameUI();
+
+    // Show game start message
+    appendGameAdminMessage(`🎮 Starting ${gameName}...`);
+
+    if (gameInitializers[gameName]) {
+        gameInitializers[gameName]();
+    }
+
+    displayChatHistory();
+}
+
+function updateGameUI() {
+    const gameStatus = document.getElementById('gameStatus');
+    if (gameStatus) {
+        if (currentGame) {
+            gameStatus.innerHTML = `<span class="game-indicator">🎮 Playing: ${currentGame}</span>`;
+            gameStatus.style.display = 'block';
+        } else {
+            gameStatus.style.display = 'none';
+        }
+    }
+
+    // Update game cards to show active state
+    document.querySelectorAll('.game-card').forEach(card => {
+        if (currentGame && card.getAttribute('data-game') === currentGame) {
+            card.classList.add('game-active');
+        } else {
+            card.classList.remove('game-active');
+        }
+    });
+}
+
 // Initialize immediately if DOM is already loaded
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', () => {
         console.log('DOM loaded via event listener');
+        initializeEventListeners();
+        loadSavedData();
+        updateUI();
+
+        const chatContainer = document.getElementById('chatDisplay');
+        if (chatContainer) {
+            document.getElementById('scrollToBottom').addEventListener('click', () => {
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            });
+        }
+
+        // Games modal functionality
+        const gamesBtn = document.getElementById('gamesButton');
+        const gamesModal = document.getElementById('gamesModal');
+        const closeGames = document.getElementById('closeGames');
+
+        if (gamesBtn && gamesModal) {
+            gamesBtn.addEventListener('click', () => {
+                gamesModal.style.display = 'block';
+            });
+        }
+
+        if (closeGames && gamesModal) {
+            closeGames.addEventListener('click', () => {
+                gamesModal.style.display = 'none';
+            });
+        }
+
+        // Game card event listeners
+        document.querySelectorAll('.game-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const gameName = card.getAttribute('data-game');
+                if (gameName) {
+                    startGame(gameName);
+                }
+            });
+        });
+
+        // Close modals when clicking outside
+        window.addEventListener('click', (event) => {
+            if (event.target === gamesModal) {
+                gamesModal.style.display = 'none';
+            }
+        });
     });
 } else {
     console.log('DOM already loaded, initializing immediately');
@@ -479,5 +657,46 @@ if (document.readyState === 'loading') {
         initializeEventListeners();
         loadSavedData();
         updateUI();
+
+        const chatContainer = document.getElementById('chatDisplay');
+        if (chatContainer) {
+            document.getElementById('scrollToBottom').addEventListener('click', () => {
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            });
+        }
+
+         // Games modal functionality
+         const gamesBtn = document.getElementById('gamesButton');
+         const gamesModal = document.getElementById('gamesModal');
+         const closeGames = document.getElementById('closeGames');
+
+         if (gamesBtn && gamesModal) {
+             gamesBtn.addEventListener('click', () => {
+                 gamesModal.style.display = 'block';
+             });
+         }
+
+         if (closeGames && gamesModal) {
+             closeGames.addEventListener('click', () => {
+                 gamesModal.style.display = 'none';
+             });
+         }
+
+         // Game card event listeners
+         document.querySelectorAll('.game-card').forEach(card => {
+             card.addEventListener('click', () => {
+                 const gameName = card.getAttribute('data-game');
+                 if (gameName) {
+                     startGame(gameName);
+                 }
+             });
+         });
+
+         // Close modals when clicking outside
+         window.addEventListener('click', (event) => {
+             if (event.target === gamesModal) {
+                 gamesModal.style.display = 'none';
+             }
+         });
     }, 100);
 }
