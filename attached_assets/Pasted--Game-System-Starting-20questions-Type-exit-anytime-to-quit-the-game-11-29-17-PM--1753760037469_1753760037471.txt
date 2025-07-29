@@ -1,0 +1,100 @@
+🎮 Game System: 🎮 Starting 20questions... (Type '/exit' anytime to quit the game)
+11:29:17 PM
+🎮 Game System: 🎯 Welcome to 20 Questions! Think of something and I'll try to guess it in 20 questions or less. Type 'start' when you're ready!
+11:29:17 PM
+You: start
+11:29:23 PM
+🎮 Game System: 🎯 Great! Think of something (an object, animal, person, etc.) and I'll try to guess it. Type 'ready' when you've thought of something!
+11:29:23 PM
+You: ready
+11:29:28 PM
+🎮 Game System: 🎯 Perfect! Question 1/20: Is it alive? (Please answer YES or NO)
+11:29:28 PM
+You: yes
+11:29:32 PM
+🎮 Game System: 🎯 Question 2/20: Is it bigger than a breadbox? (Please answer YES or NO)
+11:29:33 PM
+You: yes
+11:29:36 PM
+🎮 Game System: 🎯 Question 3/20: Can you hold it in your hand? (Please answer YES or NO)
+11:29:37 PM
+You: yes
+11:29:42 PM
+🎮 Game System: 🎯 Question 4/20: Is it made by humans? (Please answer YES or NO)
+11:29:43 PM
+You: no
+11:29:45 PM
+🎮 Game System: 🎯 Question 5/20: Do you use it daily? (Please answer YES or NO)
+11:29:46 PM
+You: mo
+11:29:48 PM
+🎮 Game System: 🎯 Please answer with 'YES' or 'NO' only!
+11:29:48 PM
+You: no
+11:29:53 PM
+🎮 Game System: 🎯 Question 6/20: Is it found indoors? (Please answer YES or NO)
+11:29:54 PM
+You: yes
+11:29:58 PM
+🎮 Game System: 🎯 Question 7/20: Is it electronic? (Please answer YES or NO)
+11:29:59 PM
+You: noi
+11:30:02 PM
+🎮 Game System: 🎯 Question 8/20: Is it edible? (Please answer YES or NO)
+11:30:03 PM
+You: no
+11:30:09 PM
+🎮 Game System: 🎯 Question 9/20: Is it made of metal? (Please answer YES or NO)
+11:30:10 PM
+You: no
+11:30:13 PM
+🎮 Game System: 🎯 Question 10/20: Is it used for entertainment? (Please answer YES or NO)
+11:30:14 PM
+You: yes
+11:30:20 PM
+🎮 Game System: 🎯 Question 11/20: Is it something you'd find in a kitchen? (Please answer YES or NO)
+11:30:21 PM
+You: yes
+11:30:26 PM
+🎮 Game System: 🎯 Question 12/20: Is it colorful? (Please answer YES or NO)
+11:30:27 PM
+You: yes
+11:30:31 PM
+🎮 Game System: 🎯 Question 13/20: Would children play with it? (Please answer YES or NO)
+11:30:32 PM
+You: yes
+11:30:35 PM
+🎮 Game System: 🎯 Question 14/20: Is it expensive? (Please answer YES or NO)
+11:30:36 PM
+You: no
+11:30:38 PM
+🎮 Game System: 🎯 Question 15/20: Can it move on its own? (Please answer YES or NO)
+11:30:39 PM
+You: yes
+11:30:42 PM
+🎮 Game System: 🎯 Question 16/20: Is it soft? (Please answer YES or NO)
+11:30:43 PM
+You: yes
+11:30:44 PM
+🎮 Game System: 🎯 Question 17/20: Is it used for work? (Please answer YES or NO)
+11:30:45 PM
+You: no
+11:30:48 PM
+🎮 Game System: 🎯 Question 18/20: Is it round? (Please answer YES or NO)
+11:30:49 PM
+You: no
+11:30:53 PM
+🎮 Game System: 🎯 Question 19/20: Would you find it outside? (Please answer YES or NO)
+11:30:54 PM
+You: yes
+11:30:57 PM
+🎮 Game System: 🎯 Question 20/20: Is it smaller than a car? (Please answer YES or NO)
+11:30:58 PM
+You: yes
+11:31:01 PM
+🎮 Game System: 🎯 I've used all 20 questions! I give up. What were you thinking of?
+11:31:01 PM
+You: cat
+11:31:05 PM
+🎮 Game System: 🎯 "cat" - interesting! Thanks for playing! That was fun. Type '/exit' to leave the game.
+11:31:05 PM
