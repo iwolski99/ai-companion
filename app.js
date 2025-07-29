@@ -568,6 +568,110 @@ function appendGameAdminMessage(message) {
     addMessageToHistory('game', message);
 }
 
+// Get AI contribution for story building game
+async function getAIStoryContribution(currentStory) {
+    let currentApiKey = '';
+    if (apiProvider === 'gemini') {
+        currentApiKey = geminiApiKey;
+    } else if (apiProvider === 'grok') {
+        currentApiKey = grokApiKey;
+    } else if (apiProvider === 'groq') {
+        currentApiKey = groqApiKey;
+    }
+
+    if (!currentApiKey) {
+        return null;
+    }
+
+    const storyPrompt = `We're playing a collaborative story-building game. Here's our story so far: "${currentStory.join(' ')}"
+
+Please add exactly ONE sentence to continue this story. Make it engaging and creative, but keep it appropriate for the story's tone. Only respond with the single sentence to add - nothing else.`;
+
+    try {
+        let response = '';
+        
+        if (apiProvider === 'gemini') {
+            const apiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${currentApiKey}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{
+                            text: storyPrompt
+                        }]
+                    }],
+                    generationConfig: {
+                        temperature: 0.8,
+                        topP: 0.9,
+                        topK: 40,
+                        maxOutputTokens: 100,
+                    }
+                })
+            });
+
+            if (apiResponse.ok) {
+                const data = await apiResponse.json();
+                response = data.candidates[0].content.parts[0].text.trim();
+            }
+        } else if (apiProvider === 'grok') {
+            const apiResponse = await fetch('https://api.x.ai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${currentApiKey}`
+                },
+                body: JSON.stringify({
+                    messages: [
+                        { role: "system", content: "You are helping build a collaborative story. Respond with exactly one sentence to continue the story." },
+                        { role: "user", content: storyPrompt }
+                    ],
+                    model: "grok-beta",
+                    stream: false,
+                    temperature: 0.8,
+                    max_tokens: 100
+                })
+            });
+
+            if (apiResponse.ok) {
+                const data = await apiResponse.json();
+                response = data.choices[0].message.content.trim();
+            }
+        } else if (apiProvider === 'groq') {
+            const apiResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${currentApiKey}`
+                },
+                body: JSON.stringify({
+                    messages: [
+                        { role: "system", content: "You are helping build a collaborative story. Respond with exactly one sentence to continue the story." },
+                        { role: "user", content: storyPrompt }
+                    ],
+                    model: "llama3-8b-8192",
+                    temperature: 0.8,
+                    max_tokens: 100
+                })
+            });
+
+            if (apiResponse.ok) {
+                const data = await apiResponse.json();
+                response = data.choices[0].message.content.trim();
+            }
+        }
+
+        // Clean up the response - remove quotes if they exist
+        response = response.replace(/^["']|["']$/g, '');
+        
+        return response || null;
+    } catch (error) {
+        console.error('Error getting AI story contribution:', error);
+        return null;
+    }
+}
+
 // Game processors with full functionality
 const gameProcessors = {
     '20questions': (message) => {
@@ -687,11 +791,12 @@ const gameProcessors = {
         }
     },
 
-    'storybuilding': (message) => {
+    'storybuilding': async (message) => {
         if (!gameState.gameData['storybuilding']) {
             gameState.gameData['storybuilding'] = {
                 story: ["Once upon a time, in a land far away..."],
-                turnCount: 1
+                turnCount: 1,
+                waitingForAI: false
             };
         }
 
@@ -702,9 +807,26 @@ const gameProcessors = {
             return;
         }
         
+        // Add user's contribution to story
         data.story.push(message);
         data.turnCount++;
-        appendGameAdminMessage(`📖 Great addition! Our story so far: "${data.story.join(' ')}" Now it's my turn again!`);
+        appendGameAdminMessage(`📖 Great addition! Our story so far: "${data.story.join(' ')}" Let me add my part...`);
+        
+        // Get AI's story contribution
+        data.waitingForAI = true;
+        const aiContribution = await getAIStoryContribution(data.story);
+        
+        if (aiContribution) {
+            data.story.push(aiContribution);
+            data.turnCount++;
+            appendGameAdminMessage(`📖 I'll add: "${aiContribution}"`);
+            appendGameAdminMessage(`📖 Updated story: "${data.story.join(' ')}" Your turn again!`);
+        } else {
+            appendGameAdminMessage("📖 I'm having trouble thinking of what to add. Your turn again!");
+        }
+        
+        data.waitingForAI = false;
+        displayChatHistory();
     },
 
     'wordassociation': (message) => {
@@ -903,7 +1025,7 @@ const gameInitializers = {
         appendGameAdminMessage("🧠 Welcome to Trivia Challenge! I'll ask you questions and keep track of your score. Ready to begin?");
     },
     'storybuilding': () => {
-        appendGameAdminMessage("📖 Let's build a story together! I'll start with the first sentence, then we'll take turns adding to it. Here we go: 'Once upon a time, in a land far away...'");
+        appendGameAdminMessage("📖 Let's build a story together! I'll start with the first sentence, then we'll take turns adding to it. Here we go: 'Once upon a time, in a land far away...' Add your sentence!");
     },
     'wordassociation': () => {
         appendGameAdminMessage("🔤 Word Association time! I'll say a word, and you respond with the first word that comes to mind. Here's your starting word: 'Sunshine'");
