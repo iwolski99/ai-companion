@@ -137,7 +137,12 @@ function setupModalCloseButtons() {
 }
 
 function loadSavedData() {
-    // Load API provider first
+    // Load API keys from localStorage first
+    geminiApiKey = localStorage.getItem('geminiApiKey') || '';
+    grokApiKey = localStorage.getItem('grokApiKey') || '';
+    groqApiKey = localStorage.getItem('groqApiKey') || '';
+    
+    // Load API provider
     const savedProvider = localStorage.getItem('apiProvider');
     if (savedProvider) {
         apiProvider = savedProvider;
@@ -370,18 +375,17 @@ async function sendMessage() {
 
     // Check if API key is configured
     let currentApiKey = '';
-    const apiKeyInput = document.getElementById('apiKey');
     
     if (apiProvider === 'gemini') {
-        currentApiKey = geminiApiKey || (apiKeyInput ? apiKeyInput.value.trim() : '');
+        currentApiKey = geminiApiKey;
     } else if (apiProvider === 'grok') {
-        currentApiKey = grokApiKey || (apiKeyInput ? apiKeyInput.value.trim() : '');
+        currentApiKey = grokApiKey;
     } else if (apiProvider === 'groq') {
-        currentApiKey = groqApiKey || (apiKeyInput ? apiKeyInput.value.trim() : '');
+        currentApiKey = groqApiKey;
     }
 
     if (!currentApiKey) {
-        alert(`Please configure your ${apiProvider} API key first!`);
+        alert(`Please configure your ${apiProvider.toUpperCase()} API key first!`);
         return;
     }
 
