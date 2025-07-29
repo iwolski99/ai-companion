@@ -448,7 +448,20 @@ async function sendMessage() {
         if (chatHistory.length > 0 && chatHistory[chatHistory.length - 1].message === 'Typing...') {
             chatHistory.pop(); // Remove "Typing..." message
         }
-        addMessageToHistory('ai', 'Sorry, I encountered an error. Please check your API key and try again.');
+        
+        // Provide specific error messages based on the error
+        let errorMessage = 'Sorry, I encountered an error. ';
+        if (error.message.includes('Rate limit')) {
+            errorMessage += 'I need to slow down a bit. Please wait 10-15 seconds before trying again.';
+        } else if (error.message.includes('quota exceeded') || error.message.includes('invalid')) {
+            errorMessage += 'Please check your API key in the settings. It might be invalid or out of quota.';
+        } else if (error.message.includes('network') || error.message.includes('fetch')) {
+            errorMessage += 'There seems to be a connection issue. Please check your internet and try again.';
+        } else {
+            errorMessage += error.message || 'Please try again in a moment.';
+        }
+        
+        addMessageToHistory('ai', errorMessage);
         displayChatHistory();
     }
 }
@@ -634,32 +647,59 @@ async function sendToGeminiAPI(message, apiKey) {
         });
     }
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            contents: [{
-                parts: [{
-                    text: `${fullPrompt}${conversationContext}\n\nUser's latest message: ${message}\n\nRespond as the AI girlfriend, acknowledging any game activity and responding naturally to both the user and any game developments.`
-                }]
-            }],
-            generationConfig: {
-                temperature: 0.7,
-                topP: 0.8,
-                topK: 40,
-                maxOutputTokens: 1024,
+    try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [{
+                        text: `${fullPrompt}${conversationContext}\n\nUser's latest message: ${message}\n\nRespond as the AI girlfriend, acknowledging any game activity and responding naturally to both the user and any game developments.`
+                    }]
+                }],
+                generationConfig: {
+                    temperature: 0.7,
+                    topP: 0.8,
+                    topK: 40,
+                    maxOutputTokens: 1024,
+                }
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Gemini API Error Details:', {
+                status: response.status,
+                statusText: response.statusText,
+                error: errorText
+            });
+
+            // Handle specific error types
+            if (response.status === 429) {
+                throw new Error('Rate limit exceeded. Please wait a moment before sending another message.');
+            } else if (response.status === 403) {
+                throw new Error('API key invalid or quota exceeded. Please check your API key.');
+            } else if (response.status === 400) {
+                throw new Error('Invalid request. Please check your message content.');
+            } else {
+                throw new Error(`Gemini API error (${response.status}): ${response.statusText}`);
             }
-        })
-    });
+        }
 
-    if (!response.ok) {
-        throw new Error(`Gemini API error: ${response.status}`);
+        const data = await response.json();
+        
+        if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+            console.error('Unexpected API response structure:', data);
+            throw new Error('Unexpected response from Gemini API');
+        }
+
+        return data.candidates[0].content.parts[0].text;
+    } catch (error) {
+        console.error('Gemini API request failed:', error);
+        throw error;
     }
-
-    const data = await response.json();
-    return data.candidates[0].content.parts[0].text;
 }
 
 async function sendToGrokAPI(message, apiKey) {
