@@ -1034,7 +1034,7 @@ const gameProcessors = {
                     data.gamePhase = 'guessing';
                     appendGameAdminMessage(`🎯 I think I know! Is it a ${guess}? (YES or NO)`);
                     displayChatHistory();
-                    return true; // Allow AI response to show confidence
+                    return false; // Block AI response during guessing
                 }
             }
 
@@ -1042,7 +1042,7 @@ const gameProcessors = {
                 data.gamePhase = 'ended';
                 appendGameAdminMessage("🎯 I've used all 20 questions! I give up. What were you thinking of?");
                 displayChatHistory();
-                return true; // Allow AI response to show disappointment
+                return false; // Block AI response when game ends
             }
 
             // Generate next intelligent question
@@ -1053,7 +1053,7 @@ const gameProcessors = {
                 appendGameAdminMessage(`🎯 Question ${data.questionsAsked + 1}/20: ${nextQuestion} (Please answer YES or NO)`);
                 displayChatHistory();
             }, 1000);
-            return true; // Allow AI response to react to answer
+            return false; // Block AI response during questioning phase
         }
 
         if (data.gamePhase === 'guessing') {
@@ -1062,7 +1062,7 @@ const gameProcessors = {
                 appendGameAdminMessage(`🎯 Yes! I guessed it! Thanks for playing! That was fun. Type '/exit' to leave the game.`);
                 data.gamePhase = 'ended';
                 displayChatHistory();
-                return true; // Allow AI response to celebrate
+                return false; // Block AI response during game end
             } else if (response.includes('no')) {
                 appendGameAdminMessage(`🎯 Hmm, let me ask more questions then...`);
                 data.gamePhase = 'questioning';
@@ -1075,7 +1075,7 @@ const gameProcessors = {
                     appendGameAdminMessage(`🎯 Question ${data.questionsAsked + 1}/20: ${nextQuestion} (Please answer YES or NO)`);
                     displayChatHistory();
                 }, 1000);
-                return true; // Allow AI response to show determination
+                return false; // Block AI response during questioning
             } else {
                 appendGameAdminMessage("🎯 Please answer with 'YES' or 'NO' only!");
                 displayChatHistory();
@@ -1086,7 +1086,7 @@ const gameProcessors = {
         if (data.gamePhase === 'ended' && !data.waitingForAnswer) {
             appendGameAdminMessage(`🎯 "${message}" - interesting! I should have guessed that! Thanks for playing! Type '/exit' to leave the game.`);
             displayChatHistory();
-            return true; // Allow AI response to analyze what they learned
+            return false; // Block AI response during game end
         }
 
         return true; // Allow AI response for other cases
