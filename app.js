@@ -316,6 +316,22 @@ function openQuizModal() {
                 aiModel = answers.aiModel || 'llama-3.3-70b-versatile';
                 localStorage.setItem('aiModel', aiModel);
 
+                // Get model description for user feedback
+                const modelDescriptions = {
+                    'llama-3.3-70b-versatile': 'Llama 3.3 70B (Best overall performance)',
+                    'llama-3.1-70b-versatile': 'Llama 3.1 70B (Excellent quality)',
+                    'llama-3.1-8b-instant': 'Llama 3.1 8B (Fast responses)',
+                    'llama-3.2-11b-vision-preview': 'Llama 3.2 11B Vision (Image understanding)',
+                    'llama-3.2-3b-preview': 'Llama 3.2 3B (Lightweight)',
+                    'llama-3.2-1b-preview': 'Llama 3.2 1B (Ultra-fast)',
+                    'gemma2-9b-it': 'Gemma 2 9B (Google model)',
+                    'gemma-7b-it': 'Gemma 7B (Efficient Google model)',
+                    'mixtral-8x7b-32768': 'Mixtral 8x7B (Large context)',
+                    'llama-guard-3-8b': 'Llama Guard 3 8B (Safety focused)'
+                };
+
+                const modelDesc = modelDescriptions[aiModel] || aiModel;
+
                 // Calculate personality based on answers
                 const personalityScores = {
                     sweet: 0,
@@ -347,7 +363,7 @@ function openQuizModal() {
 
                 // Close modal and show result
                 closeQuizModal();
-                alert(`Settings saved!\nPersonality: ${personality}\nGender: ${companionGender}\nNSFW Mode: ${nsfwMode ? 'Enabled' : 'Disabled'}\nAI Model: ${aiModel}`);
+                alert(`Settings saved!\nPersonality: ${personality}\nGender: ${companionGender}\nNSFW Mode: ${nsfwMode ? 'Enabled' : 'Disabled'}\nAI Model: ${modelDesc}`);
             });
         }
     }
