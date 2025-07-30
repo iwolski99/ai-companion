@@ -174,6 +174,27 @@ function initializeEventListeners() {
         });
     }
 
+    // Pagination event listeners
+    const firstPageBtn = document.getElementById('firstPage');
+    if (firstPageBtn) {
+        firstPageBtn.addEventListener('click', goToFirstPage);
+    }
+
+    const prevPageBtn = document.getElementById('prevPage');
+    if (prevPageBtn) {
+        prevPageBtn.addEventListener('click', goToPreviousPage);
+    }
+
+    const nextPageBtn = document.getElementById('nextPage');
+    if (nextPageBtn) {
+        nextPageBtn.addEventListener('click', goToNextPage);
+    }
+
+    const lastPageBtn = document.getElementById('lastPage');
+    if (lastPageBtn) {
+        lastPageBtn.addEventListener('click', goToLastPage);
+    }
+
     // Close buttons for modals
     setupModalCloseButtons();
 
@@ -607,6 +628,10 @@ function addMessageToHistory(sender, message, audioUrl = null) {
         }
     }
 
+    // Auto-navigate to last page when new messages are added
+    const totalPages = Math.ceil(chatHistory.length / messagesPerPage);
+    currentPage = totalPages;
+
     localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
     localStorage.setItem('attraction', attraction.toString());
 }
@@ -619,10 +644,17 @@ function displayChatHistory() {
 
     if (chatHistory.length === 0) {
         chatDisplay.innerHTML = '<p class="no-messages">No messages yet. Start a conversation!</p>';
+        updatePaginationControls();
         return;
     }
 
-    chatHistory.forEach(msg => {
+    // Calculate pagination
+    const totalPages = Math.ceil(chatHistory.length / messagesPerPage);
+    const startIndex = (currentPage - 1) * messagesPerPage;
+    const endIndex = Math.min(startIndex + messagesPerPage, chatHistory.length);
+    const messagesToShow = chatHistory.slice(startIndex, endIndex);
+
+    messagesToShow.forEach(msg => {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message message-${msg.sender}`;
 
@@ -685,6 +717,7 @@ function displayChatHistory() {
         chatDisplay.appendChild(messageDiv);
     });
 
+    updatePaginationControls();
     chatDisplay.scrollTop = chatDisplay.scrollHeight;
 }
 
@@ -716,6 +749,67 @@ function updateAttractionDisplay() {
 
         levelText.textContent = `Level: ${level}`;
     }
+}
+
+function updatePaginationControls() {
+    const totalPages = Math.ceil(chatHistory.length / messagesPerPage);
+    const pageInfo = document.getElementById('pageInfo');
+    const firstPageBtn = document.getElementById('firstPage');
+    const prevPageBtn = document.getElementById('prevPage');
+    const nextPageBtn = document.getElementById('nextPage');
+    const lastPageBtn = document.getElementById('lastPage');
+
+    if (pageInfo) {
+        pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+    }
+
+    if (firstPageBtn) {
+        firstPageBtn.disabled = currentPage === 1;
+    }
+
+    if (prevPageBtn) {
+        prevPageBtn.disabled = currentPage === 1;
+    }
+
+    if (nextPageBtn) {
+        nextPageBtn.disabled = currentPage === totalPages || totalPages === 0;
+    }
+
+    if (lastPageBtn) {
+        lastPageBtn.disabled = currentPage === totalPages || totalPages === 0;
+    }
+
+    // Show/hide pagination if needed
+    const pagination = document.getElementById('pagination');
+    if (pagination) {
+        pagination.style.display = totalPages > 1 ? 'flex' : 'none';
+    }
+}
+
+function goToFirstPage() {
+    currentPage = 1;
+    displayChatHistory();
+}
+
+function goToPreviousPage() {
+    if (currentPage > 1) {
+        currentPage--;
+        displayChatHistory();
+    }
+}
+
+function goToNextPage() {
+    const totalPages = Math.ceil(chatHistory.length / messagesPerPage);
+    if (currentPage < totalPages) {
+        currentPage++;
+        displayChatHistory();
+    }
+}
+
+function goToLastPage() {
+    const totalPages = Math.ceil(chatHistory.length / messagesPerPage);
+    currentPage = totalPages;
+    displayChatHistory();
 }
 
 // Define system prompts based on attraction level and personality
