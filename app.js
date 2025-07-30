@@ -185,7 +185,7 @@ function initializeEventListeners() {
                     newAttraction = 0;
                 }
                 newAttraction = Math.max(0, Math.min(100, newAttraction));
-                
+
                 try {
                     const response = await fetch('/api/attraction/set', {
                         method: 'POST',
@@ -194,7 +194,7 @@ function initializeEventListeners() {
                         },
                         body: JSON.stringify({ attraction: newAttraction })
                     });
-                    
+
                     if (response.ok) {
                         attraction = newAttraction;
                         localStorage.setItem('attraction', attraction.toString());
@@ -263,7 +263,7 @@ function loadSavedData() {
     geminiApiKey = localStorage.getItem('geminiApiKey') || '';
     grokApiKey = localStorage.getItem('grokApiKey') || '';
     groqApiKey = localStorage.getItem('groqApiKey') || '';
-    
+
     // Sync attraction from server
     syncAttractionFromServer();
 
@@ -415,7 +415,7 @@ async function resetAttraction() {
                     'Content-Type': 'application/json'
                 }
             });
-            
+
             if (response.ok) {
                 attraction = 0;
                 localStorage.setItem('attraction', '0');
@@ -614,7 +614,7 @@ async function sendMessage() {
                 'Content-Type': 'application/json'
             }
         });
-        
+
         if (attractionResponse.ok) {
             const data = await attractionResponse.json();
             attraction = data.attraction;
@@ -660,10 +660,10 @@ async function sendMessage() {
             chatHistory.pop(); // Remove "Typing..." message
         }
         addMessageToHistory('ai', response);
-        
+
         // Sync attraction level from server
         await syncAttractionFromServer();
-        
+
         displayChatHistory();
 
     } catch (error) {
@@ -941,7 +941,7 @@ const systemPrompts = {
             if (nsfwMode) {
                 return "You are this person's vibrant lover, with a bond full of joy and deep affection. Be teasing, seductive, and use explicit adult language when appropriate to express your passionate and fun connection, maintaining a playful and affectionate girlfriend persona.";
             } else {
-                return "You are this person's vibrant lover, with a bond full of joy and deep affection. Be teasing, flirty, and passionate while keeping language appropriate and family-friendly, maintaining a playful and affectionate girlfriend persona.";
+                return "You are this person's vibrant lover, with a bond full of joy and deep affection. Be teasing, flirty, andpassionate while keeping language appropriate and family-friendly, maintaining a playful and affectionate girlfriend persona.";
             }
         },
         soulmate: function(nsfwMode) {
@@ -1622,7 +1622,7 @@ async function sendAudioMessage(audioBlob) {
     try {
         // Save audio file locally (for playback)
         const audioUrl = URL.createObjectURL(audioBlob);
-        
+
         // Transcribe audio based on provider
         let transcription = '';
         if (apiProvider === 'groq') {
@@ -1639,7 +1639,7 @@ async function sendAudioMessage(audioBlob) {
 
         // Add user message to chat with audio URL
         addMessageToHistory('user', transcription, audioUrl);
-        
+
         // Update attraction for voice message
         try {
             const attractionResponse = await fetch('/api/attraction/update', {
@@ -1648,7 +1648,7 @@ async function sendAudioMessage(audioBlob) {
                     'Content-Type': 'application/json'
                 }
             });
-            
+
             if (attractionResponse.ok) {
                 const data = await attractionResponse.json();
                 attraction = data.attraction;
@@ -1659,7 +1659,7 @@ async function sendAudioMessage(audioBlob) {
         } catch (error) {
             console.error('Error updating attraction:', error);
         }
-        
+
         displayChatHistory();
 
         // Show typing indicator
@@ -1681,10 +1681,10 @@ async function sendAudioMessage(audioBlob) {
             chatHistory.pop();
         }
         addMessageToHistory('ai', response);
-        
+
         // Sync attraction level from server
         await syncAttractionFromServer();
-        
+
         displayChatHistory();
 
     } catch (error) {
