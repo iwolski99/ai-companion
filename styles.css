@@ -372,10 +372,11 @@ h1 {
 }
 
 .message-user {
-    text-align: left;
+    text-align: right;
     display: flex;
     align-items: flex-start;
     gap: 12px;
+    justify-content: flex-end;
 }
 
 .message-bot {
@@ -457,8 +458,8 @@ h1 {
 
 .message-user .message-content {
     background: linear-gradient(135deg, rgba(74, 144, 226, 0.9), rgba(74, 144, 226, 0.7));
-    margin-right: 20%;
-    border-bottom-left-radius: 8px;
+    margin-left: 20%;
+    border-bottom-right-radius: 8px;
     border: 1px solid rgba(74, 144, 226, 0.3);
 }
 
