@@ -8,11 +8,9 @@ from urllib.parse import urlparse, parse_qs
 from cryptography.fernet import Fernet
 import base64
 
-PORT = 5000
-
+PORT = 3000
 
 class APIKeyManager:
-
     def __init__(self):
         self.key = self._get_or_create_key()
         self.cipher = Fernet(self.key)
@@ -52,9 +50,7 @@ class APIKeyManager:
         # Create a secure hash for user identification
         return hashlib.sha256(str(user_data).encode()).hexdigest()[:16]
 
-
 class ProgressHandler(http.server.SimpleHTTPRequestHandler):
-
     def do_GET(self):
         if self.path.startswith('/load-progress'):
             parsed_url = urlparse(self.path)
@@ -73,13 +69,9 @@ class ProgressHandler(http.server.SimpleHTTPRequestHandler):
                         with open(progress_file, 'r') as f:
                             progress_data = json.load(f)
                             self.send_response(200)
-                            self.send_header('Content-type',
-                                             'application/json')
+                            self.send_header('Content-type', 'application/json')
                             self.end_headers()
-                            self.wfile.write(
-                                json.dumps({
-                                    'progress': progress_data
-                                }).encode())
+                            self.wfile.write(json.dumps({'progress': progress_data}).encode())
                             return
 
             # Return empty progress if no data found
@@ -116,10 +108,7 @@ class ProgressHandler(http.server.SimpleHTTPRequestHandler):
                     self.send_response(200)
                     self.send_header('Content-type', 'application/json')
                     self.end_headers()
-                    self.wfile.write(
-                        json.dumps({
-                            'status': 'success'
-                        }).encode())
+                    self.wfile.write(json.dumps({'status': 'success'}).encode())
                     return
 
             self.send_response(400)
@@ -139,7 +128,6 @@ class ProgressHandler(http.server.SimpleHTTPRequestHandler):
     def do_OPTIONS(self):
         self.send_response(200)
         self.end_headers()
-
 
 if __name__ == '__main__':
     os.makedirs('data', exist_ok=True)
