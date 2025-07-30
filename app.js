@@ -2,7 +2,7 @@
 let currentPage = 1;
 let messagesPerPage = 20;
 let chatHistory = JSON.parse(localStorage.getItem('chatHistory') || '[]');
-let apiProvider = 'gemini';
+let apiProvider = localStorage.getItem('apiProvider') || 'groq'; // Changed default to groq
 let geminiApiKey = localStorage.getItem('geminiApiKey') || '';
 let grokApiKey = localStorage.getItem('grokApiKey') || '';
 let groqApiKey = localStorage.getItem('groqApiKey') || '';
@@ -13,6 +13,12 @@ let attraction = parseInt(localStorage.getItem('attraction') || '0');
 let currentGame = null;
 let nsfwMode = localStorage.getItem('nsfwMode') !== 'false'; // Default to true
 let messageHistoryCount = parseInt(localStorage.getItem('messageHistoryCount') || '8'); // Default to 8
+
+// Voice recording variables
+let mediaRecorder = null;
+let audioChunks = [];
+let isRecording = false;
+let isProcessingAudio = false;
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
@@ -71,6 +77,15 @@ function initializeEventListeners() {
     const sendBtn = document.getElementById('sendMessage');
     if (sendBtn) {
         sendBtn.addEventListener('click', sendMessage);
+    }
+
+    // Voice message button
+    const voiceBtn = document.getElementById('voiceMessage');
+    if (voiceBtn) {
+        voiceBtn.addEventListener('mousedown', startRecording);
+        voiceBtn.addEventListener('mouseup', stopRecording);
+        voiceBtn.addEventListener('touchstart', startRecording);
+        voiceBtn.addEventListener('touchend', stopRecording);
     }
 
     // Message input
@@ -197,13 +212,16 @@ function loadSavedData() {
         groq: groqApiKey ? 'Found' : 'Missing'
     });
 
-    // Load API provider
+    // Load API provider (default to groq for better voice support)
     const savedProvider = localStorage.getItem('apiProvider');
     if (savedProvider) {
         apiProvider = savedProvider;
-        const apiSelect = document.getElementById('apiProvider');
-        if (apiSelect) apiSelect.value = apiProvider;
+    } else {
+        apiProvider = 'groq'; // Set default to groq
+        localStorage.setItem('apiProvider', apiProvider);
     }
+    const apiSelect = document.getElementById('apiProvider');
+    if (apiSelect) apiSelect.value = apiProvider;
 
     // Load Groq model
     const savedGroqModel = localStorage.getItem('groqModel');
@@ -569,10 +587,11 @@ async function sendMessage() {
     }
 }
 
-function addMessageToHistory(sender, message) {
+function addMessageToHistory(sender, message, audioUrl = null) {
     chatHistory.push({
         sender: sender,
         message: message,
+        audioUrl: audioUrl,
         timestamp: Date.now()
     });
 
@@ -632,6 +651,12 @@ function displayChatHistory() {
             profilePicHtml = `<img src="${profileSrc}" alt="AI Profile" class="profile-pic message-profile-pic" onclick="showProfilePreview('${profileSrc}')">`;
         }
 
+        // Add audio playback button if message has audio
+        let audioButtonHtml = '';
+        if (msg.audioUrl) {
+            audioButtonHtml = `<button class="audio-play-btn" onclick="playAudio('${msg.audioUrl}')" title="Play audio message">🔊</button>`;
+        }
+
         if (msg.sender === 'ai' || msg.sender === 'game_ai') {
             messageDiv.innerHTML = `
                 ${profilePicHtml}
@@ -639,6 +664,7 @@ function displayChatHistory() {
                     <div class="message-content">
                         <strong>${senderName}:</strong>
                         <span>${messageContent}</span>
+                        ${audioButtonHtml}
                     </div>
                     <div class="message-time">${new Date(msg.timestamp).toLocaleTimeString()}</div>
                 </div>
@@ -649,6 +675,7 @@ function displayChatHistory() {
                     <div class="message-content">
                         <strong>${senderName}:</strong>
                         <span>${messageContent}</span>
+                        ${audioButtonHtml}
                     </div>
                     <div class="message-time">${new Date(msg.timestamp).toLocaleTimeString()}</div>
                 </div>
@@ -659,6 +686,17 @@ function displayChatHistory() {
     });
 
     chatDisplay.scrollTop = chatDisplay.scrollHeight;
+}
+
+function playAudio(audioUrl) {
+    try {
+        const audio = new Audio(audioUrl);
+        audio.play().catch(error => {
+            console.error('Error playing audio:', error);
+        });
+    } catch (error) {
+        console.error('Error creating audio element:', error);
+    }
 }
 
 function updateAttractionDisplay() {
@@ -1302,6 +1340,231 @@ async function makeIntelligentGuess(questionHistory, answers) {
         console.error('Error making guess:', error);
         return null;
     }
+}
+
+// Voice Recording Functions
+async function startRecording() {
+    if (isRecording || isProcessingAudio) return;
+
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            audio: {
+                sampleRate: 44100,
+                channelCount: 1,
+                echoCancellation: true,
+                noiseSuppression: true,
+            } 
+        });
+
+        mediaRecorder = new MediaRecorder(stream, {
+            mimeType: 'audio/webm;codecs=opus'
+        });
+
+        audioChunks = [];
+        isRecording = true;
+
+        mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+                audioChunks.push(event.data);
+            }
+        };
+
+        mediaRecorder.onstop = async () => {
+            isRecording = false;
+            isProcessingAudio = true;
+            updateVoiceButtonState();
+
+            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+            await sendAudioMessage(audioBlob);
+
+            // Clean up stream
+            stream.getTracks().forEach(track => track.stop());
+            isProcessingAudio = false;
+            updateVoiceButtonState();
+        };
+
+        mediaRecorder.start();
+        updateVoiceButtonState();
+
+    } catch (error) {
+        console.error('Error starting recording:', error);
+        alert('Failed to start recording. Please check microphone permissions.');
+        isRecording = false;
+        isProcessingAudio = false;
+        updateVoiceButtonState();
+    }
+}
+
+function stopRecording() {
+    if (mediaRecorder && isRecording) {
+        mediaRecorder.stop();
+    }
+}
+
+function updateVoiceButtonState() {
+    const voiceBtn = document.getElementById('voiceMessage');
+    if (!voiceBtn) return;
+
+    if (isRecording) {
+        voiceBtn.innerHTML = '🔴';
+        voiceBtn.style.backgroundColor = '#ff4444';
+        voiceBtn.title = 'Recording... Release to send';
+    } else if (isProcessingAudio) {
+        voiceBtn.innerHTML = '⏳';
+        voiceBtn.style.backgroundColor = '#ffaa00';
+        voiceBtn.title = 'Processing audio...';
+    } else {
+        voiceBtn.innerHTML = '🎤';
+        voiceBtn.style.backgroundColor = '';
+        voiceBtn.title = 'Hold to record voice message';
+    }
+}
+
+async function sendAudioMessage(audioBlob) {
+    // Check if API key is configured
+    let currentApiKey = '';
+
+    if (apiProvider === 'gemini') {
+        currentApiKey = geminiApiKey;
+    } else if (apiProvider === 'grok') {
+        currentApiKey = grokApiKey;
+    } else if (apiProvider === 'groq') {
+        currentApiKey = groqApiKey;
+    }
+
+    if (!currentApiKey) {
+        alert(`Please configure your ${apiProvider.toUpperCase()} API key first!`);
+        return;
+    }
+
+    try {
+        // Save audio file locally (for playback)
+        const audioUrl = URL.createObjectURL(audioBlob);
+        
+        // Transcribe audio based on provider
+        let transcription = '';
+        if (apiProvider === 'groq') {
+            transcription = await transcribeAudioWithGroq(audioBlob, currentApiKey);
+        } else {
+            // Convert audio blob to base64 for Gemini
+            const audioBase64 = await blobToBase64(audioBlob);
+            transcription = await transcribeAudioWithGemini(audioBase64, 'audio/wav', currentApiKey);
+        }
+
+        if (!transcription) {
+            throw new Error('Failed to transcribe audio');
+        }
+
+        // Add user message to chat with audio URL
+        addMessageToHistory('user', transcription, audioUrl);
+        displayChatHistory();
+
+        // Show typing indicator
+        addMessageToHistory('ai', 'Typing...');
+        displayChatHistory();
+
+        // Get AI response
+        let response = '';
+        if (apiProvider === 'gemini') {
+            response = await sendToGeminiAPI(transcription, currentApiKey);
+        } else if (apiProvider === 'grok') {
+            response = await sendToGrokAPI(transcription, currentApiKey);
+        } else if (apiProvider === 'groq') {
+            response = await sendToGroqAPI(transcription, currentApiKey);
+        }
+
+        // Remove typing indicator and add real response
+        if (chatHistory.length > 0 && chatHistory[chatHistory.length - 1].message === 'Typing...') {
+            chatHistory.pop();
+        }
+        addMessageToHistory('ai', response);
+        displayChatHistory();
+
+    } catch (error) {
+        console.error('Error processing audio message:', error);
+        // Remove typing indicator if it exists
+        if (chatHistory.length > 0 && chatHistory[chatHistory.length - 1].message === 'Typing...') {
+            chatHistory.pop();
+        }
+        addMessageToHistory('ai', `Sorry, I had trouble processing your voice message: ${error.message}`);
+        displayChatHistory();
+    }
+}
+
+async function transcribeAudioWithGroq(audioBlob, apiKey) {
+    try {
+        const formData = new FormData();
+        formData.append('file', audioBlob, 'audio.wav');
+        formData.append('model', 'whisper-large-v3');
+
+        const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error(`Groq transcription failed: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data.text || '';
+    } catch (error) {
+        console.error('Error transcribing with Groq:', error);
+        throw error;
+    }
+}
+
+async function transcribeAudioWithGemini(audioBase64, mimeType, apiKey) {
+    try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [
+                        {
+                            inlineData: {
+                                data: audioBase64,
+                                mimeType: mimeType,
+                            },
+                        },
+                        { text: "Please transcribe this audio. Only return the transcribed text, nothing else." }
+                    ]
+                }],
+                generationConfig: {
+                    temperature: 0.1,
+                    maxOutputTokens: 1024,
+                }
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Gemini transcription failed: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data.candidates[0]?.content?.parts[0]?.text || '';
+    } catch (error) {
+        console.error('Error transcribing with Gemini:', error);
+        throw error;
+    }
+}
+
+function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            const base64 = reader.result.split(',')[1];
+            resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
 }
 
 // Get AI contribution for story building game

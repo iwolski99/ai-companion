@@ -587,6 +587,45 @@ h1 {
     background: linear-gradient(45deg, #ad1457, #7b1fa2);
 }
 
+.voice-btn {
+    padding: 18px 20px;
+    border-radius: 15px;
+    background: linear-gradient(45deg, #4CAF50, #45a049);
+    font-weight: 600;
+    font-size: 20px;
+    min-width: 60px;
+    transition: all 0.3s ease;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.voice-btn:hover {
+    background: linear-gradient(45deg, #45a049, #3d8b40);
+    transform: scale(1.05);
+}
+
+.voice-btn:active {
+    transform: scale(0.95);
+}
+
+.audio-play-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+    font-size: 12px;
+    margin-left: 8px;
+    padding: 4px 8px;
+    transition: all 0.3s ease;
+}
+
+.audio-play-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    color: #fff;
+    transform: scale(1.05);
+}
+
 /* Enhanced Modal with Glassmorphism */
 .modal {
     display: none;
