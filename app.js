@@ -188,7 +188,7 @@ function initializeEventListeners() {
                 }
                 newAttraction = Math.max(0, Math.min(100, newAttraction));
                 console.log('Final attraction value:', newAttraction);
-                
+
                 try {
                     console.log('Sending request to set attraction...');
                     const response = await fetch('/api/attraction/set', {
@@ -198,11 +198,11 @@ function initializeEventListeners() {
                         },
                         body: JSON.stringify({ attraction: newAttraction })
                     });
-                    
+
                     console.log('Response status:', response.status);
                     const responseData = await response.json();
                     console.log('Response data:', responseData);
-                    
+
                     if (response.ok) {
                         attraction = newAttraction;
                         localStorage.setItem('attraction', attraction.toString());
@@ -283,7 +283,7 @@ function loadSavedData() {
 
     console.log('Loaded API keys:', {
         gemini: geminiApiKey ? 'Found' : 'Missing',
-        grok: grokApiKey ? 'Found' : 'Missing', 
+        grok: grokApiKey ? 'Found' : 'Missing',
         groq: groqApiKey ? 'Found' : 'Missing'
     });
 
@@ -1446,96 +1446,97 @@ async function makeIntelligentGuess(questionHistory, answers) {
         return null;
     }
 
-    // Build context from all Q&A
-    let context = "Based on this 20 questions game, what do you think they're thinking of?\n";
-    for (let i = 0; i < questionHistory.length; i++) {
-        context += `Q: ${questionHistory[i]} A: ${answers[i]}\n`;
-    }
-    context += "\nWhat is your best guess? Respond with just the object/animal/thing name, nothing else.";
 
-    try {
-        let response = '';
+// Build context from all Q&A
+let context = "Based on this 20 questions game, what do you think they're thinking of?\n";
+for (let i = 0; i < questionHistory.length; i++) {
+    context += `Q: ${questionHistory[i]} A: ${answers[i]}\n`;
+}
+context += "\nWhat is your best guess? Respond with just the object/animal/thing name, nothing else.";
 
-        if (apiProvider === 'gemini') {
-            const apiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${currentApiKey}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [{
-                            text: context
-                        }]
-                    }],
-                    generationConfig: {
-                        temperature: 0.3,
-                        topP: 0.8,
-                        topK: 40,
-                        maxOutputTokens: 20,
-                    }
-                })
-            });
+try {
+    let response = '';
 
-            if (apiResponse.ok) {
-                const data = await apiResponse.json();
-                response = data.candidates[0].content.parts[0].text.trim();
-            }
-        } else if (apiProvider === 'grok') {
-            const apiResponse = await fetch('https://api.x.ai/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${currentApiKey}`
-                },
-                body: JSON.stringify({
-                    messages: [
-                        { role: "system", content: "You are making a guess in 20 questions. Respond with just the object name." },
-                        { role: "user", content: context }
-                    ],
-                    model: "grok-beta",
-                    stream: false,
+    if (apiProvider === 'gemini') {
+        const apiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${currentApiKey}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [{
+                        text: context
+                    }]
+                }],
+                generationConfig: {
                     temperature: 0.3,
-                    max_tokens: 20
-                })
-            });
+                    topP: 0.8,
+                    topK: 40,
+                    maxOutputTokens: 20,
+                }
+            })
+        });
 
-            if (apiResponse.ok) {
-                const data = await apiResponse.json();
-                response = data.choices[0].message.content.trim();
-            }
-        } else if (apiProvider === 'groq') {
-            const apiResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${currentApiKey}`
-                },
-                body: JSON.stringify({
-                    messages: [
-                        { role: "system", content: "You are making a guess in 20 questions. Respond with just the object name." },
-                        { role: "user", content: context }
-                    ],
-                    model: "llama3-8b-8192",
-                    temperature: 0.3,
-                    max_tokens: 20
-                })
-            });
-
-            if (apiResponse.ok) {
-                const data = await apiResponse.json();
-                response = data.choices[0].message.content.trim();
-            }
+        if (apiResponse.ok) {
+            const data = await apiResponse.json();
+            response = data.candidates[0].content.parts[0].text.trim();
         }
+    } else if (apiProvider === 'grok') {
+        const apiResponse = await fetch('https://api.x.ai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${currentApiKey}`
+            },
+            body: JSON.stringify({
+                messages: [
+                    { role: "system", content: "You are making a guess in 20 questions. Respond with just the object name." },
+                    { role: "user", content: context }
+                ],
+                model: "grok-beta",
+                stream: false,
+                temperature: 0.3,
+                max_tokens: 20
+            })
+        });
 
-        // Clean up the response
-        response = response.replace(/^["']|["']$/g, '').toLowerCase();
-        return response || null;
+        if (apiResponse.ok) {
+            const data = await apiResponse.json();
+            response = data.choices[0].message.content.trim();
+        }
+    } else if (apiProvider === 'groq') {
+        const apiResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${currentApiKey}`
+            },
+            body: JSON.stringify({
+                messages: [
+                    { role: "system", content: "You are making a guess in 20 questions. Respond with just the object name." },
+                    { role: "user", content: context }
+                ],
+                model: "llama3-8b-8192",
+                temperature: 0.3,
+                max_tokens: 20
+            })
+        });
 
-    } catch (error) {
-        console.error('Error making guess:', error);
-        return null;
+        if (apiResponse.ok) {
+            const data = await apiResponse.json();
+            response = data.choices[0].message.content.trim();
+        }
     }
+
+    // Clean up the response
+    response = response.replace(/^["']|["']$/g, '').toLowerCase();
+    return response || null;
+
+} catch (error) {
+    console.error('Error making guess:', error);
+    return null;
+}
 }
 
 // Voice Recording Functions
@@ -1543,13 +1544,13 @@ async function startRecording() {
     if (isRecording || isProcessingAudio) return;
 
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
+        const stream = await navigator.mediaDevices.getUserMedia({
             audio: {
                 sampleRate: 44100,
                 channelCount: 1,
                 echoCancellation: true,
                 noiseSuppression: true,
-            } 
+            }
         });
 
         mediaRecorder = new MediaRecorder(stream, {
@@ -2509,38 +2510,38 @@ if (document.readyState === 'loading') {
             });
         }
 
-         // Games modal functionality
-         const gamesBtn = document.getElementById('gamesButton');
-         const gamesModal = document.getElementById('gamesModal');
-         const closeGames = document.getElementById('closeGames');
+        // Games modal functionality
+        const gamesBtn = document.getElementById('gamesButton');
+        const gamesModal = document.getElementById('gamesModal');
+        const closeGames = document.getElementById('closeGames');
 
-         if (gamesBtn && gamesModal) {
-             gamesBtn.addEventListener('click', () => {
-                 gamesModal.style.display = 'block';
-             });
-         }
+        if (gamesBtn && gamesModal) {
+            gamesBtn.addEventListener('click', () => {
+                gamesModal.style.display = 'block';
+            });
+        }
 
-         if (closeGames && gamesModal) {
-             closeGames.addEventListener('click', () => {
-                 gamesModal.style.display = 'none';
-             });
-         }
+        if (closeGames && gamesModal) {
+            closeGames.addEventListener('click', () => {
+                gamesModal.style.display = 'none';
+            });
+        }
 
-         // Game card event listeners
-         document.querySelectorAll('.game-card').forEach(card => {
-             card.addEventListener('click', () => {
-                 const gameName = card.getAttribute('data-game');
-                 if (gameName) {
-                     startGame(gameName);
-                 }
-             });
-         });
+        // Game card event listeners
+        document.querySelectorAll('.game-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const gameName = card.getAttribute('data-game');
+                if (gameName) {
+                    startGame(gameName);
+                }
+            });
+        });
 
-         // Close modals when clicking outside
-         window.addEventListener('click', (event) => {
-             if (event.target === gamesModal) {
-                 gamesModal.style.display = 'none';
-             }
-         });
+        // Close modals when clicking outside
+        window.addEventListener('click', (event) => {
+            if (event.target === gamesModal) {
+                gamesModal.style.display = 'none';
+            }
+        });
     }, 100);
 }
