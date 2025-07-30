@@ -628,17 +628,87 @@ h1 {
     align-items: center;
     gap: 10px;
     margin-bottom: 20px;
+    flex-wrap: wrap;
 }
 
 .pagination .btn {
     padding: 8px 16px;
     font-size: 14px;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .pagination span {
     color: #fff;
     font-size: 14px;
     font-weight: 400;
+    text-align: center;
+    min-width: 80px;
+}
+
+/* Mobile-specific pagination styles */
+@media (max-width: 768px) {
+    .pagination {
+        gap: 8px;
+        margin-bottom: 15px;
+        padding: 0 10px;
+    }
+
+    .pagination .btn {
+        padding: 12px 16px;
+        font-size: 16px;
+        min-width: 48px;
+        min-height: 48px;
+        font-weight: 600;
+    }
+
+    .pagination span {
+        font-size: 16px;
+        font-weight: 500;
+        min-width: 100px;
+        order: 10;
+        flex-basis: 100%;
+        margin-top: 8px;
+    }
+
+    /* Make first/last page buttons smaller on mobile */
+    .pagination #firstPage,
+    .pagination #lastPage {
+        padding: 12px 12px;
+        min-width: 44px;
+        font-size: 14px;
+    }
+}
+
+/* Extra small screens */
+@media (max-width: 480px) {
+    .pagination {
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .pagination .btn {
+        padding: 10px 12px;
+        font-size: 14px;
+        min-width: 42px;
+        min-height: 42px;
+    }
+
+    .pagination span {
+        font-size: 14px;
+        margin-top: 6px;
+    }
+
+    /* Stack page info below buttons on very small screens */
+    .pagination #firstPage,
+    .pagination #lastPage {
+        padding: 10px 8px;
+        min-width: 38px;
+        font-size: 12px;
+    }
 }
 
 .send-btn {
