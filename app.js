@@ -178,15 +178,19 @@ function initializeEventListeners() {
     const setAttractionBtn = document.getElementById('setAttractionBtn');
     if (setAttractionBtn) {
         setAttractionBtn.addEventListener('click', async function() {
+            console.log('Developer attraction button clicked');
             const attractionInput = document.getElementById('devAttractionInput');
             if (attractionInput) {
                 let newAttraction = parseInt(attractionInput.value);
+                console.log('Input value:', attractionInput.value, 'Parsed:', newAttraction);
                 if (isNaN(newAttraction)) {
                     newAttraction = 0;
                 }
                 newAttraction = Math.max(0, Math.min(100, newAttraction));
-
+                console.log('Final attraction value:', newAttraction);
+                
                 try {
+                    console.log('Sending request to set attraction...');
                     const response = await fetch('/api/attraction/set', {
                         method: 'POST',
                         headers: {
@@ -194,21 +198,31 @@ function initializeEventListeners() {
                         },
                         body: JSON.stringify({ attraction: newAttraction })
                     });
-
+                    
+                    console.log('Response status:', response.status);
+                    const responseData = await response.json();
+                    console.log('Response data:', responseData);
+                    
                     if (response.ok) {
                         attraction = newAttraction;
                         localStorage.setItem('attraction', attraction.toString());
                         updateAttractionDisplay();
+                        console.log('Attraction successfully set to:', newAttraction);
                         alert(`Attraction set to ${newAttraction}!`);
                     } else {
+                        console.error('Server responded with error:', responseData);
                         alert('Failed to set attraction level. Please try again.');
                     }
                 } catch (error) {
                     console.error('Error setting attraction:', error);
                     alert('Failed to set attraction level. Please try again.');
                 }
+            } else {
+                console.error('Attraction input element not found');
             }
         });
+    } else {
+        console.error('Set attraction button not found');
     }
 
     // Pagination event listeners
