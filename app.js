@@ -226,6 +226,9 @@ function loadSavedData() {
     geminiApiKey = localStorage.getItem('geminiApiKey') || '';
     grokApiKey = localStorage.getItem('grokApiKey') || '';
     groqApiKey = localStorage.getItem('groqApiKey') || '';
+    
+    // Sync attraction from server
+    syncAttractionFromServer();
 
     console.log('Loaded API keys:', {
         gemini: geminiApiKey ? 'Found' : 'Missing',
@@ -360,12 +363,28 @@ function clearChatHistory() {
     }
 }
 
-function resetAttraction() {
+async function resetAttraction() {
     if (confirm('Reset attraction level back to 0 (Stranger)?\n\nThis will not affect chat history.')) {
-        attraction = 0;
-        localStorage.removeItem('attraction');
-        updateAttractionDisplay();
-        alert('Attraction level reset to Stranger!');
+        try {
+            const response = await fetch('/api/attraction/reset', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                attraction = 0;
+                localStorage.setItem('attraction', '0');
+                updateAttractionDisplay();
+                alert('Attraction level reset to Stranger!');
+            } else {
+                alert('Failed to reset attraction level. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error resetting attraction:', error);
+            alert('Failed to reset attraction level. Please try again.');
+        }
     }
 }
 
@@ -544,6 +563,25 @@ async function sendMessage() {
     addMessageToHistory('user', message);
     messageInput.value = '';
 
+    // Update attraction for user message
+    try {
+        const attractionResponse = await fetch('/api/attraction/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (attractionResponse.ok) {
+            const data = await attractionResponse.json();
+            attraction = data.attraction;
+            localStorage.setItem('attraction', attraction.toString());
+            updateAttractionDisplay();
+        }
+    } catch (error) {
+        console.error('Error updating attraction:', error);
+    }
+
     // Process game input if a game is active
     let shouldGetAIResponse = true;
     if (currentGame && gameProcessors[currentGame]) {
@@ -578,6 +616,10 @@ async function sendMessage() {
             chatHistory.pop(); // Remove "Typing..." message
         }
         addMessageToHistory('ai', response);
+        
+        // Sync attraction level from server
+        await syncAttractionFromServer();
+        
         displayChatHistory();
 
     } catch (error) {
@@ -616,24 +658,26 @@ function addMessageToHistory(sender, message, audioUrl = null) {
         timestamp: Date.now()
     });
 
-    // Add attraction points for AI messages, but significantly reduce for game AI messages
-    if (sender === 'ai') {
-        attraction += Math.floor(Math.random() * 3) + 1; // 1-3 points
-        updateAttractionDisplay();
-    } else if (sender === 'game_ai') {
-        // Much smaller chance of gaining attraction during games
-        if (Math.random() < 0.3) { // Only 30% chance
-            attraction += 1; // Only 1 point maximum
-            updateAttractionDisplay();
-        }
-    }
-
     // Auto-navigate to last page when new messages are added
     const totalPages = Math.ceil(chatHistory.length / messagesPerPage);
     currentPage = totalPages;
 
     localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-    localStorage.setItem('attraction', attraction.toString());
+}
+
+// New function to sync attraction from server
+async function syncAttractionFromServer() {
+    try {
+        const response = await fetch('/api/attraction');
+        if (response.ok) {
+            const data = await response.json();
+            attraction = data.attraction || 0;
+            localStorage.setItem('attraction', attraction.toString());
+            updateAttractionDisplay();
+        }
+    } catch (error) {
+        console.error('Error syncing attraction:', error);
+    }
 }
 
 function displayChatHistory() {
@@ -1551,6 +1595,26 @@ async function sendAudioMessage(audioBlob) {
 
         // Add user message to chat with audio URL
         addMessageToHistory('user', transcription, audioUrl);
+        
+        // Update attraction for voice message
+        try {
+            const attractionResponse = await fetch('/api/attraction/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (attractionResponse.ok) {
+                const data = await attractionResponse.json();
+                attraction = data.attraction;
+                localStorage.setItem('attraction', attraction.toString());
+                updateAttractionDisplay();
+            }
+        } catch (error) {
+            console.error('Error updating attraction:', error);
+        }
+        
         displayChatHistory();
 
         // Show typing indicator
@@ -1572,6 +1636,10 @@ async function sendAudioMessage(audioBlob) {
             chatHistory.pop();
         }
         addMessageToHistory('ai', response);
+        
+        // Sync attraction level from server
+        await syncAttractionFromServer();
+        
         displayChatHistory();
 
     } catch (error) {
