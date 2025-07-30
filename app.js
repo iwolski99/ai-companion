@@ -1152,7 +1152,7 @@ async function sendToGroqAPI(message, apiKey) {
             },
             body: JSON.stringify({
                 messages: messages,
-                model: groqModel || "llama-3.3-70b-versatile",
+                model: "llama-3.3-70b-versatile",
                 temperature: 0.7,
                 max_tokens: 1024,
                 stream: false
@@ -1534,7 +1534,7 @@ async function sendAudioMessage(audioBlob) {
     try {
         // Save audio file locally (for playback)
         const audioUrl = URL.createObjectURL(audioBlob);
-        
+
         // Transcribe audio based on provider
         let transcription = '';
         if (apiProvider === 'groq') {
