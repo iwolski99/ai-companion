@@ -845,6 +845,7 @@ async function sendToGrokAPI(message, apiKey) {
 
     // Add game awareness if in a game
     if (currentGame) {
+```text
         if (currentGame === '20questions') {
             fullPrompt += `\n\nYou are currently playing 20 Questions with the user. The GAME SYSTEM handles all the questions - DO NOT ask any yes/no questions yourself. Only react to their answers with encouragement and excitement. Let the game system do the questioning while you provide emotional support and commentary. Do not interfere with the game flow.`;
         } else {
@@ -1712,7 +1713,6 @@ const gameProcessors = {
         }
 
         if (!data.started && !data.scenario) {
-```text
             data.scenario = message;
             data.started = true;
             appendGameAdminMessage(`🎭 Great! Let's roleplay a ${message} scenario. I'll play along with whatever character fits the scene!`);
