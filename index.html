@@ -12,52 +12,90 @@
         <header>
             <img id="profilePic" src="images/sweet_neutral.svg" alt="AI Companion Profile Picture" class="profile-pic-large">
             <h1>AI Companions</h1>
-            <div class="settings">
-                <!-- <button id="editSystemPrompt" class="btn">Edit System Prompt</button> -->
-                <button id="clearHistory" class="btn">Clear History</button>
-                <button id="resetAttraction" class="btn">Reset Attraction</button>
-                <button id="setProfilePic" class="btn">Set GF Picture</button>
-                <button id="settings-button" class="btn">Personality Quiz</button>
-                <button id="gamesButton" class="btn">🎮 Games</button>
-            </div>
-            <div class="api-key-section">
-                <select id="apiProvider" class="api-select">
-                    <option value="gemini">Gemini</option>
-                    <option value="grok">Grok</option>
-                    <option value="groq">Groq</option>
-                </select>
-                
-                <!-- Groq Model Selection (hidden by default) -->
-                <div id="groqModelSection" class="groq-model-section" style="display: none;">
-                    <select id="groqModel" class="api-select">
-                        <optgroup label="Llama Models">
-                            <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Recommended)</option>
-                            <option value="llama-3.1-70b-versatile">Llama 3.1 70B</option>
-                            <option value="llama-3.1-8b-instant">Llama 3.1 8B (Fast)</option>
-                            <option value="llama-3.2-11b-vision-preview">Llama 3.2 11B Vision</option>
-                            <option value="llama-3.2-3b-preview">Llama 3.2 3B</option>
-                            <option value="llama-3.2-1b-preview">Llama 3.2 1B (Fastest)</option>
-                            <option value="llama-guard-3-8b">Llama Guard 3 8B (Safety)</option>
-                        </optgroup>
-                        <optgroup label="Gemma Models">
-                            <option value="gemma2-9b-it">Gemma 2 9B</option>
-                            <option value="gemma-7b-it">Gemma 7B</option>
-                        </optgroup>
-                        <optgroup label="Other Models">
-                            <option value="mixtral-8x7b-32768">Mixtral 8x7B (Large Context)</option>
-                        </optgroup>
-                    </select>
-                </div>
-
-                <div class="api-input-container">
-                    <input type="password" id="apiKey" placeholder="Enter API Key" class="api-input">
-                    <button type="button" class="toggle-visibility" data-target="apiKey">
-                        <span class="eye-icon">👁️</span>
-                    </button>
-                </div>
-                <button id="saveKeys" class="btn">Save Keys</button>
+            <div class="settings-container">
+                <button id="openSettings" class="btn settings-toggle">⚙️ Settings</button>
             </div>
         </header>
+
+        <!-- Settings Panel Modal -->
+        <div id="settingsPanel" class="modal">
+            <div class="modal-content settings-modal-content">
+                <button id="closeSettings" class="modal-close">×</button>
+                <h2>⚙️ Settings</h2>
+                
+                <!-- NSFW Toggle Section -->
+                <div class="settings-section">
+                    <h3>Content Settings</h3>
+                    <div class="setting-item">
+                        <label class="toggle-label">
+                            <input type="checkbox" id="nsfwToggle" checked>
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-text">NSFW Mode</span>
+                        </label>
+                        <p class="setting-description">Enable adult content and explicit language</p>
+                    </div>
+                </div>
+
+                <!-- API Configuration Section -->
+                <div class="settings-section">
+                    <h3>AI Provider Configuration</h3>
+                    <div class="setting-item">
+                        <label>Select AI Provider:</label>
+                        <select id="apiProvider" class="api-select">
+                            <option value="gemini">Gemini</option>
+                            <option value="grok">Grok</option>
+                            <option value="groq">Groq</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Groq Model Selection (hidden by default) -->
+                    <div id="groqModelSection" class="setting-item groq-model-section" style="display: none;">
+                        <label>Groq Model:</label>
+                        <select id="groqModel" class="api-select">
+                            <optgroup label="Llama Models">
+                                <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Recommended)</option>
+                                <option value="llama-3.1-70b-versatile">Llama 3.1 70B</option>
+                                <option value="llama-3.1-8b-instant">Llama 3.1 8B (Fast)</option>
+                                <option value="llama-3.2-11b-vision-preview">Llama 3.2 11B Vision</option>
+                                <option value="llama-3.2-3b-preview">Llama 3.2 3B</option>
+                                <option value="llama-3.2-1b-preview">Llama 3.2 1B (Fastest)</option>
+                                <option value="llama-guard-3-8b">Llama Guard 3 8B (Safety)</option>
+                            </optgroup>
+                            <optgroup label="Gemma Models">
+                                <option value="gemma2-9b-it">Gemma 2 9B</option>
+                                <option value="gemma-7b-it">Gemma 7B</option>
+                            </optgroup>
+                            <optgroup label="Other Models">
+                                <option value="mixtral-8x7b-32768">Mixtral 8x7B (Large Context)</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <div class="setting-item">
+                        <label>API Key:</label>
+                        <div class="api-input-container">
+                            <input type="password" id="apiKey" placeholder="Enter API Key" class="api-input">
+                            <button type="button" class="toggle-visibility" data-target="apiKey">
+                                <span class="eye-icon">👁️</span>
+                            </button>
+                        </div>
+                        <button id="saveKeys" class="btn">Save API Key</button>
+                    </div>
+                </div>
+
+                <!-- Actions Section -->
+                <div class="settings-section">
+                    <h3>Actions</h3>
+                    <div class="settings-buttons">
+                        <button id="settings-button" class="btn">📋 Personality Quiz</button>
+                        <button id="gamesButton" class="btn">🎮 Games</button>
+                        <button id="setProfilePic" class="btn">🖼️ Set Profile Picture</button>
+                        <button id="clearHistory" class="btn btn-warning">🗑️ Clear History</button>
+                        <button id="resetAttraction" class="btn btn-warning">💔 Reset Attraction</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <div id="attractionDisplay" class="attraction-display">
             <div class="progress-bar">

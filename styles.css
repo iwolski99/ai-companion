@@ -1136,6 +1136,151 @@ h1 {
     color: rgba(255, 255, 255, 0.8);
 }
 
+/* Settings Container */
+.settings-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.settings-toggle {
+    background: linear-gradient(45deg, #6c63ff, #5a54d6);
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 15px;
+    transition: all 0.3s ease;
+}
+
+.settings-toggle:hover {
+    background: linear-gradient(45deg, #5a54d6, #4c46b6);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(108, 99, 255, 0.4);
+}
+
+/* Settings Modal */
+.settings-modal-content {
+    max-width: 700px;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 30px;
+}
+
+.settings-section {
+    margin-bottom: 30px;
+    padding-bottom: 25px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.settings-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.settings-section h3 {
+    color: #fff;
+    margin-bottom: 20px;
+    font-size: 18px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.setting-item {
+    margin-bottom: 20px;
+}
+
+.setting-item label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.setting-description {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 5px;
+    font-style: italic;
+}
+
+/* NSFW Toggle Switch */
+.toggle-label {
+    display: flex !important;
+    align-items: center;
+    gap: 15px;
+    cursor: pointer;
+    margin-bottom: 0 !important;
+}
+
+.toggle-label input[type="checkbox"] {
+    display: none;
+}
+
+.toggle-slider {
+    position: relative;
+    width: 60px;
+    height: 30px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 30px;
+    transition: all 0.3s ease;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.toggle-slider::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 22px;
+    height: 22px;
+    background: #fff;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-label input[type="checkbox"]:checked + .toggle-slider {
+    background: linear-gradient(45deg, #c2185b, #ad1457);
+    border-color: var(--sultry-accent);
+}
+
+.toggle-label input[type="checkbox"]:checked + .toggle-slider::before {
+    transform: translateX(30px);
+}
+
+.toggle-text {
+    font-weight: 600;
+    color: #fff;
+    font-size: 16px;
+}
+
+/* Settings Buttons Grid */
+.settings-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.settings-buttons .btn {
+    padding: 12px 20px;
+    text-align: center;
+    white-space: nowrap;
+    font-size: 14px;
+}
+
+.btn-warning {
+    background: linear-gradient(45deg, #ff6b35, #f7931e);
+    border-color: rgba(255, 107, 53, 0.3);
+}
+
+.btn-warning:hover {
+    background: linear-gradient(45deg, #f7931e, #ff6b35);
+    box-shadow: 0 8px 25px rgba(255, 107, 53, 0.4);
+}
+
 /* Games Modal Styling */
 .games-modal-content {
     max-width: 900px;
