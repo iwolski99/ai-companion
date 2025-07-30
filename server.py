@@ -83,15 +83,6 @@ class ProgressHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps({'progress': None}).encode())
             return
 
-        elif self.path == '/api/attraction':
-            # Get current attraction level
-            attraction_level = get_current_attraction()
-            self.send_response(200)
-            self.send_header('Content-type', 'application/json')
-            self.end_headers()
-            self.wfile.write(json.dumps({'attraction': attraction_level}).encode())
-            return
-
         return super().do_GET()
 
     def do_POST(self):
@@ -126,28 +117,6 @@ class ProgressHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header('Content-type', 'application/json')
             self.end_headers()
             self.wfile.write(json.dumps({'error': 'Invalid data'}).encode())
-            return
-
-        elif self.path == '/api/attraction/reset':
-            # Reset attraction to 0
-            save_attraction(0)
-            self.send_response(200)
-            self.send_header('Content-type', 'application/json')
-            self.end_headers()
-            self.wfile.write(json.dumps({'status': 'success', 'attraction': 0}).encode())
-            return
-
-        elif self.path == '/api/attraction/update':
-            # Update attraction (called when user sends message)
-            current_attraction = get_current_attraction()
-            # Add 1-3 points for user messages
-            points_to_add = random.randint(1, 3)
-            new_attraction = min(current_attraction + points_to_add, 100)  # Cap at 100
-            save_attraction(new_attraction)
-            self.send_response(200)
-            self.send_header('Content-type', 'application/json')
-            self.end_headers()
-            self.wfile.write(json.dumps({'status': 'success', 'attraction': new_attraction}).encode())
             return
 
         return super().do_POST()

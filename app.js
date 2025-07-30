@@ -563,25 +563,6 @@ async function sendMessage() {
     addMessageToHistory('user', message);
     messageInput.value = '';
 
-    // Update attraction for user message
-    try {
-        const attractionResponse = await fetch('/api/attraction/update', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        if (attractionResponse.ok) {
-            const data = await attractionResponse.json();
-            attraction = data.attraction;
-            localStorage.setItem('attraction', attraction.toString());
-            updateAttractionDisplay();
-        }
-    } catch (error) {
-        console.error('Error updating attraction:', error);
-    }
-
     // Process game input if a game is active
     let shouldGetAIResponse = true;
     if (currentGame && gameProcessors[currentGame]) {
@@ -1595,26 +1576,6 @@ async function sendAudioMessage(audioBlob) {
 
         // Add user message to chat with audio URL
         addMessageToHistory('user', transcription, audioUrl);
-        
-        // Update attraction for voice message
-        try {
-            const attractionResponse = await fetch('/api/attraction/update', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            if (attractionResponse.ok) {
-                const data = await attractionResponse.json();
-                attraction = data.attraction;
-                localStorage.setItem('attraction', attraction.toString());
-                updateAttractionDisplay();
-            }
-        } catch (error) {
-            console.error('Error updating attraction:', error);
-        }
-        
         displayChatHistory();
 
         // Show typing indicator
