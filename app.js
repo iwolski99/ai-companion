@@ -1157,6 +1157,7 @@ async function sendToGroqAPI(message, apiKey) {
                 max_tokens: 1024,
                 stream: false
             })
+            })
         });
 
         if (!response.ok) {
