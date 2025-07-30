@@ -1140,7 +1140,9 @@ h1 {
 .settings-container {
     display: flex;
     justify-content: center;
+    gap: 15px;
     margin-bottom: 20px;
+    flex-wrap: wrap;
 }
 
 .settings-toggle {
