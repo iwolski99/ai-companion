@@ -6,6 +6,7 @@ let apiProvider = 'gemini';
 let geminiApiKey = localStorage.getItem('geminiApiKey') || '';
 let grokApiKey = localStorage.getItem('grokApiKey') || '';
 let groqApiKey = localStorage.getItem('groqApiKey') || '';
+let groqModel = localStorage.getItem('groqModel') || 'llama-3.3-70b-versatile';
 let personality = localStorage.getItem('personality') || 'sweet';
 let companionGender = localStorage.getItem('companionGender') || 'female';
 let attraction = parseInt(localStorage.getItem('attraction') || '0');
@@ -87,6 +88,16 @@ function initializeEventListeners() {
             apiProvider = this.value;
             localStorage.setItem('apiProvider', apiProvider);
             updateApiKeyInput();
+            toggleGroqModelSection();
+        });
+    }
+
+    // Groq model selector
+    const groqModelSelect = document.getElementById('groqModel');
+    if (groqModelSelect) {
+        groqModelSelect.addEventListener('change', function() {
+            groqModel = this.value;
+            localStorage.setItem('groqModel', groqModel);
         });
     }
 
@@ -156,8 +167,19 @@ function loadSavedData() {
         if (apiSelect) apiSelect.value = apiProvider;
     }
 
+    // Load Groq model
+    const savedGroqModel = localStorage.getItem('groqModel');
+    if (savedGroqModel) {
+        groqModel = savedGroqModel;
+        const groqModelSelect = document.getElementById('groqModel');
+        if (groqModelSelect) groqModelSelect.value = groqModel;
+    }
+
     // Load appropriate API key based on provider
     updateApiKeyInput();
+    
+    // Toggle Groq model section visibility
+    toggleGroqModelSection();
     
     // Load saved profile picture
     const savedProfilePic = localStorage.getItem('profilePictureData');
@@ -224,6 +246,17 @@ function updateApiKeyInput() {
         apiKeyInput.style.borderColor = '#4CAF50';
     } else {
         apiKeyInput.style.borderColor = '#ccc';
+    }
+}
+
+function toggleGroqModelSection() {
+    const groqModelSection = document.getElementById('groqModelSection');
+    if (groqModelSection) {
+        if (apiProvider === 'groq') {
+            groqModelSection.style.display = 'block';
+        } else {
+            groqModelSection.style.display = 'none';
+        }
     }
 }
 
@@ -817,7 +850,7 @@ async function sendToGroqAPI(message, apiKey) {
             },
             body: JSON.stringify({
                 messages: messages,
-                model: "llama-3.1-8b-instant",
+                model: groqModel || "llama-3.3-70b-versatile",
                 temperature: 0.7,
                 max_tokens: 1024,
                 stream: false
