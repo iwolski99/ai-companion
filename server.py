@@ -7,8 +7,6 @@ import secrets
 from urllib.parse import urlparse, parse_qs
 from cryptography.fernet import Fernet
 import base64
-import random
-from datetime import datetime
 
 PORT = 3000
 
@@ -130,67 +128,6 @@ class ProgressHandler(http.server.SimpleHTTPRequestHandler):
     def do_OPTIONS(self):
         self.send_response(200)
         self.end_headers()
-
-def save_chat_history(entry):
-    """Save chat entry to history file"""
-    try:
-        # Load existing history
-        history = []
-        CHAT_HISTORY_FILE = 'data/chat_history.json' # Define CHAT_HISTORY_FILE here
-        if os.path.exists(CHAT_HISTORY_FILE):
-            with open(CHAT_HISTORY_FILE, 'r', encoding='utf-8') as f:
-                history = json.load(f)
-
-        # Add new entry
-        history.append(entry)
-
-        # Keep only last 100 entries to prevent file from getting too large
-        if len(history) > 100:
-            history = history[-100:]
-
-        # Save updated history
-        with open(CHAT_HISTORY_FILE, 'w', encoding='utf-8') as f:
-            json.dump(history, f, indent=2, ensure_ascii=False)
-
-    except Exception as e:
-        print(f"Error saving chat history: {e}")
-
-def get_current_attraction():
-    """Get current attraction level from storage"""
-    try:
-        attraction_file = 'data/attraction.json'
-        if os.path.exists(attraction_file):
-            with open(attraction_file, 'r') as f:
-                data = json.load(f)
-                return data.get('attraction', 0)
-        return 0
-    except:
-        return 0
-
-def save_attraction(attraction_level):
-    """Save attraction level to storage"""
-    try:
-        os.makedirs('data', exist_ok=True) # Ensure data directory exists
-        attraction_file = 'data/attraction.json'
-        with open(attraction_file, 'w') as f:
-            json.dump({'attraction': attraction_level}, f)
-    except Exception as e:
-        print(f"Error saving attraction: {e}")
-
-def update_attraction():
-    """Update attraction level when AI responds"""
-    try:
-        current_attraction = get_current_attraction()
-        # Add 1-3 points for AI messages (same as frontend logic)
-        points_to_add = random.randint(1, 3)
-        new_attraction = min(current_attraction + points_to_add, 100)  # Cap at 100
-        save_attraction(new_attraction)
-        print(f"Attraction updated: {current_attraction} -> {new_attraction}")
-        return new_attraction
-    except Exception as e:
-        print(f"Error updating attraction: {e}")
-        return get_current_attraction()
-
 
 if __name__ == '__main__':
     os.makedirs('data', exist_ok=True)
