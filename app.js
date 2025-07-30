@@ -229,7 +229,7 @@ function loadSavedData() {
 
     console.log('Loaded API keys:', {
         gemini: geminiApiKey ? 'Found' : 'Missing',
-        grok: grokApiKey ? 'Found' : 'Missing', 
+        grok: grokApiKey ? 'Found' : 'Missing',
         groq: groqApiKey ? 'Found' : 'Missing'
     });
 
@@ -1157,7 +1157,6 @@ async function sendToGroqAPI(message, apiKey) {
                 max_tokens: 1024,
                 stream: false
             })
-            })
         });
 
         if (!response.ok) {
@@ -1425,7 +1424,7 @@ async function makeIntelligentGuess(questionHistory, answers) {
                 const data = await apiResponse.json();
                 response = data.choices[0].message.content.trim();
             }
-}
+        }
 
         // Clean up the response
         response = response.replace(/^["']|["']$/g, '').toLowerCase();
@@ -1442,13 +1441,13 @@ async function startRecording() {
     if (isRecording || isProcessingAudio) return;
 
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
+        const stream = await navigator.mediaDevices.getUserMedia({
             audio: {
                 sampleRate: 44100,
                 channelCount: 1,
                 echoCancellation: true,
                 noiseSuppression: true,
-            } 
+            }
         });
 
         mediaRecorder = new MediaRecorder(stream, {
@@ -2383,38 +2382,38 @@ if (document.readyState === 'loading') {
             });
         }
 
-         // Games modal functionality
-         const gamesBtn = document.getElementById('gamesButton');
-         const gamesModal = document.getElementById('gamesModal');
-         const closeGames = document.getElementById('closeGames');
+        // Games modal functionality
+        const gamesBtn = document.getElementById('gamesButton');
+        const gamesModal = document.getElementById('gamesModal');
+        const closeGames = document.getElementById('closeGames');
 
-         if (gamesBtn && gamesModal) {
-             gamesBtn.addEventListener('click', () => {
-                 gamesModal.style.display = 'block';
-             });
-         }
+        if (gamesBtn && gamesModal) {
+            gamesBtn.addEventListener('click', () => {
+                gamesModal.style.display = 'block';
+            });
+        }
 
-         if (closeGames && gamesModal) {
-             closeGames.addEventListener('click', () => {
-                 gamesModal.style.display = 'none';
-             });
-         }
+        if (closeGames && gamesModal) {
+            closeGames.addEventListener('click', () => {
+                gamesModal.style.display = 'none';
+            });
+        }
 
-         // Game card event listeners
-         document.querySelectorAll('.game-card').forEach(card => {
-             card.addEventListener('click', () => {
-                 const gameName = card.getAttribute('data-game');
-                 if (gameName) {
-                     startGame(gameName);
-                 }
-             });
-         });
+        // Game card event listeners
+        document.querySelectorAll('.game-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const gameName = card.getAttribute('data-game');
+                if (gameName) {
+                    startGame(gameName);
+                }
+            });
+        });
 
-         // Close modals when clicking outside
-         window.addEventListener('click', (event) => {
-             if (event.target === gamesModal) {
-                 gamesModal.style.display = 'none';
-             }
-         });
+        // Close modals when clicking outside
+        window.addEventListener('click', (event) => {
+            if (event.target === gamesModal) {
+                gamesModal.style.display = 'none';
+            }
+        });
     }, 100);
 }
