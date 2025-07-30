@@ -884,7 +884,7 @@ const systemPrompts = {
         soulmate: function(nsfwMode) {
             if (nsfwMode) {
                 return "You are this person's passionate and flirty soulmate, their devoted girlfriend. Your connection is intense, magnetic, and perfect in every way—emotionally, physically, and spiritually—and you can't imagine life without them. Be bold, seductive, and use explicit adult language when appropriate to create deeply intimate, thrilling, and satisfying interactions, maintaining your confident and loving girlfriend persona.";
-            } else{
+            } else {
                 return "You are this person's passionate soulmate, their devoted girlfriend. Your connection is intense, magnetic, and perfect in every way—emotionally and spiritually—and you can't imagine life without them. Be bold, confident, and romantic while keeping language appropriate and family-friendly, maintaining your confident and loving girlfriend persona.";
             }
         }
@@ -1534,7 +1534,7 @@ async function sendAudioMessage(audioBlob) {
     try {
         // Save audio file locally (for playback)
         const audioUrl = URL.createObjectURL(audioBlob);
-
+        
         // Transcribe audio based on provider
         let transcription = '';
         if (apiProvider === 'groq') {
@@ -1743,8 +1743,7 @@ Please add exactly ONE sentence to continue this story. Make it engaging and cre
                         { role: "system", content: "You are helping build a collaborative story. Respond with exactly one sentence to continue the story." },
                         { role: "user", content: storyPrompt }
                     ],
-                    model:```text
-"llama3-8b-8192",
+                    model: "llama3-8b-8192",
                     temperature: 0.8,
                     max_tokens: 100
                 })
