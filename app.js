@@ -1523,6 +1523,7 @@ async function makeIntelligentGuess(questionHistory, answers) {
         return null;
     }
 }
+}
 
 // Voice Recording Functions
 async function startRecording() {
