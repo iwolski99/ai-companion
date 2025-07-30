@@ -1952,7 +1952,10 @@ if (document.readyState === 'loading') {
         const chatContainer = document.getElementById('chatDisplay');
         if (chatContainer) {
             document.getElementById('scrollToBottom').addEventListener('click', () => {
-                chatContainer.scrollTop = chatContainer.scrollHeight;
+                chatContainer.scrollTo({
+                    top: chatContainer.scrollHeight,
+                    behavior: 'smooth'
+                });
             });
         }
 
@@ -2015,7 +2018,10 @@ if (document.readyState === 'loading') {
         const chatContainer = document.getElementById('chatDisplay');
         if (chatContainer) {
             document.getElementById('scrollToBottom').addEventListener('click', () => {
-                chatContainer.scrollTop = chatContainer.scrollHeight;
+                chatContainer.scrollTo({
+                    top: chatContainer.scrollHeight,
+                    behavior: 'smooth'
+                });
             });
         }
 
