@@ -243,6 +243,65 @@ h1 {
     transition: all 0.3s ease;
 }
 
+/* Info Page Styles */
+.info-container {
+    padding: 20px;
+    background-color: var(--background);
+    color: var(--foreground);
+    border-radius: 8px;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+}
+
+.info-header {
+    font-size: 2em;
+    margin-bottom: 20px;
+    color: var(--primary);
+}
+
+.info-section {
+    margin-bottom: 20px;
+}
+
+.info-section h2 {
+    font-size: 1.5em;
+    color: var(--accent);
+}
+
+.info-section p {
+    line-height: 1.6;
+    color: var(--muted-foreground);
+}
+
+.info-footer {
+    margin-top: 30px;
+    text-align: center;
+}
+
+.link {
+    color: var(--primary);
+    text-decoration: underline;
+}
+
+.link:hover {
+    text-decoration: none;
+    color: var(--primary-foreground);
+}
+
+/* Responsive Design for Info Page */
+@media (max-width: 768px) {
+    .info-container {
+        padding: 15px;
+    }
+    
+    .info-header {
+        font-size: 1.75em;
+    }
+
+    .info-section h2 {
+        font-size: 1.25em;
+    }
+}
+
 /* Enhanced Buttons with Sultry Gradient */
 .btn {
     padding: 12px 24px;
