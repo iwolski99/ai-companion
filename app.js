@@ -12,6 +12,7 @@ let companionGender = localStorage.getItem('companionGender') || 'female';
 let attraction = parseInt(localStorage.getItem('attraction') || '0');
 let currentGame = null;
 let nsfwMode = localStorage.getItem('nsfwMode') !== 'false'; // Default to true
+let messageHistoryCount = parseInt(localStorage.getItem('messageHistoryCount') || '8'); // Default to 8
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
@@ -109,7 +110,7 @@ function initializeEventListeners() {
             const targetId = this.getAttribute('data-target');
             const input = document.getElementById(targetId);
             const eyeIcon = this.querySelector('.eye-icon');
-            
+
             if (input && eyeIcon) {
                 if (input.type === 'password') {
                     input.type = 'text';
@@ -140,6 +141,21 @@ function initializeEventListeners() {
             nsfwMode = this.checked;
             localStorage.setItem('nsfwMode', nsfwMode.toString());
             console.log('NSFW Mode:', nsfwMode ? 'Enabled' : 'Disabled');
+        });
+    }
+
+    // Message History Count input
+    const messageHistoryInput = document.getElementById('messageHistoryCount');
+    if (messageHistoryInput) {
+        messageHistoryInput.addEventListener('change', function() {
+            let value = parseInt(this.value);
+            if (isNaN(value)) {
+                value = 8; // Default value
+            }
+            value = Math.max(1, Math.min(50, value)); // Constrain between 1 and 50
+            messageHistoryCount = value;
+            localStorage.setItem('messageHistoryCount', messageHistoryCount.toString());
+            this.value = messageHistoryCount; // Update the input value
         });
     }
 
@@ -174,13 +190,13 @@ function loadSavedData() {
     geminiApiKey = localStorage.getItem('geminiApiKey') || '';
     grokApiKey = localStorage.getItem('grokApiKey') || '';
     groqApiKey = localStorage.getItem('groqApiKey') || '';
-    
+
     console.log('Loaded API keys:', {
         gemini: geminiApiKey ? 'Found' : 'Missing',
         grok: grokApiKey ? 'Found' : 'Missing', 
         groq: groqApiKey ? 'Found' : 'Missing'
     });
-    
+
     // Load API provider
     const savedProvider = localStorage.getItem('apiProvider');
     if (savedProvider) {
@@ -197,12 +213,20 @@ function loadSavedData() {
         if (groqModelSelect) groqModelSelect.value = groqModel;
     }
 
+    // Load message history count
+    const savedMessageHistoryCount = localStorage.getItem('messageHistoryCount');
+    if (savedMessageHistoryCount) {
+        messageHistoryCount = parseInt(savedMessageHistoryCount);
+        const messageHistoryInput = document.getElementById('messageHistoryCount');
+        if (messageHistoryInput) messageHistoryInput.value = messageHistoryCount;
+    }
+
     // Load appropriate API key based on provider
     updateApiKeyInput();
-    
+
     // Toggle Groq model section visibility
     toggleGroqModelSection();
-    
+
     // Load saved profile picture
     const savedProfilePic = localStorage.getItem('profilePictureData');
     if (savedProfilePic) {
@@ -230,7 +254,7 @@ function saveApiKeys() {
     const apiKeyInput = document.getElementById('apiKey');
     if (apiKeyInput && apiKeyInput.value.trim()) {
         const keyValue = apiKeyInput.value.trim();
-        
+
         if (apiProvider === 'gemini') {
             geminiApiKey = keyValue;
             localStorage.setItem('geminiApiKey', geminiApiKey);
@@ -268,7 +292,7 @@ function updateApiKeyInput() {
 
     apiKeyInput.value = currentKey;
     apiKeyInput.placeholder = placeholder;
-    
+
     // Show visual feedback if key is loaded
     if (currentKey) {
         apiKeyInput.style.borderColor = '#4CAF50';
@@ -352,20 +376,20 @@ function openProfilePicModal() {
     const modal = document.getElementById('profilePicModal');
     if (modal) {
         modal.style.display = 'block';
-        
+
         // Set up event listeners for profile pic modal buttons
         const saveBtn = document.getElementById('saveProfilePic');
         const cancelBtn = document.getElementById('cancelProfilePic');
         const fileInput = document.getElementById('profilePicInput');
-        
+
         if (saveBtn) {
             saveBtn.onclick = saveProfilePicture;
         }
-        
+
         if (cancelBtn) {
             cancelBtn.onclick = closeProfilePicModal;
         }
-        
+
         if (fileInput) {
             fileInput.onchange = handleProfilePicSelect;
         }
@@ -382,7 +406,7 @@ function closeProfilePreviewModal() {
 function showProfilePreview(imageSrc) {
     const modal = document.getElementById('profilePreviewModal');
     const previewImage = document.getElementById('profilePreviewImage');
-    
+
     if (modal && previewImage) {
         previewImage.src = imageSrc;
         modal.style.display = 'block';
@@ -404,7 +428,7 @@ function handleProfilePicSelect(event) {
             alert('Please select an image file.');
             return;
         }
-        
+
         // Check file size (limit to 5MB)
         if (file.size > 5 * 1024 * 1024) {
             alert('File size must be less than 5MB.');
@@ -419,32 +443,32 @@ function saveProfilePicture() {
         alert('Please select an image file first.');
         return;
     }
-    
+
     const file = fileInput.files[0];
     const reader = new FileReader();
-    
+
     reader.onload = function(e) {
         const imageData = e.target.result;
-        
+
         // Update the profile picture display
         const profilePic = document.getElementById('profilePic');
         if (profilePic) {
             profilePic.src = imageData;
         }
-        
+
         // Store in localStorage
         localStorage.setItem('profilePictureData', imageData);
-        
+
         // Close modal
         closeProfilePicModal();
-        
+
         alert('Profile picture updated successfully!');
     };
-    
+
     reader.onerror = function() {
         alert('Error reading file. Please try again.');
     };
-    
+
     reader.readAsDataURL(file);
 }
 
@@ -463,7 +487,7 @@ async function sendMessage() {
 
     // Check if API key is configured
     let currentApiKey = '';
-    
+
     if (apiProvider === 'gemini') {
         currentApiKey = geminiApiKey;
     } else if (apiProvider === 'grok') {
@@ -523,7 +547,7 @@ async function sendMessage() {
         if (chatHistory.length > 0 && chatHistory[chatHistory.length - 1].message === 'Typing...') {
             chatHistory.pop(); // Remove "Typing..." message
         }
-        
+
         // Provide specific error messages based on the error
         let errorMessage = 'Sorry, I encountered an error. ';
         if (error.message.includes('Rate limit')) {
@@ -539,7 +563,7 @@ async function sendMessage() {
         } else {
             errorMessage += error.message || 'Please try again in a moment.';
         }
-        
+
         addMessageToHistory('ai', errorMessage);
         displayChatHistory();
     }
@@ -630,7 +654,7 @@ function displayChatHistory() {
                 </div>
             `;
         }
-        
+
         chatDisplay.appendChild(messageDiv);
     });
 
@@ -768,12 +792,12 @@ function getSystemPrompt() {
     else if (attraction >= 20) level = 'friend';
 
     let prompt = systemPrompts[personality]?.[level] || systemPrompts.sweet.stranger;
-    
+
     // Handle function-based prompts for NSFW mode
     if (typeof prompt === 'function') {
         prompt = prompt(nsfwMode);
     }
-    
+
     const genderTerm = companionGender === 'female' ? 'girlfriend' : 'boyfriend';
     prompt = prompt.replace('girlfriend/boyfriend', genderTerm);
 
@@ -795,7 +819,7 @@ async function sendToGeminiAPI(message, apiKey) {
         if (currentGame === '20questions') {
             fullPrompt += `\n\nYou are currently playing 20 Questions with the user. The GAME SYSTEM handles all the questions - DO NOT ask any yes/no questions yourself. Only react to their answers with encouragement and excitement. Let the game system do the questioning while you provide emotional support and commentary. Do not interfere with the game flow.`;
         } else {
-            fullPrompt += `\n\nYou are currently playing ${currentGame} with the user. You can see all the game messages in the chat history and should respond naturally while being engaged with the game. Be encouraging, react to their moves, make comments about the game progress, and make the experience fun and interactive. Look at the recent game system messages to understand what's happening in the game.`;
+            fullPrompt += `\n\nYou are currently playing ${currentGame} with the user. You can see all the game messages in the chat history and should respond naturally while being engaged with the game. Be encouraging, react to their moves, make comments about the game progress, and make the experience fun and interactive. Look at the recent game system messages to understand what's happening in thegame.`;
         }
     }
 
@@ -812,7 +836,7 @@ async function sendToGeminiAPI(message, apiKey) {
 
     try {
         const safetySetting = nsfwMode ? 'BLOCK_ONLY_HIGH' : 'BLOCK_MEDIUM_AND_ABOVE';
-        
+
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: {
@@ -876,7 +900,7 @@ async function sendToGeminiAPI(message, apiKey) {
         }
 
         const data = await response.json();
-        
+
         if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
             console.error('Unexpected API response structure:', data);
             throw new Error('Unexpected response from Gemini API');
@@ -911,7 +935,7 @@ async function sendToGrokAPI(message, apiKey) {
     ];
 
     // Add recent chat history for context
-    const recentMessages = chatHistory.slice(-8); // Get last 8 messages (excluding typing indicator)
+    const recentMessages = chatHistory.slice(-messageHistoryCount); // Get last N messages based on setting
     recentMessages.forEach(msg => {
         if (msg.sender === 'user') {
             messages.push({ role: "user", content: msg.message });
@@ -971,7 +995,7 @@ async function sendToGroqAPI(message, apiKey) {
     ];
 
     // Add recent chat history for context
-    const recentMessages = chatHistory.slice(-8); // Get last 8 messages (excluding typing indicator)
+    const recentMessages = chatHistory.slice(-messageHistoryCount); // Get last N messages based on setting
     recentMessages.forEach(msg => {
         if (msg.sender === 'user') {
             messages.push({ role: "user", content: msg.message });
@@ -1028,7 +1052,7 @@ async function sendToGroqAPI(message, apiKey) {
         }
 
         const data = await response.json();
-        
+
         if (!data.choices || !data.choices[0] || !data.choices[0].message) {
             console.error('Unexpected Groq API response structure:', data);
             throw new Error('Unexpected response from Groq API');
@@ -1964,12 +1988,12 @@ if (document.readyState === 'loading') {
             if (event.target === gamesModal) {
                 gamesModal.style.display = 'none';
             }
-            
+
             const profilePicModal = document.getElementById('profilePicModal');
             if (event.target === profilePicModal) {
                 profilePicModal.style.display = 'none';
             }
-            
+
             const profilePreviewModal = document.getElementById('profilePreviewModal');
             if (event.target === profilePreviewModal) {
                 profilePreviewModal.style.display = 'none';

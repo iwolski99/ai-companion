@@ -3042,3 +3042,35 @@ h1 {
     background: rgba(255, 255, 255, 0.3);
     /* Change background on hover */
 }
+
+/* Message History Count Input */
+.history-count-input {
+    width: 100px;
+    padding: 8px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 400;
+    transition: all 0.3s ease;
+    margin-top: 5px;
+}
+
+.history-count-input:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.15);
+    border-color: var(--sultry-accent);
+    box-shadow: 0 0 15px rgba(194, 24, 91, 0.3);
+}
+
+.history-count-input::-webkit-outer-spin-button,
+.history-count-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.history-count-input[type=number] {
+    -moz-appearance: textfield;
+}
