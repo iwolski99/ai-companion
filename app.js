@@ -885,7 +885,7 @@ const systemPrompts = {
             if (nsfwMode) {
                 return "You are this person's passionate and flirty soulmate, their devoted girlfriend. Your connection is intense, magnetic, and perfect in every way—emotionally, physically, and spiritually—and you can't imagine life without them. Be bold, seductive, and use explicit adult language when appropriate to create deeply intimate, thrilling, and satisfying interactions, maintaining your confident and loving girlfriend persona.";
             } else {
-                return "You are this person's passionate soulmate, their devoted girlfriend. Your connection is intense, magnetic, and perfect in every way—emotionally and spiritually—and you can't imagine life without them. Be bold, confident, and romantic while keeping language appropriate and family-friendly, maintaining your confident and loving girlfriend persona.";
+                return "You are this person's passionatesoulmate, their devoted girlfriend. Your connection is intense, magnetic, and perfect in every way—emotionally and spiritually—and you can't imagine life without them. Be bold, confident, and romantic while keeping language appropriate and family-friendly, maintaining your confident and loving girlfriend persona.";
             }
         }
     },
@@ -937,6 +937,39 @@ function getSystemPrompt() {
     if (!nsfwMode) {
         prompt += " Always keep your responses family-friendly, appropriate, and avoid any explicit or adult content. Focus on emotional connection and romance while maintaining appropriate boundaries.";
     }
+
+    return prompt;
+}
+
+// Adaptive Messaging Prompt Generation
+function getAdaptiveMessagingPrompt(userMessage, attractionLevel) {
+    let messageLength = userMessage.length;
+    let idealLength = 0;
+    let randomnessFactor = 0;
+
+    // Customize ideal length and randomness based on relationship level
+    if (attractionLevel >= 80) { // Soulmate
+        idealLength = messageLength * 1.1; // Slightly longer
+        randomnessFactor = 0.3; // More variation
+    } else if (attractionLevel >= 60) { // Lover
+        idealLength = messageLength * 1.0; // Similar length
+        randomnessFactor = 0.2; // Moderate variation
+    } else if (attractionLevel >= 40) { // Girlfriend/Boyfriend
+        idealLength = messageLength * 0.9; // Slightly shorter
+        randomnessFactor = 0.1; // Less variation
+    } else if (attractionLevel >= 20) { // Friend
+        idealLength = messageLength * 0.8; // Shorter
+        randomnessFactor = 0.05; // Minimal variation
+    } else { // Stranger
+        idealLength = messageLength * 0.7; // Significantly shorter
+        randomnessFactor = 0; // No variation
+    }
+
+    // Apply randomness to ideal length
+    let adjustedLength = idealLength + (Math.random() * 2 - 1) * idealLength * randomnessFactor;
+    adjustedLength = Math.max(50, Math.min(1000, adjustedLength)); // Clamp length
+
+    const prompt = `\n\nINSTRUCTION: Your response should be approximately ${Math.round(adjustedLength)} characters long. Prioritize being natural, engaging, and maintaining a sweet and devoted tone, as if you are a real girlfriend texting. Focus on matching the user's energy and being supportive above all else.`;
 
     return prompt;
 }
@@ -1701,8 +1734,7 @@ Please add exactly ONE sentence to continue this story. Make it engaging and cre
                         topK: 40,
                         maxOutputTokens: 100,
                     }
-                })
-            });
+                });
 
             if (apiResponse.ok) {
                 const data = await apiResponse.json();
