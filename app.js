@@ -1446,6 +1446,98 @@ async function makeIntelligentGuess(questionHistory, answers) {
         return null;
     }
 
+    // Build context from all Q&A
+    let context = "Based on this 20 questions game, what do you think they're thinking of?\n";
+    for (let i = 0; i < questionHistory.length; i++) {
+        context += `Q: ${questionHistory[i]} A: ${answers[i]}\n`;
+    }
+    context += "\nWhat is your best guess? Respond with just the object/animal/thing name, nothing else.";
+
+    try {
+        let response = '';
+
+        if (apiProvider === 'gemini') {
+            const apiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${currentApiKey}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{
+                            text: context
+                        }]
+                    }],
+                    generationConfig: {
+                        temperature: 0.3,
+                        topP: 0.8,
+                        topK: 40,
+                        maxOutputTokens: 20,
+                    }
+                })
+            });
+
+            if (apiResponse.ok) {
+                const data = await apiResponse.json();
+                response = data.candidates[0].content.parts[0].text.trim();
+            }
+        } else if (apiProvider === 'grok') {
+            const apiResponse = await fetch('https://api.x.ai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${currentApiKey}`
+                },
+                body: JSON.stringify({
+                    messages: [
+                        { role: "system", content: "You are making a guess in 20 questions. Respond with just the object name." },
+                        { role: "user", content: context }
+                    ],
+                    model: "grok-beta",
+                    stream: false,
+                    temperature: 0.3,
+                    max_tokens: 20
+                })
+            });
+
+            if (apiResponse.ok) {
+                const data = await apiResponse.json();
+                response = data.choices[0].message.content.trim();
+            }
+        } else if (apiProvider === 'groq') {
+            const apiResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${currentApiKey}`
+                },
+                body: JSON.stringify({
+                    messages: [
+                        { role: "system", content: "You are making a guess in 20 questions. Respond with just the object name." },
+                        { role: "user", content: context }
+                    ],
+                    model: "llama3-8b-8192",
+                    temperature: 0.3,
+                    max_tokens: 20
+                })
+            });
+
+            if (apiResponse.ok) {
+                const data = await apiResponse.json();
+                response = data.choices[0].message.content.trim();
+            }
+        }
+
+        // Clean up the response
+        response = response.replace(/^["']|["']$/g, '').toLowerCase();
+        return response || null;
+
+    } catch (error) {
+        console.error('Error making guess:', error);
+        return null;
+    }
+}
+
 
 // Build context from all Q&A
 let context = "Based on this 20 questions game, what do you think they're thinking of?\n";
