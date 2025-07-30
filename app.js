@@ -174,57 +174,6 @@ function initializeEventListeners() {
         });
     }
 
-    // Developer attraction control
-    const setAttractionBtn = document.getElementById('setAttractionBtn');
-    if (setAttractionBtn) {
-        setAttractionBtn.addEventListener('click', async function() {
-            console.log('Developer attraction button clicked');
-            const attractionInput = document.getElementById('devAttractionInput');
-            if (attractionInput) {
-                let newAttraction = parseInt(attractionInput.value);
-                console.log('Input value:', attractionInput.value, 'Parsed:', newAttraction);
-                if (isNaN(newAttraction)) {
-                    newAttraction = 0;
-                }
-                newAttraction = Math.max(0, Math.min(100, newAttraction));
-                console.log('Final attraction value:', newAttraction);
-
-                try {
-                    console.log('Sending request to set attraction...');
-                    const response = await fetch('/api/attraction/set', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ attraction: newAttraction })
-                    });
-
-                    console.log('Response status:', response.status);
-                    const responseData = await response.json();
-                    console.log('Response data:', responseData);
-
-                    if (response.ok) {
-                        attraction = newAttraction;
-                        localStorage.setItem('attraction', attraction.toString());
-                        updateAttractionDisplay();
-                        console.log('Attraction successfully set to:', newAttraction);
-                        alert(`Attraction set to ${newAttraction}!`);
-                    } else {
-                        console.error('Server responded with error:', responseData);
-                        alert('Failed to set attraction level. Please try again.');
-                    }
-                } catch (error) {
-                    console.error('Error setting attraction:', error);
-                    alert('Failed to set attraction level. Please try again.');
-                }
-            } else {
-                console.error('Attraction input element not found');
-            }
-        });
-    } else {
-        console.error('Set attraction button not found');
-    }
-
     // Pagination event listeners
     const firstPageBtn = document.getElementById('firstPage');
     if (firstPageBtn) {
@@ -278,12 +227,9 @@ function loadSavedData() {
     grokApiKey = localStorage.getItem('grokApiKey') || '';
     groqApiKey = localStorage.getItem('groqApiKey') || '';
 
-    // Sync attraction from server
-    syncAttractionFromServer();
-
     console.log('Loaded API keys:', {
         gemini: geminiApiKey ? 'Found' : 'Missing',
-        grok: grokApiKey ? 'Found' : 'Missing',
+        grok: grokApiKey ? 'Found' : 'Missing', 
         groq: groqApiKey ? 'Found' : 'Missing'
     });
 
@@ -312,12 +258,6 @@ function loadSavedData() {
         messageHistoryCount = parseInt(savedMessageHistoryCount);
         const messageHistoryInput = document.getElementById('messageHistoryCount');
         if (messageHistoryInput) messageHistoryInput.value = messageHistoryCount;
-    }
-
-    // Update developer attraction input with current value
-    const devAttractionInput = document.getElementById('devAttractionInput');
-    if (devAttractionInput) {
-        devAttractionInput.value = attraction;
     }
 
     // Load appropriate API key based on provider
@@ -420,28 +360,12 @@ function clearChatHistory() {
     }
 }
 
-async function resetAttraction() {
+function resetAttraction() {
     if (confirm('Reset attraction level back to 0 (Stranger)?\n\nThis will not affect chat history.')) {
-        try {
-            const response = await fetch('/api/attraction/reset', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (response.ok) {
-                attraction = 0;
-                localStorage.setItem('attraction', '0');
-                updateAttractionDisplay();
-                alert('Attraction level reset to Stranger!');
-            } else {
-                alert('Failed to reset attraction level. Please try again.');
-            }
-        } catch (error) {
-            console.error('Error resetting attraction:', error);
-            alert('Failed to reset attraction level. Please try again.');
-        }
+        attraction = 0;
+        localStorage.removeItem('attraction');
+        updateAttractionDisplay();
+        alert('Attraction level reset to Stranger!');
     }
 }
 
@@ -620,26 +544,6 @@ async function sendMessage() {
     addMessageToHistory('user', message);
     messageInput.value = '';
 
-    // Update attraction for user message
-    try {
-        const attractionResponse = await fetch('/api/attraction/update', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (attractionResponse.ok) {
-            const data = await attractionResponse.json();
-            attraction = data.attraction;
-            localStorage.setItem('attraction', attraction.toString());
-            updateAttractionDisplay();
-            console.log(`Attraction increased by ${data.points_added || 'unknown'} points to ${attraction}`);
-        }
-    } catch (error) {
-        console.error('Error updating attraction:', error);
-    }
-
     // Process game input if a game is active
     let shouldGetAIResponse = true;
     if (currentGame && gameProcessors[currentGame]) {
@@ -674,10 +578,6 @@ async function sendMessage() {
             chatHistory.pop(); // Remove "Typing..." message
         }
         addMessageToHistory('ai', response);
-
-        // Sync attraction level from server
-        await syncAttractionFromServer();
-
         displayChatHistory();
 
     } catch (error) {
@@ -716,26 +616,24 @@ function addMessageToHistory(sender, message, audioUrl = null) {
         timestamp: Date.now()
     });
 
+    // Add attraction points for AI messages, but significantly reduce for game AI messages
+    if (sender === 'ai') {
+        attraction += Math.floor(Math.random() * 3) + 1; // 1-3 points
+        updateAttractionDisplay();
+    } else if (sender === 'game_ai') {
+        // Much smaller chance of gaining attraction during games
+        if (Math.random() < 0.3) { // Only 30% chance
+            attraction += 1; // Only 1 point maximum
+            updateAttractionDisplay();
+        }
+    }
+
     // Auto-navigate to last page when new messages are added
     const totalPages = Math.ceil(chatHistory.length / messagesPerPage);
     currentPage = totalPages;
 
     localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-}
-
-// New function to sync attraction from server
-async function syncAttractionFromServer() {
-    try {
-        const response = await fetch('/api/attraction');
-        if (response.ok) {
-            const data = await response.json();
-            attraction = data.attraction || 0;
-            localStorage.setItem('attraction', attraction.toString());
-            updateAttractionDisplay();
-        }
-    } catch (error) {
-        console.error('Error syncing attraction:', error);
-    }
+    localStorage.setItem('attraction', attraction.toString());
 }
 
 function displayChatHistory() {
@@ -955,7 +853,7 @@ const systemPrompts = {
             if (nsfwMode) {
                 return "You are this person's vibrant lover, with a bond full of joy and deep affection. Be teasing, seductive, and use explicit adult language when appropriate to express your passionate and fun connection, maintaining a playful and affectionate girlfriend persona.";
             } else {
-                return "You are this person's vibrant lover, with a bond full of joy and deep affection. Be teasing, flirty, andpassionate while keeping language appropriate and family-friendly, maintaining a playful and affectionate girlfriend persona.";
+                return "You are this person's vibrant lover, with a bond full of joy and deep affection. Be teasing, flirty, and passionate while keeping language appropriate and family-friendly, maintaining a playful and affectionate girlfriend persona.";
             }
         },
         soulmate: function(nsfwMode) {
@@ -1446,97 +1344,96 @@ async function makeIntelligentGuess(questionHistory, answers) {
         return null;
     }
 
-
-// Build context from all Q&A
-let context = "Based on this 20 questions game, what do you think they're thinking of?\n";
-for (let i = 0; i < questionHistory.length; i++) {
-    context += `Q: ${questionHistory[i]} A: ${answers[i]}\n`;
-}
-context += "\nWhat is your best guess? Respond with just the object/animal/thing name, nothing else.";
-
-try {
-    let response = '';
-
-    if (apiProvider === 'gemini') {
-        const apiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${currentApiKey}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                contents: [{
-                    parts: [{
-                        text: context
-                    }]
-                }],
-                generationConfig: {
-                    temperature: 0.3,
-                    topP: 0.8,
-                    topK: 40,
-                    maxOutputTokens: 20,
-                }
-            })
-        });
-
-        if (apiResponse.ok) {
-            const data = await apiResponse.json();
-            response = data.candidates[0].content.parts[0].text.trim();
-        }
-    } else if (apiProvider === 'grok') {
-        const apiResponse = await fetch('https://api.x.ai/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${currentApiKey}`
-            },
-            body: JSON.stringify({
-                messages: [
-                    { role: "system", content: "You are making a guess in 20 questions. Respond with just the object name." },
-                    { role: "user", content: context }
-                ],
-                model: "grok-beta",
-                stream: false,
-                temperature: 0.3,
-                max_tokens: 20
-            })
-        });
-
-        if (apiResponse.ok) {
-            const data = await apiResponse.json();
-            response = data.choices[0].message.content.trim();
-        }
-    } else if (apiProvider === 'groq') {
-        const apiResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${currentApiKey}`
-            },
-            body: JSON.stringify({
-                messages: [
-                    { role: "system", content: "You are making a guess in 20 questions. Respond with just the object name." },
-                    { role: "user", content: context }
-                ],
-                model: "llama3-8b-8192",
-                temperature: 0.3,
-                max_tokens: 20
-            })
-        });
-
-        if (apiResponse.ok) {
-            const data = await apiResponse.json();
-            response = data.choices[0].message.content.trim();
-        }
+    // Build context from all Q&A
+    let context = "Based on this 20 questions game, what do you think they're thinking of?\n";
+    for (let i = 0; i < questionHistory.length; i++) {
+        context += `Q: ${questionHistory[i]} A: ${answers[i]}\n`;
     }
+    context += "\nWhat is your best guess? Respond with just the object/animal/thing name, nothing else.";
 
-    // Clean up the response
-    response = response.replace(/^["']|["']$/g, '').toLowerCase();
-    return response || null;
+    try {
+        let response = '';
 
-} catch (error) {
-    console.error('Error making guess:', error);
-    return null;
+        if (apiProvider === 'gemini') {
+            const apiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${currentApiKey}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{
+                            text: context
+                        }]
+                    }],
+                    generationConfig: {
+                        temperature: 0.3,
+                        topP: 0.8,
+                        topK: 40,
+                        maxOutputTokens: 20,
+                    }
+                })
+            });
+
+            if (apiResponse.ok) {
+                const data = await apiResponse.json();
+                response = data.candidates[0].content.parts[0].text.trim();
+            }
+        } else if (apiProvider === 'grok') {
+            const apiResponse = await fetch('https://api.x.ai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${currentApiKey}`
+                },
+                body: JSON.stringify({
+                    messages: [
+                        { role: "system", content: "You are making a guess in 20 questions. Respond with just the object name." },
+                        { role: "user", content: context }
+                    ],
+                    model: "grok-beta",
+                    stream: false,
+                    temperature: 0.3,
+                    max_tokens: 20
+                })
+            });
+
+            if (apiResponse.ok) {
+                const data = await apiResponse.json();
+                response = data.choices[0].message.content.trim();
+            }
+        } else if (apiProvider === 'groq') {
+            const apiResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${currentApiKey}`
+                },
+                body: JSON.stringify({
+                    messages: [
+                        { role: "system", content: "You are making a guess in 20 questions. Respond with just the object name." },
+                        { role: "user", content: context }
+                    ],
+                    model: "llama3-8b-8192",
+                    temperature: 0.3,
+                    max_tokens: 20
+                })
+            });
+
+            if (apiResponse.ok) {
+                const data = await apiResponse.json();
+                response = data.choices[0].message.content.trim();
+            }
 }
+
+        // Clean up the response
+        response = response.replace(/^["']|["']$/g, '').toLowerCase();
+        return response || null;
+
+    } catch (error) {
+        console.error('Error making guess:', error);
+        return null;
+    }
 }
 
 // Voice Recording Functions
@@ -1544,13 +1441,13 @@ async function startRecording() {
     if (isRecording || isProcessingAudio) return;
 
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({
+        const stream = await navigator.mediaDevices.getUserMedia({ 
             audio: {
                 sampleRate: 44100,
                 channelCount: 1,
                 echoCancellation: true,
                 noiseSuppression: true,
-            }
+            } 
         });
 
         mediaRecorder = new MediaRecorder(stream, {
@@ -1637,7 +1534,7 @@ async function sendAudioMessage(audioBlob) {
     try {
         // Save audio file locally (for playback)
         const audioUrl = URL.createObjectURL(audioBlob);
-
+        
         // Transcribe audio based on provider
         let transcription = '';
         if (apiProvider === 'groq') {
@@ -1654,27 +1551,6 @@ async function sendAudioMessage(audioBlob) {
 
         // Add user message to chat with audio URL
         addMessageToHistory('user', transcription, audioUrl);
-
-        // Update attraction for voice message
-        try {
-            const attractionResponse = await fetch('/api/attraction/update', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (attractionResponse.ok) {
-                const data = await attractionResponse.json();
-                attraction = data.attraction;
-                localStorage.setItem('attraction', attraction.toString());
-                updateAttractionDisplay();
-                console.log(`Attraction increased by ${data.points_added || 'unknown'} points to ${attraction} (voice message)`);
-            }
-        } catch (error) {
-            console.error('Error updating attraction:', error);
-        }
-
         displayChatHistory();
 
         // Show typing indicator
@@ -1696,10 +1572,6 @@ async function sendAudioMessage(audioBlob) {
             chatHistory.pop();
         }
         addMessageToHistory('ai', response);
-
-        // Sync attraction level from server
-        await syncAttractionFromServer();
-
         displayChatHistory();
 
     } catch (error) {
@@ -2510,38 +2382,38 @@ if (document.readyState === 'loading') {
             });
         }
 
-        // Games modal functionality
-        const gamesBtn = document.getElementById('gamesButton');
-        const gamesModal = document.getElementById('gamesModal');
-        const closeGames = document.getElementById('closeGames');
+         // Games modal functionality
+         const gamesBtn = document.getElementById('gamesButton');
+         const gamesModal = document.getElementById('gamesModal');
+         const closeGames = document.getElementById('closeGames');
 
-        if (gamesBtn && gamesModal) {
-            gamesBtn.addEventListener('click', () => {
-                gamesModal.style.display = 'block';
-            });
-        }
+         if (gamesBtn && gamesModal) {
+             gamesBtn.addEventListener('click', () => {
+                 gamesModal.style.display = 'block';
+             });
+         }
 
-        if (closeGames && gamesModal) {
-            closeGames.addEventListener('click', () => {
-                gamesModal.style.display = 'none';
-            });
-        }
+         if (closeGames && gamesModal) {
+             closeGames.addEventListener('click', () => {
+                 gamesModal.style.display = 'none';
+             });
+         }
 
-        // Game card event listeners
-        document.querySelectorAll('.game-card').forEach(card => {
-            card.addEventListener('click', () => {
-                const gameName = card.getAttribute('data-game');
-                if (gameName) {
-                    startGame(gameName);
-                }
-            });
-        });
+         // Game card event listeners
+         document.querySelectorAll('.game-card').forEach(card => {
+             card.addEventListener('click', () => {
+                 const gameName = card.getAttribute('data-game');
+                 if (gameName) {
+                     startGame(gameName);
+                 }
+             });
+         });
 
-        // Close modals when clicking outside
-        window.addEventListener('click', (event) => {
-            if (event.target === gamesModal) {
-                gamesModal.style.display = 'none';
-            }
-        });
+         // Close modals when clicking outside
+         window.addEventListener('click', (event) => {
+             if (event.target === gamesModal) {
+                 gamesModal.style.display = 'none';
+             }
+         });
     }, 100);
 }
