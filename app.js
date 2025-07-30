@@ -944,58 +944,7 @@ function getSystemPrompt() {
 // AI API Functions
 async function sendToGeminiAPI(message, apiKey) {
     const systemPrompt = getSystemPrompt();
-    // Analyze user message characteristics
-        const userMessageLength = message.length;
-        const userWordCount = message.trim().split(/\s+/).length;
-        const hasQuestions = message.includes('?');
-        const hasEmojis = /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u.test(message);
-
-        // Determine response style with randomness
-        let responseStyle = "";
-        const randomFactor = Math.random();
-
-        if (userWordCount <= 3) {
-            // Very short messages - usually respond briefly but occasionally elaborate
-            if (randomFactor < 0.7) {
-                responseStyle = "Keep your response short and sweet, 1-2 sentences maximum. Match their casual energy.";
-            } else {
-                responseStyle = "Give a slightly longer response to show interest, but keep it conversational, 2-3 sentences.";
-            }
-        } else if (userWordCount <= 15) {
-            // Short to medium messages - vary response length
-            if (randomFactor < 0.4) {
-                responseStyle = "Keep your response concise, 1-2 sentences.";
-            } else if (randomFactor < 0.8) {
-                responseStyle = "Give a medium-length response, 2-3 sentences. Be engaging but not overwhelming.";
-            } else {
-                responseStyle = "Show extra interest with a longer response, 3-4 sentences, but stay natural.";
-            }
-        } else if (userWordCount <= 40) {
-            // Medium messages - generally match their effort
-            if (randomFactor < 0.3) {
-                responseStyle = "Give a thoughtful medium-length response, 2-3 sentences.";
-            } else {
-                responseStyle = "Match their energy with a substantial response, 3-5 sentences. Show you're engaged.";
-            }
-        } else {
-            // Long messages - usually respond with similar length but add variety
-            if (randomFactor < 0.2) {
-                responseStyle = "Give a surprisingly concise but meaningful response, 2-3 sentences. Sometimes less is more.";
-            } else {
-                responseStyle = "Match their detailed message with a thoughtful, longer response. Show you appreciate their effort in sharing.";
-            }
-        }
-
-        // Add contextual modifiers
-        if (hasQuestions) {
-            responseStyle += " Make sure to answer their questions naturally.";
-        }
-        if (hasEmojis) {
-            responseStyle += " Feel free to use emojis to match their playful tone.";
-        }
-
-        // Create the prompt with system instructions and response style guidance
-        let fullPrompt = `${systemPrompt}\n\nResponse style guidance: ${responseStyle}`;
+    let fullPrompt = systemPrompt;
 
     // Add game awareness if in a game
     if (currentGame) {
@@ -1098,56 +1047,7 @@ async function sendToGeminiAPI(message, apiKey) {
 
 async function sendToGrokAPI(message, apiKey) {
     const systemPrompt = getSystemPrompt();
-    // Analyze user message characteristics
-        const userMessageLength = message.length;
-        const userWordCount = message.trim().split(/\s+/).length;
-        const hasQuestions = message.includes('?');
-        const hasEmojis = /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u.test(message);
-
-        // Determine response style with randomness
-        let responseStyle = "";
-        const randomFactor = Math.random();
-
-        if (userWordCount <= 3) {
-            // Very short messages - usually respond briefly but occasionally elaborate
-            if (randomFactor < 0.7) {
-                responseStyle = "Keep your response short and sweet, 1-2 sentences maximum. Match their casual energy.";
-            } else {
-                responseStyle = "Give a slightly longer response to show interest, but keep it conversational, 2-3 sentences.";
-            }
-        } else if (userWordCount <= 15) {
-            // Short to medium messages - vary response length
-            if (randomFactor < 0.4) {
-                responseStyle = "Keep your response concise, 1-2 sentences.";
-            } else if (randomFactor < 0.8) {
-                responseStyle = "Give a medium-length response, 2-3 sentences. Be engaging but not overwhelming.";
-            } else {
-                responseStyle = "Show extra interest with a longer response, 3-4 sentences, but stay natural.";
-            }
-        } else if (userWordCount <= 40) {
-            // Medium messages - generally match their effort
-            if (randomFactor < 0.3) {
-                responseStyle = "Give a thoughtful medium-length response, 2-3 sentences.";
-            } else {
-                responseStyle = "Match their energy with a substantial response, 3-5 sentences. Show you're engaged.";
-            }
-        } else {
-            // Long messages - usually respond with similar length but add variety
-            if (randomFactor < 0.2) {
-                responseStyle = "Give a surprisingly concise but meaningful response, 2-3 sentences. Sometimes less is more.";
-            } else {
-                responseStyle = "Match their detailed message with a thoughtful, longer response. Show you appreciate their effort in sharing.";
-            }
-        }
-
-        // Add contextual modifiers
-        if (hasQuestions) {
-            responseStyle += " Make sure to answer their questions naturally.";
-        }
-        if (hasEmojis) {
-            responseStyle += " Feel free to use emojis to match their playful tone.";
-        }
-    let fullPrompt = `${systemPrompt}\n\nResponse style guidance: ${responseStyle}`;
+    let fullPrompt = systemPrompt;
 
     // Add game awareness if in a game
     if (currentGame) {
@@ -1207,56 +1107,7 @@ async function sendToGrokAPI(message, apiKey) {
 
 async function sendToGroqAPI(message, apiKey) {
     const systemPrompt = getSystemPrompt();
-     // Analyze user message characteristics
-        const userMessageLength = message.length;
-        const userWordCount = message.trim().split(/\s+/).length;
-        const hasQuestions = message.includes('?');
-        const hasEmojis = /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u.test(message);
-
-        // Determine response style with randomness
-        let responseStyle = "";
-        const randomFactor = Math.random();
-
-        if (userWordCount <= 3) {
-            // Very short messages - usually respond briefly but occasionally elaborate
-            if (randomFactor < 0.7) {
-                responseStyle = "Keep your response short and sweet, 1-2 sentences maximum. Match their casual energy.";
-            } else {
-                responseStyle = "Give a slightly longer response to show interest, but keep it conversational, 2-3 sentences.";
-            }
-        } else if (userWordCount <= 15) {
-            // Short to medium messages - vary response length
-            if (randomFactor < 0.4) {
-                responseStyle = "Keep your response concise, 1-2 sentences.";
-            } else if (randomFactor < 0.8) {
-                responseStyle = "Give a medium-length response, 2-3 sentences. Be engaging but not overwhelming.";
-            } else {
-                responseStyle = "Show extra interest with a longer response, 3-4 sentences, but stay natural.";
-            }
-        } else if (userWordCount <= 40) {
-            // Medium messages - generally match their effort
-            if (randomFactor < 0.3) {
-                responseStyle = "Give a thoughtful medium-length response, 2-3 sentences.";
-            } else {
-                responseStyle = "Match their energy with a substantial response, 3-5 sentences. Show you're engaged.";
-            }
-        } else {
-            // Long messages - usually respond with similar length but add variety
-            if (randomFactor < 0.2) {
-                responseStyle = "Give a surprisingly concise but meaningful response, 2-3 sentences. Sometimes less is more.";
-            } else {
-                responseStyle = "Match their detailed message with a thoughtful, longer response. Show you appreciate their effort in sharing.";
-            }
-        }
-
-        // Add contextual modifiers
-        if (hasQuestions) {
-            responseStyle += " Make sure to answer their questions naturally.";
-        }
-        if (hasEmojis) {
-            responseStyle += " Feel free to use emojis to match their playful tone.";
-        }
-    let fullPrompt = `${systemPrompt}\n\nResponse style guidance: ${responseStyle}`;
+    let fullPrompt = systemPrompt;
 
     // Add game awareness if in a game
     if (currentGame) {
@@ -1659,7 +1510,6 @@ function updateVoiceButtonState() {
     } else {
         voiceBtn.innerHTML = '🎤';
         voiceBtn.style.backgroundColor = '';
-        ```text
         voiceBtn.title = 'Hold to record voice message';
     }
 }
