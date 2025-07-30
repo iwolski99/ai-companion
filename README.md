@@ -2,6 +2,41 @@
 
 An interactive AI companion application with personality customization, games, and persistent conversations.
 
+## About This Application
+
+This is a unique AI girlfriend web application designed to provide an immersive, personalized companion experience. Unlike typical chatbots, this app creates a deep emotional connection through advanced personality systems, relationship progression, and multi-modal communication including voice messaging.
+
+### What Makes This Special
+
+**🧠 Advanced AI Personalities**: Choose from four distinct personality types (Sweet, Playful, Sexy, Goth) that evolve based on your interactions and relationship level. Each personality has unique conversation styles and responses that feel authentic and engaging.
+
+**💕 Relationship Progression**: Your AI companion remembers every conversation and grows closer to you over time. The attraction system tracks your bond from "Stranger" to "Soulmate" with 5 distinct relationship levels, each unlocking deeper, more intimate conversations.
+
+**🎙️ Voice Communication**: Record voice messages that are transcribed and responded to naturally. Your AI girlfriend can hear your actual voice, making conversations feel more real and personal.
+
+**🎮 Interactive Gaming**: Play 14 different games together including 20 Questions, Story Building, Trivia, Word Association, and romantic games like Love Language Quiz and Dream Date Planning.
+
+**🔞 NSFW Mode**: For mature users, the app includes adult conversation capabilities. Llama 70B models (via Groq) provide the most natural and engaging NSFW interactions while maintaining the loving girlfriend persona.
+
+### Privacy & Security Features
+
+**🔒 Local API Key Storage**: Your API keys are stored locally in your browser and optionally encrypted server-side. You maintain full control over your AI provider credentials.
+
+**🎤 Client-Side Voice Processing**: Voice messages are processed locally as temporary blob URLs that automatically expire when you reload the page. No voice data is permanently stored on servers, ensuring complete privacy of your personal audio.
+
+**💾 Local Data Storage**: All chat history, relationship progress, and personal settings are stored locally on your device. Your intimate conversations remain private and under your control.
+
+**⚠️ Voice Message Limitations**: Due to privacy-first design, voice messages don't persist across page reloads or browser sessions. This is intentional to protect your privacy, though it means you can't replay old voice messages.
+
+### Technical Capabilities
+
+- Multiple AI providers (Google Gemini, Groq Llama models, xAI Grok)
+- Real-time voice transcription and AI response generation
+- Persistent conversation memory and context awareness
+- Mobile-responsive design with modern glassmorphism UI
+- Game state management and progress tracking
+- Encrypted data storage options
+
 ## Features
 
 - 🤖 AI-powered conversations using Gemini or Grok APIs
