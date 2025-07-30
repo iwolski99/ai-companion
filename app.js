@@ -10,6 +10,13 @@ let personality = localStorage.getItem('personality') || 'sweet';
 let companionGender = localStorage.getItem('companionGender') || 'female';
 let attraction = parseInt(localStorage.getItem('attraction') || '0');
 let currentGame = null;
+let nsfwMode = localStorage.getItem('nsfwMode') === 'true' || true; // Default to true
+let aiModel = localStorage.getItem('aiModel') || 'llama-3.3-70b-versatile';
+
+// Voice Recording Variables
+let mediaRecorder;
+let audioChunks = [];
+let isRecording = false;
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
@@ -80,6 +87,14 @@ function initializeEventListeners() {
         });
     }
 
+    // Voice message button
+    const voiceBtn = document.getElementById('voiceButton');
+    if (voiceBtn) {
+        voiceBtn.addEventListener('mousedown', startRecording);
+        voiceBtn.addEventListener('mouseup', stopRecording);
+        voiceBtn.addEventListener('mouseleave', stopRecording);
+    }
+
     // API provider selector
     const apiSelect = document.getElementById('apiProvider');
     if (apiSelect) {
@@ -97,7 +112,7 @@ function initializeEventListeners() {
             const targetId = this.getAttribute('data-target');
             const input = document.getElementById(targetId);
             const eyeIcon = this.querySelector('.eye-icon');
-            
+
             if (input && eyeIcon) {
                 if (input.type === 'password') {
                     input.type = 'text';
@@ -141,13 +156,13 @@ function loadSavedData() {
     geminiApiKey = localStorage.getItem('geminiApiKey') || '';
     grokApiKey = localStorage.getItem('grokApiKey') || '';
     groqApiKey = localStorage.getItem('groqApiKey') || '';
-    
+
     console.log('Loaded API keys:', {
         gemini: geminiApiKey ? 'Found' : 'Missing',
         grok: grokApiKey ? 'Found' : 'Missing', 
         groq: groqApiKey ? 'Found' : 'Missing'
     });
-    
+
     // Load API provider
     const savedProvider = localStorage.getItem('apiProvider');
     if (savedProvider) {
@@ -158,7 +173,7 @@ function loadSavedData() {
 
     // Load appropriate API key based on provider
     updateApiKeyInput();
-    
+
     // Load saved profile picture
     const savedProfilePic = localStorage.getItem('profilePictureData');
     if (savedProfilePic) {
@@ -167,6 +182,18 @@ function loadSavedData() {
             profilePic.src = savedProfilePic;
         }
     }
+
+    // Load saved nsfw mode
+    const savedNsfwMode = localStorage.getItem('nsfwMode');
+    if (savedNsfwMode !== null) {
+        nsfwMode = savedNsfwMode === 'true';
+    }
+
+     // Load saved AI model
+     const savedAiModel = localStorage.getItem('aiModel');
+     if (savedAiModel) {
+         aiModel = savedAiModel;
+     }
 }
 
 function updateUI() {
@@ -180,7 +207,7 @@ function saveApiKeys() {
     const apiKeyInput = document.getElementById('apiKey');
     if (apiKeyInput && apiKeyInput.value.trim()) {
         const keyValue = apiKeyInput.value.trim();
-        
+
         if (apiProvider === 'gemini') {
             geminiApiKey = keyValue;
             localStorage.setItem('geminiApiKey', geminiApiKey);
@@ -218,7 +245,7 @@ function updateApiKeyInput() {
 
     apiKeyInput.value = currentKey;
     apiKeyInput.placeholder = placeholder;
-    
+
     // Show visual feedback if key is loaded
     if (currentKey) {
         apiKeyInput.style.borderColor = '#4CAF50';
@@ -249,6 +276,80 @@ function openQuizModal() {
     const modal = document.getElementById('quizModal');
     if (modal) {
         modal.style.display = 'block';
+
+        // Set up form values
+        const genderSelect = document.getElementById('gender');
+        const nsfwToggle = document.getElementById('nsfwMode');
+        const aiModelSelect = document.getElementById('aiModel');
+
+        if (genderSelect) {
+            genderSelect.value = companionGender;
+        }
+        if (nsfwToggle) {
+            nsfwToggle.checked = nsfwMode;
+        }
+        if (aiModelSelect) {
+            aiModelSelect.value = aiModel;
+        }
+
+        // Quiz form submission
+        const quizForm = document.getElementById('quizForm');
+        if (quizForm) {
+            quizForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const formData = new FormData(e.target);
+                const answers = {};
+                for (let [key, value] of formData.entries()) {
+                    answers[key] = value;
+                }
+
+                // Store gender preference
+                companionGender = answers.gender || 'female';
+                localStorage.setItem('companionGender', companionGender);
+
+                // Store NSFW mode
+                nsfwMode = answers.nsfwMode === 'true';
+                localStorage.setItem('nsfwMode', nsfwMode.toString());
+
+                // Store AI model
+                aiModel = answers.aiModel || 'llama-3.3-70b-versatile';
+                localStorage.setItem('aiModel', aiModel);
+
+                // Calculate personality based on answers
+                const personalityScores = {
+                    sweet: 0,
+                    playful: 0,
+                    sexy: 0,
+                    goth: 0
+                };
+
+                // Count answers for each personality
+                Object.values(answers).forEach(answer => {
+                    if (personalityScores.hasOwnProperty(answer)) {
+                        personalityScores[answer]++;
+                    }
+                });
+
+                // Find the personality with the highest score
+                let maxScore = 0;
+                let selectedPersonality = 'sweet';
+
+                Object.entries(personalityScores).forEach(([pers, score]) => {
+                    if (score > maxScore) {
+                        maxScore = score;
+                        selectedPersonality = pers;
+                    }
+                });
+
+                personality = selectedPersonality;
+                localStorage.setItem('personality', personality);
+
+                // Close modal and show result
+                closeQuizModal();
+                alert(`Settings saved!\nPersonality: ${personality}\nGender: ${companionGender}\nNSFW Mode: ${nsfwMode ? 'Enabled' : 'Disabled'}\nAI Model: ${aiModel}`);
+            });
+        }
     }
 }
 
@@ -277,20 +378,20 @@ function openProfilePicModal() {
     const modal = document.getElementById('profilePicModal');
     if (modal) {
         modal.style.display = 'block';
-        
+
         // Set up event listeners for profile pic modal buttons
         const saveBtn = document.getElementById('saveProfilePic');
         const cancelBtn = document.getElementById('cancelProfilePic');
         const fileInput = document.getElementById('profilePicInput');
-        
+
         if (saveBtn) {
             saveBtn.onclick = saveProfilePicture;
         }
-        
+
         if (cancelBtn) {
             cancelBtn.onclick = closeProfilePicModal;
         }
-        
+
         if (fileInput) {
             fileInput.onchange = handleProfilePicSelect;
         }
@@ -307,7 +408,7 @@ function closeProfilePreviewModal() {
 function showProfilePreview(imageSrc) {
     const modal = document.getElementById('profilePreviewModal');
     const previewImage = document.getElementById('profilePreviewImage');
-    
+
     if (modal && previewImage) {
         previewImage.src = imageSrc;
         modal.style.display = 'block';
@@ -329,7 +430,7 @@ function handleProfilePicSelect(event) {
             alert('Please select an image file.');
             return;
         }
-        
+
         // Check file size (limit to 5MB)
         if (file.size > 5 * 1024 * 1024) {
             alert('File size must be less than 5MB.');
@@ -344,32 +445,32 @@ function saveProfilePicture() {
         alert('Please select an image file first.');
         return;
     }
-    
+
     const file = fileInput.files[0];
     const reader = new FileReader();
-    
+
     reader.onload = function(e) {
         const imageData = e.target.result;
-        
+
         // Update the profile picture display
         const profilePic = document.getElementById('profilePic');
         if (profilePic) {
             profilePic.src = imageData;
         }
-        
+
         // Store in localStorage
         localStorage.setItem('profilePictureData', imageData);
-        
+
         // Close modal
         closeProfilePicModal();
-        
+
         alert('Profile picture updated successfully!');
     };
-    
+
     reader.onerror = function() {
         alert('Error reading file. Please try again.');
     };
-    
+
     reader.readAsDataURL(file);
 }
 
@@ -388,7 +489,7 @@ async function sendMessage() {
 
     // Check if API key is configured
     let currentApiKey = '';
-    
+
     if (apiProvider === 'gemini') {
         currentApiKey = geminiApiKey;
     } else if (apiProvider === 'grok') {
@@ -448,7 +549,7 @@ async function sendMessage() {
         if (chatHistory.length > 0 && chatHistory[chatHistory.length - 1].message === 'Typing...') {
             chatHistory.pop(); // Remove "Typing..." message
         }
-        
+
         // Provide specific error messages based on the error
         let errorMessage = 'Sorry, I encountered an error. ';
         if (error.message.includes('Rate limit')) {
@@ -464,7 +565,7 @@ async function sendMessage() {
         } else {
             errorMessage += error.message || 'Please try again in a moment.';
         }
-        
+
         addMessageToHistory('ai', errorMessage);
         displayChatHistory();
     }
@@ -533,6 +634,11 @@ function displayChatHistory() {
             profilePicHtml = `<img src="${profileSrc}" alt="AI Profile" class="profile-pic message-profile-pic" onclick="showProfilePreview('${profileSrc}')">`;
         }
 
+        let audioPlayerHtml = '';
+        if (msg.sender === 'user' && msg.audioUrl) {
+            audioPlayerHtml = `<audio controls src="${msg.audioUrl}"></audio>`;
+        }
+
         if (msg.sender === 'ai' || msg.sender === 'game_ai') {
             messageDiv.innerHTML = `
                 ${profilePicHtml}
@@ -550,12 +656,13 @@ function displayChatHistory() {
                     <div class="message-content">
                         <strong>${senderName}:</strong>
                         <span>${messageContent}</span>
+                        ${audioPlayerHtml}
                     </div>
                     <div class="message-time">${new Date(msg.timestamp).toLocaleTimeString()}</div>
                 </div>
             `;
         }
-        
+
         chatDisplay.appendChild(messageDiv);
     });
 
@@ -623,7 +730,13 @@ function getSystemPrompt() {
     const prompt = systemPrompts[personality]?.[level] || systemPrompts.sweet.stranger;
     const genderTerm = companionGender === 'female' ? 'girlfriend' : 'boyfriend';
 
-    return prompt.replace('girlfriend/boyfriend', genderTerm);
+    let finalPrompt = prompt.replace('girlfriend/boyfriend', genderTerm);
+
+    if (!nsfwMode) {
+        finalPrompt += " Keep all responses strictly PG-13 and avoid any suggestive or explicit content.";
+    }
+
+    return finalPrompt;
 }
 
 // AI API Functions
@@ -697,7 +810,7 @@ async function sendToGeminiAPI(message, apiKey) {
         }
 
         const data = await response.json();
-        
+
         if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
             console.error('Unexpected API response structure:', data);
             throw new Error('Unexpected response from Gemini API');
@@ -817,7 +930,7 @@ async function sendToGroqAPI(message, apiKey) {
             },
             body: JSON.stringify({
                 messages: messages,
-                model: "llama-3.1-8b-instant",
+                model: aiModel,
                 temperature: 0.7,
                 max_tokens: 1024,
                 stream: false
@@ -849,7 +962,7 @@ async function sendToGroqAPI(message, apiKey) {
         }
 
         const data = await response.json();
-        
+
         if (!data.choices || !data.choices[0] || !data.choices[0].message) {
             console.error('Unexpected Groq API response structure:', data);
             throw new Error('Unexpected response from Groq API');
@@ -1583,6 +1696,7 @@ const gameProcessors = {
         }
 
         if (!data.started && !data.scenario) {
+```text
             data.scenario = message;
             data.started = true;
             appendGameAdminMessage(`🎭 Great! Let's roleplay a ${message} scenario. I'll play along with whatever character fits the scene!`);
@@ -1785,12 +1899,12 @@ if (document.readyState === 'loading') {
             if (event.target === gamesModal) {
                 gamesModal.style.display = 'none';
             }
-            
+
             const profilePicModal = document.getElementById('profilePicModal');
             if (event.target === profilePicModal) {
                 profilePicModal.style.display = 'none';
             }
-            
+
             const profilePreviewModal = document.getElementById('profilePreviewModal');
             if (event.target === profilePreviewModal) {
                 profilePreviewModal.style.display = 'none';
@@ -1845,4 +1959,207 @@ if (document.readyState === 'loading') {
              }
          });
     }, 100);
+}
+
+// Voice Recording Functions
+async function startRecording() {
+    if (isRecording) return;
+
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            audio: {
+                sampleRate: 44100,
+                channelCount: 1,
+                echoCancellation: true,
+                noiseSuppression: true,
+            } 
+        });
+
+        mediaRecorder = new MediaRecorder(stream, {
+            mimeType: 'audio/webm;codecs=opus'
+        });
+
+        audioChunks = [];
+        isRecording = true;
+
+        const voiceBtn = document.getElementById('voiceButton');
+        if (voiceBtn) {
+            voiceBtn.classList.add('recording');
+            voiceBtn.innerHTML = '🔴';
+        }
+
+        mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+                audioChunks.push(event.data);
+            }
+        };
+
+        mediaRecorder.onstop = async () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+            await processAudioMessage(audioBlob);
+
+            // Clean up
+            stream.getTracks().forEach(track => track.stop());
+            isRecording = false;
+
+            if (voiceBtn) {
+                voiceBtn.classList.remove('recording');
+                voiceBtn.innerHTML = '🎤';
+            }
+        };
+
+        mediaRecorder.start();
+    } catch (error) {
+        console.error('Error starting recording:', error);
+        alert('Could not access microphone. Please check permissions.');
+        isRecording = false;
+    }
+}
+
+function stopRecording() {
+    if (mediaRecorder && isRecording) {
+        mediaRecorder.stop();
+    }
+}
+
+async function processAudioMessage(audioBlob) {
+    // Check if API key is configured
+    let currentApiKey = '';
+
+    if (apiProvider === 'gemini') {
+        currentApiKey = geminiApiKey;
+    } else if (apiProvider === 'grok') {
+        currentApiKey = grokApiKey;
+    } else if (apiProvider === 'groq') {
+        currentApiKey = groqApiKey;
+    }
+
+    if (!currentApiKey) {
+        alert(`Please configure your ${apiProvider.toUpperCase()} API key first!`);
+        return;
+    }
+
+    // Create audio URL for playback
+    const audioUrl = URL.createObjectURL(audioBlob);
+
+    // Show processing message
+    addMessageToHistory('user', 'Processing voice message...');
+    displayChatHistory();
+
+    try {
+        let transcription = '';
+
+        // Transcribe audio based on provider
+        if (apiProvider === 'groq') {
+            transcription = await transcribeWithGroq(audioBlob, currentApiKey);
+        } else {
+            transcription = await transcribeWithGemini(audioBlob, currentApiKey);
+        }
+
+        // Remove processing message and add actual transcription
+        if (chatHistory.length > 0 && chatHistory[chatHistory.length - 1].message === 'Processing voice message...') {
+            chatHistory.pop();
+        }
+
+        // Add user message with audio
+        const userMessage = {
+            sender: 'user',
+            message: transcription,
+            audioUrl: audioUrl,
+            timestamp: Date.now()
+        };
+
+        chatHistory.push(userMessage);
+        localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+        displayChatHistory();
+
+        // Get AI response
+        addMessageToHistory('ai', 'Typing...');
+        displayChatHistory();
+
+        let response = '';
+        if (apiProvider === 'gemini') {
+            response = await sendToGeminiAPI(transcription, currentApiKey);
+        } else if (apiProvider === 'grok') {
+            response = await sendToGrokAPI(transcription, currentApiKey);
+        } else if (apiProvider === 'groq') {
+            response = await sendToGroqAPI(transcription, currentApiKey);
+        }
+
+        // Remove typing indicator and add real response
+        if (chatHistory.length > 0 && chatHistory[chatHistory.length - 1].message === 'Typing...') {
+            chatHistory.pop();
+        }
+        addMessageToHistory('ai', response);
+        displayChatHistory();
+
+    } catch (error) {
+        console.error('Error processing audio:', error);
+
+        // Remove processing message
+        if (chatHistory.length > 0 && chatHistory[chatHistory.length - 1].message === 'Processing voice message...') {
+            chatHistory.pop();
+        }
+
+        addMessageToHistory('ai', 'Sorry, I had trouble processing your voice message. Please try again.');
+        displayChatHistory();
+    }
+}
+
+async function transcribeWithGroq(audioBlob, apiKey) {
+    const formData = new FormData();
+    formData.append('file', audioBlob, 'audio.wav');
+    formData.append('model', 'whisper-large-v3');
+
+    const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${apiKey}`
+        },
+        body: formData
+    });
+
+    if (!response.ok) {
+        throw new Error(`Groq transcription failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.text || "I couldn't transcribe your audio.";
+}
+
+async function transcribeWithGemini(audioBlob, apiKey) {
+    // Convert blob to base64 for Gemini
+    const arrayBuffer = await audioBlob.arrayBuffer();
+    const base64Audio = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            contents: [{
+                parts: [
+                    {
+                        inlineData: {
+                            data: base64Audio,
+                            mimeType: 'audio/wav',
+                        },
+                    },
+                    { text: "Please transcribe this audio." }
+                ]
+            }],
+            generationConfig: {
+                temperature: 0.1,
+                maxOutputTokens: 1024,
+            }
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error(`Gemini transcription failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.candidates[0]?.content?.parts[0]?.text || "I couldn't transcribe your audio.";
 }

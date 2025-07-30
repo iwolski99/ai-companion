@@ -552,6 +552,63 @@ h1 {
     background: linear-gradient(45deg, #ad1457, #7b1fa2);
 }
 
+.voice-btn {
+    padding: 18px 20px;
+    border-radius: 15px;
+    background: linear-gradient(45deg, #e91e63, #ad1457);
+    font-weight: 600;
+    font-size: 18px;
+    transition: all 0.3s ease;
+    min-width: 60px;
+}
+
+.voice-btn:hover {
+    background: linear-gradient(45deg, #c2185b, #880e4f);
+    transform: scale(1.05);
+}
+
+.voice-btn.recording {
+    background: linear-gradient(45deg, #f44336, #d32f2f);
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+.audio-message {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(194, 24, 91, 0.1);
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(194, 24, 91, 0.3);
+    margin-top: 5px;
+}
+
+.audio-play-btn {
+    background: var(--sultry-accent);
+    border: none;
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transition: all 0.3s ease;
+}
+
+.audio-play-btn:hover {
+    background: #ad1457;
+    transform: scale(1.1);
+}
+
 /* Enhanced Modal with Glassmorphism */
 .modal {
     display: none;
