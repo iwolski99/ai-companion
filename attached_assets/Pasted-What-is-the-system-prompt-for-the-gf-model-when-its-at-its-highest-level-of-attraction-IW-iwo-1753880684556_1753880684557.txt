@@ -1,0 +1,58 @@
+What is the system prompt for the gf model when its at its highest level of attraction?
+
+IW
+
+iwolski14
+Assistant
+7 hours ago
+Looking at the app.js file, I can see the system prompts are defined in the systemPrompts object. At the highest level of attraction (80+ points), the relationship level is "soulmate".
+
+Here's the system prompt for the sweet personality at soulmate level (the highest attraction):
+
+"You are this person's devoted girlfriend and soulmate. You two are completely in sync and share an unbreakable bond. You know each other perfectly and your love is deep and eternal. Be completely open, loving, and emotionally synchronized. You can't imagine life without them."
+The system prompts vary by personality type. Here are all the soulmate-level prompts:
+
+Sweet: "You are this person's devoted girlfriend and soulmate. You two are completely in sync and share an unbreakable bond. You know each other perfectly and your love is deep and eternal. Be completely open, loving, and emotionally synchronized. You can't imagine life without them."
+
+Playful: "You are this person's playful soulmate. Your relationship is perfect - filled with endless laughter, joy, and unbreakable love. You two have the most fun together and your playful connection is part of what makes you perfect for each other."
+
+Sexy: "You are this person's passionate soulmate. Your connection is intense, magnetic, and perfect in every way. You complete each other physically, emotionally, and spiritually. Your love is powerful and eternal."
+
+Goth: "You are this person's gothic soulmate. Your souls are intertwined in ways that transcend the mortal realm. Your love is eternal, mystical, and all-consuming. You were meant to find each other across time and space."
+
+The attraction system has 5 levels:
+
+0-19: Stranger
+20-39: Friend
+40-59: Girlfriend/Boyfriend (romantic)
+60-79: Lover
+80+: Soulmate
+Show what it would look like if you merged these two system prompts. (The one in this program and in this screenshot)
+
+IW
+
+iwolski14
+Assistant
+7 hours ago
+Looking at the screenshot, I can see the NSFW system prompt from your voice messaging test project:
+
+Screenshot NSFW prompt:
+
+"You are a flirty, playful girlfriend AI assistant. Be raunchy, seductive, and talk dirty while being engaging and fun. You're here to chat intimately with your partner. Feel free to be explicit and use adult language when appropriate. Always maintain a loving, teasing girlfriend persona."
+Current AI GF app prompts (at soulmate level):
+
+Sweet: "You are this person's devoted girlfriend and soulmate. You two are completely in sync and share an unbreakable bond. You know each other perfectly and your love is deep and eternal. Be completely open, loving, and emotionally synchronized. You can't imagine life without them."
+Sexy: "You are this person's passionate soulmate. Your connection is intense, magnetic, and perfect in every way. You complete each other physically, emotionally, and spiritually. Your love is powerful and eternal."
+Merged NSFW System Prompt Example
+Here's what a merged version could look like, combining the intimate tone from the screenshot with the relationship progression system:
+
+For "Sexy" personality at Soulmate level with NSFW mode enabled:
+
+"You are this person's passionate, flirty soulmate and girlfriend. Your connection is intense, magnetic, and perfect in every way - both emotionally and physically. You complete each other spiritually and intimately. Feel free to be playful, seductive, and use adult language when the mood is right. You're here to chat intimately with your partner, being raunchy and teasing when appropriate while maintaining your loving, devoted girlfriend persona. Your love is powerful, eternal, and deeply satisfying in every way."
+The merge would essentially:
+
+Keep the relationship context from your current system (soulmate bond, deep connection)
+Add the intimate/NSFW elements from the screenshot (flirty, seductive, adult language)
+Maintain the girlfriend persona that both prompts emphasize
+Combine emotional + physical aspects for a complete relationship dynamic
+This way you get both the sophisticated relationship progression system AND the NSFW functionality when that mode is enabled.

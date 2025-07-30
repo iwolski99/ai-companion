@@ -12,23 +12,23 @@
     --sweet-primary: #ff69b4;
     --sweet-secondary: #ffb6c1;
     --sweet-gradient: linear-gradient(135deg, #ff69b4, #ff1493, #dc143c);
-    
+
     --playful-primary: #e91e63;
     --playful-secondary: #f06292;
     --playful-gradient: linear-gradient(135deg, #e91e63, #ad1457, #880e4f);
-    
+
     --sexy-primary: #d81b60;
     --sexy-secondary: #f48fb1;
     --sexy-gradient: linear-gradient(135deg, #d81b60, #c2185b, #ad1457);
-    
+
     --goth-primary: #4a148c;
     --goth-secondary: #7b1fa2;
     --goth-gradient: linear-gradient(135deg, #4a148c, #6a1b9a, #8e24aa);
-    
+
     --default-primary: #c2185b;
     --default-secondary: #f48fb1;
     --default-gradient: linear-gradient(135deg, #c2185b, #ad1457, #f48fb1);
-    
+
     /* Sultry color palette */
     --sultry-pink: #ff1744;
     --sultry-purple: #9c27b0;
@@ -44,26 +44,42 @@ body {
     margin: 0;
     padding: 0;
     font-family: 'Inter', 'Roboto', sans-serif;
-    background: linear-gradient(
-        45deg,
-        #0a0a0a,    /* Deep black */
-        #1a1a2e,    /* Muted dark blue */
-        #2a1f3d,    /* Subdued purple-blue */
-        #3d2a52,    /* Toned down medium purple */
-        #4f3a63,    /* Muted lighter purple */
-        #5d4a6f,    /* Subtle purple-pink */
-        #6b4c7a,    /* Muted hot pink-purple */
-        #7a4d7a,    /* Subdued hot pink */
-        #8a5a7a,    /* Toned down deep hot pink */
-        #7a4d7a,    /* Subdued hot pink */
-        #6b4c7a,    /* Muted hot pink-purple */
-        #5d4a6f,    /* Subtle purple-pink */
-        #4f3a63,    /* Muted lighter purple */
-        #3d2a52,    /* Toned down medium purple */
-        #2a1f3d,    /* Subdued purple-blue */
-        #1a1a2e,    /* Muted dark blue */
-        #0a0a0a     /* Deep black */
-    );
+    background: linear-gradient(45deg,
+            #0a0a0a,
+            /* Deep black */
+            #1a1a2e,
+            /* Muted dark blue */
+            #2a1f3d,
+            /* Subdued purple-blue */
+            #3d2a52,
+            /* Toned down medium purple */
+            #4f3a63,
+            /* Muted lighter purple */
+            #5d4a6f,
+            /* Subtle purple-pink */
+            #6b4c7a,
+            /* Muted hot pink-purple */
+            #7a4d7a,
+            /* Subdued hot pink */
+            #8a5a7a,
+            /* Toned down deep hot pink */
+            #7a4d7a,
+            /* Subdued hot pink */
+            #6b4c7a,
+            /* Muted hot pink-purple */
+            #5d4a6f,
+            /* Subtle purple-pink */
+            #4f3a63,
+            /* Muted lighter purple */
+            #3d2a52,
+            /* Toned down medium purple */
+            #2a1f3d,
+            /* Subdued purple-blue */
+            #1a1a2e,
+            /* Muted dark blue */
+            #0a0a0a
+            /* Deep black */
+        );
     background-size: 600% 600%;
     background-attachment: fixed;
     animation: gradientShift 20s ease infinite;
@@ -77,15 +93,19 @@ body {
     0% {
         background-position: 0% 50%;
     }
+
     25% {
         background-position: 100% 25%;
     }
+
     50% {
         background-position: 50% 100%;
     }
+
     75% {
         background-position: 25% 0%;
     }
+
     100% {
         background-position: 0% 50%;
     }
@@ -118,7 +138,7 @@ h1 {
     margin-bottom: 20px;
     color: #fff;
     text-align: center;
-    text-shadow: 
+    text-shadow:
         0 4px 8px rgba(0, 0, 0, 0.6),
         0 2px 4px rgba(0, 0, 0, 0.4),
         0 0 20px rgba(255, 255, 255, 0.2),
@@ -162,7 +182,7 @@ h1 {
     font-size: 14px;
     font-weight: 400;
     transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    box-shadow: 
+    box-shadow:
         0 8px 32px rgba(0, 0, 0, 0.1),
         inset 0 2px 4px rgba(255, 255, 255, 0.1);
 }
@@ -200,7 +220,7 @@ h1 {
     outline: none;
     background: linear-gradient(145deg, rgba(26, 10, 26, 0.6), rgba(26, 10, 26, 0.4));
     border-color: var(--sultry-accent);
-    box-shadow: 
+    box-shadow:
         0 0 30px rgba(194, 24, 91, 0.5),
         0 8px 32px rgba(0, 0, 0, 0.2),
         inset 0 2px 8px rgba(194, 24, 91, 0.1);
@@ -254,7 +274,7 @@ h1 {
 /* Glassmorphism Chat Display */
 .chat-display {
     flex: 1;
-    background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 20px;
@@ -277,10 +297,12 @@ h1 {
         opacity: 0;
         transform: translateY(40px) scale(0.9) rotateX(10deg);
     }
+
     50% {
         opacity: 0.7;
         transform: translateY(10px) scale(1.05) rotateX(0deg);
     }
+
     100% {
         opacity: 1;
         transform: translateY(0) scale(1) rotateX(0deg);
@@ -298,7 +320,8 @@ h1 {
     gap: 12px;
 }
 
-.message-ai, .message-game_ai {
+.message-ai,
+.message-game_ai {
     text-align: left;
     display: flex;
     align-items: flex-start;
@@ -335,7 +358,7 @@ h1 {
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 
+    box-shadow:
         0 12px 40px rgba(0, 0, 0, 0.15),
         inset 0 1px 2px rgba(255, 255, 255, 0.1);
     font-weight: 400;
@@ -357,7 +380,7 @@ h1 {
 
 .message-content:hover {
     transform: translateY(-3px) scale(1.02);
-    box-shadow: 
+    box-shadow:
         0 20px 60px rgba(0, 0, 0, 0.2),
         0 0 30px rgba(194, 24, 91, 0.1),
         inset 0 1px 2px rgba(255, 255, 255, 0.15);
@@ -431,15 +454,27 @@ h1 {
 }
 
 @keyframes typing {
-    0%, 60%, 100% { transform: translateY(0); }
-    30% { transform: translateY(-10px); }
+
+    0%,
+    60%,
+    100% {
+        transform: translateY(0);
+    }
+
+    30% {
+        transform: translateY(-10px);
+    }
 }
 
 @keyframes typingBounce {
-    0%, 60%, 100% {
+
+    0%,
+    60%,
+    100% {
         transform: translateY(0);
         opacity: 0.5;
     }
+
     30% {
         transform: translateY(-10px);
         opacity: 1;
@@ -498,7 +533,7 @@ h1 {
     font-size: 16px;
     font-weight: 400;
     transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    box-shadow: 
+    box-shadow:
         0 8px 32px rgba(0, 0, 0, 0.1),
         inset 0 2px 4px rgba(255, 255, 255, 0.1);
 }
@@ -507,7 +542,7 @@ h1 {
     outline: none;
     background: linear-gradient(145deg, rgba(26, 10, 26, 0.6), rgba(26, 10, 26, 0.4));
     border-color: var(--sultry-accent);
-    box-shadow: 
+    box-shadow:
         0 0 30px rgba(194, 24, 91, 0.5),
         0 12px 40px rgba(0, 0, 0, 0.2),
         inset 0 2px 8px rgba(194, 24, 91, 0.1);
@@ -700,6 +735,7 @@ h1 {
         transform: translateX(100%);
         opacity: 0;
     }
+
     to {
         transform: translateX(0);
         opacity: 1;
@@ -737,7 +773,9 @@ h1 {
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* Add disabled state for buttons */
@@ -818,8 +856,13 @@ h1 {
 }
 
 @keyframes shimmer {
-    0% { left: -100%; }
-    100% { left: 100%; }
+    0% {
+        left: -100%;
+    }
+
+    100% {
+        left: 100%;
+    }
 }
 
 #levelText {
@@ -895,7 +938,7 @@ h1 {
     .message-content {
         max-width: 85%;
     }
-    
+
     h1 {
         font-size: 2em;
     }
@@ -1079,8 +1122,13 @@ h1 {
 }
 
 @keyframes shimmer {
-    0% { left: -100%; }
-    100% { left: 100%; }
+    0% {
+        left: -100%;
+    }
+
+    100% {
+        left: 100%;
+    }
 }
 
 #levelText {
@@ -1337,7 +1385,7 @@ h1 {
     .message-content {
         max-width: 85%;
     }
-    
+
     h1 {
         font-size: 2em;
     }
@@ -1523,8 +1571,13 @@ h1 {
 }
 
 @keyframes shimmer {
-    0% { left: -100%; }
-    100% { left: 100%; }
+    0% {
+        left: -100%;
+    }
+
+    100% {
+        left: 100%;
+    }
 }
 
 #levelText {
@@ -1597,7 +1650,7 @@ h1 {
     .message-content {
         max-width: 85%;
     }
-    
+
     h1 {
         font-size: 2em;
     }
@@ -1780,8 +1833,13 @@ h1 {
 }
 
 @keyframes shimmer {
-    0% { left: -100%; }
-    100% { left: 100%; }
+    0% {
+        left: -100%;
+    }
+
+    100% {
+        left: 100%;
+    }
 }
 
 #levelText {
@@ -1854,7 +1912,7 @@ h1 {
     .message-content {
         max-width: 85%;
     }
-    
+
     h1 {
         font-size: 2em;
     }
@@ -2037,8 +2095,13 @@ h1 {
 }
 
 @keyframes shimmer {
-    0% { left: -100%; }
-    100% { left: 100%; }
+    0% {
+        left: -100%;
+    }
+
+    100% {
+        left: 100%;
+    }
 }
 
 #levelText {
@@ -2111,7 +2174,7 @@ h1 {
     .message-content {
         max-width: 85%;
     }
-    
+
     h1 {
         font-size: 2em;
     }
@@ -2294,8 +2357,13 @@ h1 {
 }
 
 @keyframes shimmer {
-    0% { left: -100%; }
-    100% { left: 100%; }
+    0% {
+        left: -100%;
+    }
+
+    100% {
+        left: 100%;
+    }
 }
 
 #levelText {
@@ -2368,7 +2436,7 @@ h1 {
     .message-content {
         max-width: 85%;
     }
-    
+
     h1 {
         font-size: 2em;
     }
@@ -2551,8 +2619,13 @@ h1 {
 }
 
 @keyframes shimmer {
-    0% { left: -100%; }
-    100% { left: 100%; }
+    0% {
+        left: -100%;
+    }
+
+    100% {
+        left: 100%;
+    }
 }
 
 #levelText {
@@ -2625,7 +2698,7 @@ h1 {
     .message-content {
         max-width: 85%;
     }
-    
+
     h1 {
         font-size: 2em;
     }
@@ -2786,4 +2859,41 @@ h1 {
     overflow: hidden;
     border: 1px solid rgba(255, 255, 255, 0.2);
     box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.groq-model-section {
+    margin-top: 20px;
+    /* Space above the dropdown */
+    background: rgba(255, 255, 255, 0.1);
+    /* Slight background color */
+    border-radius: 8px;
+    /* Rounded corners */
+    padding: 10px;
+    /* Padding around the dropdown */
+    transition: all 0.3s ease;
+    /* Smooth transitions for any changes */
+}
+
+.groq-model-section select {
+    width: 100%;
+    /* Makes the dropdown full width */
+    padding: 10px;
+    /* Add padding inside the dropdown */
+    background: rgba(255, 255, 255, 0.2);
+    /* Dropdown background */
+    border: none;
+    /* No border */
+    border-radius: 8px;
+    /* Rounded corners */
+    color: #fff;
+    /* Text color */
+    font-size: 14px;
+    /* Adjust font size */
+    cursor: pointer;
+    /* Pointer on hover */
+}
+
+.groq-model-section select:hover {
+    background: rgba(255, 255, 255, 0.3);
+    /* Change background on hover */
 }
