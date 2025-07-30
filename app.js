@@ -174,6 +174,43 @@ function initializeEventListeners() {
         });
     }
 
+    // Developer attraction control
+    const setAttractionBtn = document.getElementById('setAttractionBtn');
+    if (setAttractionBtn) {
+        setAttractionBtn.addEventListener('click', async function() {
+            const attractionInput = document.getElementById('devAttractionInput');
+            if (attractionInput) {
+                let newAttraction = parseInt(attractionInput.value);
+                if (isNaN(newAttraction)) {
+                    newAttraction = 0;
+                }
+                newAttraction = Math.max(0, Math.min(100, newAttraction));
+                
+                try {
+                    const response = await fetch('/api/attraction/set', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ attraction: newAttraction })
+                    });
+                    
+                    if (response.ok) {
+                        attraction = newAttraction;
+                        localStorage.setItem('attraction', attraction.toString());
+                        updateAttractionDisplay();
+                        alert(`Attraction set to ${newAttraction}!`);
+                    } else {
+                        alert('Failed to set attraction level. Please try again.');
+                    }
+                } catch (error) {
+                    console.error('Error setting attraction:', error);
+                    alert('Failed to set attraction level. Please try again.');
+                }
+            }
+        });
+    }
+
     // Pagination event listeners
     const firstPageBtn = document.getElementById('firstPage');
     if (firstPageBtn) {
@@ -261,6 +298,12 @@ function loadSavedData() {
         messageHistoryCount = parseInt(savedMessageHistoryCount);
         const messageHistoryInput = document.getElementById('messageHistoryCount');
         if (messageHistoryInput) messageHistoryInput.value = messageHistoryCount;
+    }
+
+    // Update developer attraction input with current value
+    const devAttractionInput = document.getElementById('devAttractionInput');
+    if (devAttractionInput) {
+        devAttractionInput.value = attraction;
     }
 
     // Load appropriate API key based on provider

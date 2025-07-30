@@ -150,6 +150,22 @@ class ProgressHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps({'status': 'success', 'attraction': new_attraction}).encode())
             return
 
+        elif self.path == '/api/attraction/set':
+            # Set attraction to specific value (developer tool)
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            data = json.loads(post_data)
+            
+            attraction_level = data.get('attraction', 0)
+            attraction_level = max(0, min(100, attraction_level))  # Constrain between 0-100
+            
+            save_attraction(attraction_level)
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'status': 'success', 'attraction': attraction_level}).encode())
+            return
+
         return super().do_POST()
 
     def end_headers(self):
