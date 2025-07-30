@@ -620,6 +620,7 @@ async function sendMessage() {
             attraction = data.attraction;
             localStorage.setItem('attraction', attraction.toString());
             updateAttractionDisplay();
+            console.log(`Attraction increased by ${data.points_added || 'unknown'} points to ${attraction}`);
         }
     } catch (error) {
         console.error('Error updating attraction:', error);
@@ -1511,7 +1512,7 @@ async function makeIntelligentGuess(questionHistory, answers) {
                 const data = await apiResponse.json();
                 response = data.choices[0].message.content.trim();
             }
-}
+        }
 
         // Clean up the response
         response = response.replace(/^["']|["']$/g, '').toLowerCase();
@@ -1653,6 +1654,7 @@ async function sendAudioMessage(audioBlob) {
                 attraction = data.attraction;
                 localStorage.setItem('attraction', attraction.toString());
                 updateAttractionDisplay();
+                console.log(`Attraction increased by ${data.points_added || 'unknown'} points to ${attraction} (voice message)`);
             }
         } catch (error) {
             console.error('Error updating attraction:', error);
