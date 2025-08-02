@@ -643,7 +643,11 @@ function displayChatHistory() {
     chatDisplay.innerHTML = '';
 
     if (chatHistory.length === 0) {
-        chatDisplay.innerHTML = '<p class="no-messages">No messages yet. Start a conversation!</p>';
+        chatDisplay.innerHTML = '';
+        const noMessagesElement = document.createElement('p');
+        noMessagesElement.className = 'no-messages';
+        noMessagesElement.textContent = 'No messages yet. Start a conversation!';
+        chatDisplay.appendChild(noMessagesElement);
         updatePaginationControls();
         return;
     }
@@ -667,52 +671,70 @@ function displayChatHistory() {
             senderName = companionGender === 'female' ? 'Her' : 'Him';
         }
 
-        // Add special styling for game messages
-        let messageContent = msg.message;
-        if (msg.sender === 'game') {
-            messageContent = `<span style="color: #ffd700; font-weight: 500;">${msg.message}</span>`;
-        } else if (msg.sender === 'game_ai') {
-            messageContent = `<span style="color: #ffd700; font-weight: 500;">${msg.message}</span>`;
-        }
-
         // Create profile picture element for AI messages
-        let profilePicHtml = '';
+        let profilePicElement = null;
         if (msg.sender === 'ai' || msg.sender === 'game_ai') {
             const savedProfilePic = localStorage.getItem('profilePictureData');
             const profileSrc = savedProfilePic || 'images/sweet_neutral.svg';
-            profilePicHtml = `<img src="${profileSrc}" alt="AI Profile" class="profile-pic message-profile-pic" onclick="showProfilePreview('${profileSrc}')">`;
+            profilePicElement = document.createElement('img');
+            profilePicElement.src = profileSrc;
+            profilePicElement.alt = 'AI Profile';
+            profilePicElement.className = 'profile-pic message-profile-pic';
+            profilePicElement.onclick = () => showProfilePreview(profileSrc);
         }
+
+        // Create main content container
+        const contentContainer = document.createElement('div');
+        contentContainer.style.flex = '1';
+
+        // Create message content container
+        const messageContentDiv = document.createElement('div');
+        messageContentDiv.className = 'message-content';
+
+        // Create sender name element
+        const senderElement = document.createElement('strong');
+        senderElement.textContent = senderName + ':';
+
+        // Create message text element with special styling for game messages
+        const messageTextElement = document.createElement('span');
+        if (msg.sender === 'game' || msg.sender === 'game_ai') {
+            messageTextElement.style.color = '#ffd700';
+            messageTextElement.style.fontWeight = '500';
+        }
+        messageTextElement.textContent = msg.message;
 
         // Add audio playback button if message has audio
-        let audioButtonHtml = '';
+        let audioButton = null;
         if (msg.audioUrl) {
-            audioButtonHtml = `<button class="audio-play-btn" onclick="playAudio('${msg.audioUrl}')" title="Play audio message">🔊</button>`;
+            audioButton = document.createElement('button');
+            audioButton.className = 'audio-play-btn';
+            audioButton.title = 'Play audio message';
+            audioButton.textContent = '🔊';
+            audioButton.onclick = () => playAudio(msg.audioUrl);
         }
 
-        if (msg.sender === 'ai' || msg.sender === 'game_ai') {
-            messageDiv.innerHTML = `
-                ${profilePicHtml}
-                <div style="flex: 1;">
-                    <div class="message-content">
-                        <strong>${senderName}:</strong>
-                        <span>${messageContent}</span>
-                        ${audioButtonHtml}
-                    </div>
-                    <div class="message-time">${new Date(msg.timestamp).toLocaleTimeString()}</div>
-                </div>
-            `;
-        } else {
-            messageDiv.innerHTML = `
-                <div style="flex: 1;">
-                    <div class="message-content">
-                        <strong>${senderName}:</strong>
-                        <span>${messageContent}</span>
-                        ${audioButtonHtml}
-                    </div>
-                    <div class="message-time">${new Date(msg.timestamp).toLocaleTimeString()}</div>
-                </div>
-            `;
+        // Assemble message content
+        messageContentDiv.appendChild(senderElement);
+        messageContentDiv.appendChild(document.createTextNode(' '));
+        messageContentDiv.appendChild(messageTextElement);
+        if (audioButton) {
+            messageContentDiv.appendChild(audioButton);
         }
+
+        // Create timestamp element
+        const timeElement = document.createElement('div');
+        timeElement.className = 'message-time';
+        timeElement.textContent = new Date(msg.timestamp).toLocaleTimeString();
+
+        // Assemble content container
+        contentContainer.appendChild(messageContentDiv);
+        contentContainer.appendChild(timeElement);
+
+        // Assemble message div
+        if (profilePicElement) {
+            messageDiv.appendChild(profilePicElement);
+        }
+        messageDiv.appendChild(contentContainer);
 
         chatDisplay.appendChild(messageDiv);
     });
@@ -2281,7 +2303,15 @@ function updateGameUI() {
     const gameStatus = document.getElementById('gameStatus');
     if (gameStatus) {
         if (currentGame) {
-            gameStatus.innerHTML = `<span class="game-indicator">🎮 Playing: ${currentGame}</span>`;
+            // Clear existing content
+            gameStatus.innerHTML = '';
+            
+            // Create game indicator element
+            const gameIndicator = document.createElement('span');
+            gameIndicator.className = 'game-indicator';
+            gameIndicator.textContent = `🎮 Playing: ${currentGame}`;
+            
+            gameStatus.appendChild(gameIndicator);
             gameStatus.style.display = 'block';
         } else {
             gameStatus.style.display = 'none';
