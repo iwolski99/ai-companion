@@ -241,6 +241,36 @@ body {
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.site-count {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid rgba(61, 214, 198, 0.3);
+  border-radius: 999px;
+  padding: 0.15rem 0.5rem;
+}
+
+.sources-hint {
+  margin: 0 0 0.35rem;
+  grid-column: 1 / -1;
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.sources label.is-locked {
+  opacity: 0.45;
 }
 
 .sources label,

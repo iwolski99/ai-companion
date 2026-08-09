@@ -4,7 +4,8 @@
  *
  * Query params / JSON body:
  *   q          — search query (required)
- *   sites      — comma-separated site ids (optional; default all)
+ *   sites      — comma-separated site ids (optional; default DEFAULT_SITE_IDS)
+ *                Max MAX_SITES (5) per request — extras are rejected.
  *   limit      — per-site result cap (default 20, max 40)
  *   password   — if SITE_PASSWORD is set
  *   nocache    — "1" to bypass cache
@@ -17,7 +18,7 @@
  *   }
  */
 
-const { ALL, byId } = require('./lib/sites');
+const { ALL, byId, MAX_SITES, DEFAULT_SITE_IDS } = require('./lib/sites');
 const { checkPassword } = require('./lib/auth');
 const { cacheKey, cacheGet, cacheSet } = require('./lib/cache');
 
@@ -111,14 +112,23 @@ exports.handler = async (event) => {
     return json(400, { error: 'Query too long' });
   }
 
-  const sites = siteIds
-    ? siteIds.map((id) => byId[id]).filter(Boolean)
-    : ALL;
+  const requestedIds = siteIds || DEFAULT_SITE_IDS;
+  if (requestedIds.length > MAX_SITES) {
+    return json(400, {
+      error: 'Too many sites',
+      message: `Select at most ${MAX_SITES} sites per search.`,
+      maxSites: MAX_SITES,
+      available: ALL.map((s) => s.id),
+    });
+  }
+
+  const sites = requestedIds.map((id) => byId[id]).filter(Boolean);
 
   if (!sites.length) {
     return json(400, {
       error: 'No valid sites',
       available: ALL.map((s) => s.id),
+      maxSites: MAX_SITES,
     });
   }
 

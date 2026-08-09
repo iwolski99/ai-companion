@@ -3,6 +3,7 @@
  */
 
 (() => {
+  const MAX_SITES = 5;
   const form = document.getElementById('search-form');
   const qInput = document.getElementById('q');
   const sortSelect = document.getElementById('sort');
@@ -12,19 +13,69 @@
   const statusEl = document.getElementById('status');
   const metaEl = document.getElementById('meta');
   const resultsEl = document.getElementById('results');
+  const siteCountEl = document.getElementById('site-count');
+  const siteInputs = [...form.querySelectorAll('input[name="site"]')];
 
   /** @type {any[]} */
   let lastResults = [];
 
-  // Restore saved password for convenience on personal devices
+  // Restore saved prefs for convenience on personal devices
   try {
     const saved = localStorage.getItem('av_search_password');
     if (saved) passwordInput.value = saved;
     const proxy = localStorage.getItem('av_proxy_thumbs');
     if (proxy === '1') proxyThumbs.checked = true;
+    const savedSites = localStorage.getItem('av_selected_sites');
+    if (savedSites) {
+      const set = new Set(
+        savedSites
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .slice(0, MAX_SITES)
+      );
+      if (set.size) {
+        siteInputs.forEach((input) => {
+          input.checked = set.has(input.value);
+        });
+      }
+    }
   } catch {
     /* ignore */
   }
+
+  function selectedSites() {
+    return siteInputs.filter((el) => el.checked).map((el) => el.value);
+  }
+
+  function syncSiteLimit() {
+    const selected = selectedSites();
+    const atMax = selected.length >= MAX_SITES;
+    if (siteCountEl) {
+      siteCountEl.textContent = `${selected.length}/${MAX_SITES}`;
+    }
+    siteInputs.forEach((input) => {
+      const lock = atMax && !input.checked;
+      input.disabled = lock;
+      input.closest('label')?.classList.toggle('is-locked', lock);
+    });
+    try {
+      localStorage.setItem('av_selected_sites', selected.join(','));
+    } catch {
+      /* ignore */
+    }
+  }
+
+  siteInputs.forEach((input) => {
+    input.addEventListener('change', () => {
+      const checked = siteInputs.filter((el) => el.checked);
+      if (checked.length > MAX_SITES) {
+        input.checked = false;
+      }
+      syncSiteLimit();
+    });
+  });
+  syncSiteLimit();
 
   passwordInput.addEventListener('change', () => {
     try {
@@ -51,12 +102,6 @@
     if (lastResults.length) renderResults(sortResults(lastResults, sortSelect.value));
   });
 
-  function selectedSites() {
-    return [...form.querySelectorAll('input[name="site"]:checked')].map(
-      (el) => el.value
-    );
-  }
-
   function setStatus(kind, html) {
     statusEl.hidden = false;
     statusEl.className = `status ${kind || ''}`.trim();
@@ -78,7 +123,6 @@
   function parseDurationSeconds(raw) {
     if (!raw) return 0;
     const s = String(raw).trim();
-    // mm:ss or hh:mm:ss
     if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(s)) {
       const parts = s.split(':').map(Number);
       if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
@@ -111,7 +155,6 @@
     } else if (mode === 'views') {
       copy.sort((a, b) => (b.views || 0) - (a.views || 0));
     }
-    // relevance = server interleaved order
     return copy;
   }
 
@@ -203,9 +246,13 @@
       setStatus('error', 'Select at least one source site.');
       return;
     }
+    if (sites.length > MAX_SITES) {
+      setStatus('error', `Select at most ${MAX_SITES} sites per search.`);
+      return;
+    }
 
     searchBtn.disabled = true;
-    setStatus('loading', '<span class="spinner"></span>Searching all selected sites…');
+    setStatus('loading', '<span class="spinner"></span>Searching selected sites…');
     metaEl.hidden = true;
     resultsEl.innerHTML = '';
     lastResults = [];
@@ -274,7 +321,6 @@
     runSearch(q);
   });
 
-  // Deep-link support: ?q=query
   const bootQ = new URLSearchParams(location.search).get('q');
   if (bootQ) {
     qInput.value = bootQ;

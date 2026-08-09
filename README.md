@@ -1,6 +1,6 @@
 # AV Search — Personal Multi-Site Video Search (Netlify)
 
-A private, personal-use search UI that queries **XVideos**, **XNXX**, **SpankBang**, **xHamster**, and **PornHub** in parallel via a single Netlify Function. No official APIs — HTML search pages are fetched and parsed with Cheerio.
+A private, personal-use search UI that queries adult video sites in parallel via a single Netlify Function (max **5 sites per search**). Included scrapers: **XVideos**, **XNXX**, **SpankBang**, **xHamster**, **PornHub**, **YouPorn**, and **BDSMStreak**. No official APIs — HTML search pages are fetched and parsed with Cheerio.
 
 > For personal use only. Be polite to upstream sites (realistic User-Agent, one page per site per query, short timeouts). Do not hammer or republish scraped content.
 
@@ -88,7 +88,7 @@ Follow prompts to link a site. Ensure publish dir is `public` and functions dir 
 | Param | Description |
 |---|---|
 | `q` / `query` | Search string (required) |
-| `sites` | Comma-separated ids: `xvideos,xnxx,spankbang,xhamster,pornhub` |
+| `sites` | Comma-separated ids (max **5**): `xvideos,xnxx,spankbang,xhamster,pornhub,youporn,bdsmstreak` |
 | `limit` | Per-site cap (default 20, max 40) |
 | `password` | Required when `SITE_PASSWORD` is set |
 | `nocache` | `1` to bypass cache |
