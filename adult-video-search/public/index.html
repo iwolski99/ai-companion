@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0a0a0b" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>AV Search</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="bg-glow" aria-hidden="true"></div>
+
+    <header class="top">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <h1>AV Search</h1>
+      </div>
+      <p class="tagline">Personal multi-site search · private use only</p>
+    </header>
+
+    <main class="shell">
+      <form id="search-form" class="search" autocomplete="off">
+        <label class="sr-only" for="q">Search query</label>
+        <div class="search-row">
+          <input
+            id="q"
+            name="q"
+            type="search"
+            enterkeyhint="search"
+            placeholder="Search videos…"
+            maxlength="200"
+            required
+            autofocus
+          />
+          <button type="submit" id="search-btn" class="btn-primary">
+            Search
+          </button>
+        </div>
+
+        <details class="advanced">
+          <summary>Filters &amp; options</summary>
+          <div class="advanced-grid">
+            <fieldset class="sources">
+              <legend>Sources</legend>
+              <label><input type="checkbox" name="site" value="xvideos" checked /> XVideos</label>
+              <label><input type="checkbox" name="site" value="xnxx" checked /> XNXX</label>
+              <label><input type="checkbox" name="site" value="spankbang" checked /> SpankBang</label>
+              <label><input type="checkbox" name="site" value="xhamster" checked /> xHamster</label>
+              <label><input type="checkbox" name="site" value="pornhub" checked /> PornHub</label>
+            </fieldset>
+
+            <div class="opts">
+              <label class="field">
+                <span>Sort</span>
+                <select id="sort">
+                  <option value="relevance">Relevance (interleaved)</option>
+                  <option value="source">Source</option>
+                  <option value="duration">Duration</option>
+                  <option value="views">Views</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Password</span>
+                <input
+                  id="password"
+                  type="password"
+                  placeholder="If required"
+                  autocomplete="current-password"
+                />
+              </label>
+              <label class="check">
+                <input type="checkbox" id="proxy-thumbs" />
+                Proxy thumbnails
+              </label>
+            </div>
+          </div>
+        </details>
+      </form>
+
+      <section id="status" class="status" aria-live="polite" hidden></section>
+
+      <section id="meta" class="meta" hidden></section>
+
+      <section id="results" class="results" aria-label="Search results"></section>
+    </main>
+
+    <footer class="foot">
+      <p>Personal use only. Be polite to upstream sites. Results open on original hosts.</p>
+    </footer>
+
+    <script src="/app.js" defer></script>
+  </body>
+</html>
