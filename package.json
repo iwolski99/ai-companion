@@ -1,20 +1,21 @@
 {
-  "name": "chatbot-gf",
+  "name": "aiosearch",
   "version": "1.0.0",
-  "description": "AI Chatbot Girlfriend Web Application",
-  "main": "server/app.js",
+  "private": true,
+  "description": "Personal multi-site adult video search engine (Netlify Functions + static frontend)",
   "scripts": {
-    "start": "NODE_ENV=production node server/app.js",
-    "dev": "nodemon server/app.js",
-    "install-deps": "npm install"
+    "dev": "netlify dev",
+    "build": "echo 'Static site \u2014 no build step required'"
   },
   "dependencies": {
-    "express": "^4.18.2"
+    "@netlify/blobs": "^8.1.0",
+    "cheerio": "^1.0.0",
+    "node-fetch": "^2.7.0"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "netlify-cli": "^17.38.1"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=18"
   }
 }

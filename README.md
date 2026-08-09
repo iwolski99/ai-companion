@@ -1,195 +1,161 @@
-# AI Girlfriend Chatbot
+# AV Search — Personal Multi-Site Video Search (Netlify)
 
-An interactive AI companion application with personality customization, games, and persistent conversations.
+A private, personal-use search UI that queries **XVideos**, **XNXX**, **SpankBang**, **xHamster**, and **PornHub** in parallel via a single Netlify Function. No official APIs — HTML search pages are fetched and parsed with Cheerio.
 
-## About This Application
+> For personal use only. Be polite to upstream sites (realistic User-Agent, one page per site per query, short timeouts). Do not hammer or republish scraped content.
 
-This is a unique AI girlfriend web application designed to provide an immersive, personalized companion experience. Unlike typical chatbots, this app creates a deep emotional connection through advanced personality systems, relationship progression, and multi-modal communication including voice messaging.
-
-### What Makes This Special
-
-**🧠 Advanced AI Personalities**: Choose from four distinct personality types (Sweet, Playful, Sexy, Goth) that evolve based on your interactions and relationship level. Each personality has unique conversation styles and responses that feel authentic and engaging.
-
-**💕 Relationship Progression**: Your AI companion remembers every conversation and grows closer to you over time. The attraction system tracks your bond from "Stranger" to "Soulmate" with 5 distinct relationship levels, each unlocking deeper, more intimate conversations.
-
-**🎙️ Voice Communication**: Record voice messages that are transcribed and responded to naturally. Your AI girlfriend can hear your actual voice, making conversations feel more real and personal.
-
-**🎮 Interactive Gaming**: Play 14 different games together including 20 Questions, Story Building, Trivia, Word Association, and romantic games like Love Language Quiz and Dream Date Planning.
-
-**🔞 NSFW Mode**: For mature users, the app includes adult conversation capabilities. Llama 70B models (via Groq) provide the most natural and engaging NSFW interactions while maintaining the loving girlfriend persona.
-
-### Privacy & Security Features
-
-**🔒 Local API Key Storage**: Your API keys are stored locally in your browser and optionally encrypted server-side. You maintain full control over your AI provider credentials.
-
-**🎤 Client-Side Voice Processing**: Voice messages are processed locally as temporary blob URLs that automatically expire when you reload the page. No voice data is permanently stored on servers, ensuring complete privacy of your personal audio.
-
-**💾 Local Data Storage**: All chat history, relationship progress, and personal settings are stored locally on your device. Your intimate conversations remain private and under your control.
-
-**⚠️ Voice Message Limitations**: Due to privacy-first design, voice messages don't persist across page reloads or browser sessions. This is intentional to protect your privacy, though it means you can't replay old voice messages.
-
-### Technical Capabilities
-
-- Multiple AI providers (Google Gemini, Groq Llama models, xAI Grok)
-- Real-time voice transcription and AI response generation
-- Persistent conversation memory and context awareness
-- Mobile-responsive design with modern glassmorphism UI
-- Game state management and progress tracking
-- Encrypted data storage options
-
-## Features
-
-- 🤖 AI-powered conversations using Gemini or Grok APIs
-- 🎮 Interactive games (20 Questions, Trivia, Story Building, etc.)
-- 💝 Relationship progression system
-- 🎨 Personality customization
-- 💾 Persistent chat history and user progress
-- 🔐 Secure API key management
-
-## Setup Instructions
-
-### Prerequisites
-- Python 3.7+
-- Web browser
-- API key from Google (Gemini) or xAI (Grok)
-
-### Installation
-
-1. Clone the repository:
-   ```bash
-   git clone <your-repo-url>
-   cd chatbot-gf
-   ```
-
-2. Install Python dependencies:
-   ```bash
-   pip install cryptography
-   ```
-
-3. Start the backend server:
-   ```bash
-   python server.py
-   ```
-
-4. Start the web server:
-   ```bash
-   python -m http.server 8000
-   ```
-
-5. Open your browser and navigate to `http://localhost:8000`
-
-### Configuration
-
-1. Enter your API keys in the application interface
-2. Choose your preferred AI provider (Gemini or Grok)
-3. Complete the personality quiz to customize your AI companion
-
-## File Structure
+## Project layout
 
 ```
-chatbot-gf/
-├── app.js              # Main application logic
-├── index.html          # User interface
-├── styles.css          # Styling
-├── server.py           # Backend server for data persistence
-├── chatbot.py          # Alternative Python GUI version
-├── data/               # User progress storage (auto-created)
-├── ENHANCEMENT_BLUEPRINT.md  # Future feature plans
-├── IMPLEMENTATION_GUIDE.md   # Development guide
-└── README.md           # This file
+.
+├── netlify.toml                 # publish dir, functions, redirects
+├── package.json
+├── .env.example                 # optional password + cache TTL
+├── public/                      # static frontend
+│   ├── index.html
+│   ├── styles.css
+│   └── app.js
+└── netlify/functions/
+    ├── search.js                # main parallel search endpoint
+    ├── thumbnail.js             # optional thumbnail proxy
+    └── lib/
+        ├── http.js              # fetch helpers + normalization
+        ├── cache.js             # in-memory + Netlify Blobs cache
+        ├── auth.js              # optional SITE_PASSWORD gate
+        └── sites/               # one scraper module per site
+            ├── index.js
+            ├── xvideos.js
+            ├── xnxx.js
+            ├── spankbang.js
+            ├── xhamster.js
+            └── pornhub.js
 ```
 
-## API Keys
+## Quick start (local)
 
-### Gemini API
-1. Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. Create a new API key
-3. Enter the key in the application
-
-### Grok API
-1. Visit [xAI Console](https://console.x.ai/)
-2. Generate an API key
-3. Enter the key in the application
-
-## Games Available
-
-- **20 Questions**: AI tries to guess what you're thinking
-- **Trivia**: Test your knowledge with AI-generated questions
-- **Story Building**: Collaborate on creative stories
-- **Word Association**: Chain-building word game
-- **Would You Rather**: Discuss hypothetical scenarios
-- **Song Guess**: Guess songs from AI-provided clues
-- **Roleplay**: Interactive roleplay scenarios
-- **Love Quiz**: Relationship compatibility questions
-- **Dream Date**: Plan your ideal date together
-- **Movie Guess**: Guess movies from descriptions
-- **Quick Fire**: Rapid-fire question rounds
-- **Creative**: Creative writing and art challenges
-- **Predictions**: Make predictions about various topics
-- **Deep Convo**: Deep philosophical discussions
-
-## Development
-
-### Planned Features
-See `ENHANCEMENT_BLUEPRINT.md` for upcoming features including:
-- Enhanced API key management with visibility toggles
-- Game state persistence across sessions
-- Deeper AI-game integration
-- Encrypted server-side storage
-
-### Contributing
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## Security Notes
-
-- API keys are stored locally in browser localStorage
-- No personal data is transmitted to external services except AI APIs
-- User progress is stored locally on your machine
-- Sensitive files are excluded via .gitignore
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Messages not sending**: 
-   - Check that both servers are running (ports 8000 and 3000)
-   - Verify API keys are entered correctly
-   - Check browser console for JavaScript errors
-
-2. **Games not working**:
-   - Ensure all game initializer functions are defined
-   - Check for JavaScript errors in browser console
-   - Verify game state is being saved properly
-
-3. **API errors**:
-   - Verify API keys have sufficient quota
-   - Check network connectivity
-   - Ensure API endpoints are accessible
-
-### Server Commands
+1. Install the [Netlify CLI](https://docs.netlify.com/cli/get-started/) (or use the project devDependency):
 
 ```bash
-# Start backend server (port 3000)
-python server.py
-
-# Start web server (port 8000)
-python -m http.server 8000
-
-# Both servers must be running simultaneously
+npm install
+npx netlify login   # once
+npx netlify dev
 ```
+
+2. Open the URL Netlify prints (usually `http://localhost:8888`).
+3. Search from the UI. The frontend calls `/api/search`, which redirects to `/.netlify/functions/search`.
+
+### Optional local env
+
+Copy `.env.example` to `.env` in this folder:
+
+```bash
+cp .env.example .env
+```
+
+| Variable | Purpose |
+|---|---|
+| `SITE_PASSWORD` | If set, search/thumbnail require this password (`X-Search-Password` header or `?password=`) |
+| `CACHE_TTL_SECONDS` | Cache window for identical queries (default `180` = 3 minutes) |
+
+## Deploy to Netlify
+
+### Option A — Netlify UI
+
+1. In Netlify: **Add new site → Import an existing project** (this repo).
+2. Leave **Base directory** empty — the app lives at the repo root.
+3. Confirm:
+   - **Publish directory**: `public`
+   - **Functions directory**: `netlify/functions`
+   - Build command: `npm install` (already in `netlify.toml`)
+4. (Optional) Site settings → Environment variables:
+   - `SITE_PASSWORD` — private gate
+   - `CACHE_TTL_SECONDS` — e.g. `180`
+5. Deploy. Your site serves the SPA; `/api/search` and `/api/thumbnail` hit Functions.
+
+### Option B — CLI
+
+```bash
+npm install
+npx netlify deploy --prod
+```
+
+Follow prompts to link a site. Ensure publish dir is `public` and functions dir is `netlify/functions`.
+
+## API
+
+### `GET /api/search?q=query`
+
+| Param | Description |
+|---|---|
+| `q` / `query` | Search string (required) |
+| `sites` | Comma-separated ids: `xvideos,xnxx,spankbang,xhamster,pornhub` |
+| `limit` | Per-site cap (default 20, max 40) |
+| `password` | Required when `SITE_PASSWORD` is set |
+| `nocache` | `1` to bypass cache |
+
+**Response shape**
+
+```json
+{
+  "query": "example",
+  "cached": false,
+  "tookMs": 3200,
+  "count": 80,
+  "results": [
+    {
+      "title": "...",
+      "url": "https://...",
+      "thumbnail": "https://...",
+      "duration": "12:34",
+      "source": "XVideos",
+      "views": 12345,
+      "rating": null,
+      "uploaded": null,
+      "rank": 0
+    }
+  ],
+  "meta": {
+    "sites": {
+      "xvideos": { "ok": true, "name": "XVideos", "count": 20 },
+      "pornhub": { "ok": false, "name": "PornHub", "count": 0, "error": "HTTP 403" }
+    }
+  }
+}
+```
+
+Sites are fetched with `Promise.allSettled` — one failure returns partial results plus per-site error notes.
+
+### `GET /api/thumbnail?url=...`
+
+Proxies an image when a CDN blocks hotlinking. Enable **Proxy thumbnails** in the UI filters.
+
+## Frontend features
+
+- Dark OLED-friendly UI, mobile-first layout, large tap targets
+- Source filters, sort (relevance / source / duration / views)
+- Loading, empty, and error states
+- Lazy-loaded thumbnails; cards open the original video page in a new tab
+- Optional password field (stored in `localStorage` on the device)
+
+## Updating scrapers
+
+Each file under `netlify/functions/lib/sites/` documents the CSS selectors it relies on. When a site redesigns:
+
+1. Open the site’s public search page in a browser.
+2. Inspect a result card and update the selectors/comments in that site’s module.
+3. Redeploy. No frontend change needed.
+
+To add a site: create a module exporting `{ id, name, search }`, then register it in `lib/sites/index.js`.
+
+## Notes & limits
+
+- Netlify free-tier function time is limited — scrapers use ~7s timeouts and run in parallel; aim for &lt; 8–9s total when upstreams are healthy.
+- Some hosts may block or age-gate datacenter IPs:
+  - **SpankBang** often returns a Cloudflare challenge from Netlify / cloud IPs. The scraper stays enabled and succeeds when the network is allowed; otherwise you’ll see a clear error in `meta.sites.spankbang`.
+  - **PornHub** may occasionally age-gate or challenge; failures are reported per-site without breaking the whole search.
+- Cache uses in-memory Map on warm instances and Netlify Blobs when available.
+- This project does not store, host, or re-encode video files — it only links to public pages.
 
 ## License
 
-This project is for educational and personal use.
-
-## Support
-
-If you encounter issues:
-1. Check the browser console for JavaScript errors
-2. Verify both servers are running
-3. Ensure API keys are valid and have sufficient quota
-4. Review the troubleshooting section above
+Private / personal use. You are responsible for complying with upstream terms and local laws.
