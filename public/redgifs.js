@@ -161,6 +161,12 @@
     resetAndSearch();
   });
 
+  function previewTag(gif) {
+    const src = mediaSrc(gif);
+    if (!src || gif.play === 'iframe') return '';
+    return `<video class="rg-preview" data-preview muted loop playsinline preload="none" poster="${escapeHtml(gif.thumbnail || '')}" data-src="${escapeHtml(src)}" referrerpolicy="no-referrer"></video>`;
+  }
+
   function cardHtml(gif) {
     if (window.BuddyPrefs?.isDisliked?.(gif.id)) return '';
     const prefs = window.BuddyPrefs?.load() || { likes: [], bookmarks: [] };
@@ -177,6 +183,7 @@
               ? `<img src="${escapeHtml(thumbSrc(gif))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" />`
               : ''
           }
+          ${previewTag(gif)}
           ${dur ? `<span class="badge">${escapeHtml(dur)}</span>` : ''}
           ${srcLabel}
           ${sound}
@@ -248,6 +255,7 @@
       const html = gifs.map(cardHtml).join('');
       if (reset) gridEl.innerHTML = html;
       else gridEl.insertAdjacentHTML('beforeend', html);
+      window.BuddyGifPreview?.scan(gridEl);
 
       if (gifs.length < 8) done = true;
       else page += 1;
@@ -265,6 +273,7 @@
     page = 1;
     done = false;
     gridEl.innerHTML = '';
+    window.BuddyGifPreview?.scan(gridEl);
     sentinel.hidden = false;
     fetchPage(true);
   }
@@ -372,6 +381,7 @@
     }
 
     modal.showModal();
+    window.BuddyGifPreview?.pauseAll();
     if (gif.id) window.BuddyPrefs?.like({ ...gif, thumbnail: gif.thumbnail });
   }
 
@@ -404,6 +414,7 @@
       const gif = gifCache.get(dislikeBtn.dataset.dislike);
       if (gif) window.BuddyPrefs.dislike(gif);
       dislikeBtn.closest('.rg-card')?.remove();
+      window.BuddyGifPreview?.scan(gridEl);
     }
   });
 
@@ -413,6 +424,7 @@
     currentGifId = '';
     watchUrl = '';
     if (modal.open) modal.close();
+    window.BuddyGifPreview?.resume();
   }
 
   likeBtnEl?.addEventListener('click', (e) => {
@@ -437,6 +449,7 @@
     document.querySelectorAll('.rg-card').forEach((el) => {
       if (el.dataset.id === gif.id) el.remove();
     });
+    window.BuddyGifPreview?.scan(gridEl);
     closePlayer();
   });
 
@@ -448,6 +461,7 @@
     clearVideo();
     iframe.src = '';
     currentGifId = '';
+    window.BuddyGifPreview?.resume();
   });
   modal.addEventListener('click', (e) => {
     if (!e.target.closest('.player-stage')) closePlayer();

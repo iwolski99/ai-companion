@@ -195,7 +195,7 @@
           pattern="[0-9A-Za-z]+"
           minlength="4"
           maxlength="32"
-          placeholder="e.g. 69420"
+          placeholder="Profile key"
           required
           autofocus
         />

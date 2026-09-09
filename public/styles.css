@@ -879,6 +879,27 @@ button.vault-lock:hover {
   display: block;
 }
 
+.rg-thumb .rg-preview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #0e0e10;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.rg-thumb.is-playing .rg-preview {
+  opacity: 1;
+}
+
+.rg-thumb .badge,
+.rg-thumb .source-badge,
+.rg-thumb .sound-badge {
+  z-index: 2;
+}
+
 .rg-body {
   padding: 0.55rem 0.65rem 0.7rem;
   display: grid;
