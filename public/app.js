@@ -538,7 +538,11 @@
     qInput.value = bootQ;
     runSearch(bootQ.trim(), { remember: true });
   } else {
-    const learnedSearches = (window.BuddyPrefs?.topSearches(4) || []).map((t) => t.tag);
+    const learnedSearches = (
+      window.BuddyPrefs?.recommendationQueries?.(4) ||
+      window.BuddyPrefs?.topSearches(4) ||
+      []
+    ).map((t) => t.tag);
     const learned = (window.BuddyPrefs?.topTags(4) || []).map((t) => t.tag);
     const fallbacks = ['pawg', 'amateur', 'big ass', 'blonde', 'milf'];
     const pool = [...new Set([...learnedSearches, ...learned, ...fallbacks])];

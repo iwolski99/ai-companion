@@ -133,6 +133,22 @@
     return [...new Set(names)];
   }
 
+  function namesFromItem(item) {
+    const blobs = [item?.title, ...(item?.tags || [])].filter(Boolean);
+    const names = [];
+    for (const blob of blobs) names.push(...extractPerformers(blob));
+    return [...new Set(names)];
+  }
+
+  function learnPerformers(state, names, weight, source) {
+    if (!names.length) return;
+    if (!Array.isArray(state.performers)) state.performers = [];
+    for (const name of names) {
+      bumpNamed(state.performers, name, weight, { source });
+    }
+    state.performers = state.performers.slice(0, 40);
+  }
+
   function bumpNamed(list, key, weight, extra) {
     const found = list.find((x) => x.q === key);
     if (found) {
@@ -195,6 +211,7 @@
       state.likes = state.likes.slice(0, 200);
     }
     bumpTags(state, item.tags, 2);
+    learnPerformers(state, namesFromItem(item), 4, 'like');
     delete state.skips[item.id];
     if (state.dislikes) delete state.dislikes[item.id];
     return save(state);
@@ -223,6 +240,7 @@
       state.bookmarks = state.bookmarks.slice(0, 400);
     }
     bumpTags(state, item.tags, 3);
+    learnPerformers(state, namesFromItem(item), 5, 'bookmark');
     return save(state);
   }
 
@@ -308,6 +326,72 @@
     return scored
       .filter((x) => x.weight > 0)
       .sort((a, b) => b.weight - a.weight || b.ts - a.ts)
+      .slice(0, n);
+  }
+
+  /**
+   * Unified search phrases for cross-feed recs: tube searches, gif
+   * likes/bookmarks, clicked titles, minus disliked names.
+   */
+  function recommendationQueries(n = 4) {
+    const seen = new Map();
+    const now = Date.now();
+
+    function add(q, weight, kind, ts) {
+      const key = normalizeQuery(q);
+      if (!key || key.length < 2) return;
+      if (
+        ['a', 'an', 'the', 'and', 'or', 'of', 'porn', 'sex', 'video', 'videos', 'gif', 'gifs'].includes(
+          key
+        )
+      ) {
+        return;
+      }
+      if (kind === 'performer' && SEARCH_STOP.has(key)) return;
+      const prev = seen.get(key);
+      if (prev) {
+        prev.weight += weight;
+        prev.ts = Math.max(prev.ts || 0, ts || 0);
+        return;
+      }
+      seen.set(key, {
+        tag: key,
+        label: titleCase(key),
+        weight,
+        kind: kind || 'search',
+        ts: ts || now,
+      });
+    }
+
+    for (const s of topSearches(12)) {
+      add(s.tag, s.weight || 1, s.kind, s.ts);
+    }
+    for (const t of topTags(8)) {
+      add(t.tag, t.weight || 1, 'tag');
+    }
+
+    const state = load();
+    for (const item of [...(state.likes || []), ...(state.bookmarks || [])]) {
+      for (const name of namesFromItem(item)) add(name, 6, 'performer', item.ts);
+      for (const t of (item.tags || []).slice(0, 4)) {
+        const tag = normalizeQuery(t);
+        if (!tag || tag.length < 3) continue;
+        if (tag.split(' ').length >= 2) add(tag, 4, 'tag', item.ts);
+        else add(tag, 2, 'tag', item.ts);
+      }
+    }
+    for (const click of (state.avClicks || []).slice(0, 24)) {
+      for (const name of extractPerformers(click.title)) {
+        add(name, 3, 'performer', click.ts);
+      }
+    }
+    for (const d of Object.values(state.dislikes || {})) {
+      for (const name of namesFromItem(d)) add(name, -10, 'dislike', d.ts);
+    }
+
+    return [...seen.values()]
+      .filter((x) => x.weight > 0)
+      .sort((a, b) => b.weight - a.weight || (b.ts || 0) - (a.ts || 0))
       .slice(0, n);
   }
 
@@ -480,6 +564,7 @@
     trackSearch,
     topSearches,
     extractPerformers,
+    recommendationQueries,
     tasteBlurb,
     trackAvClick,
     logOrgasm,

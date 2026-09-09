@@ -708,6 +708,48 @@ body {
   background: var(--accent-dim);
 }
 
+.taste-chip {
+  display: inline-flex;
+  align-items: stretch;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  background: var(--bg-elevated);
+}
+
+.taste-chip-label {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.taste-chip a {
+  display: flex;
+  align-items: center;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  color: var(--text-muted);
+  border-left: 1px solid var(--border-soft);
+}
+
+.taste-chip a:hover {
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.fy-picks {
+  margin-top: 0.8rem;
+}
+
+.fy-why {
+  margin: 0.2rem 0 0;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
 .rg-grid {
   margin-top: 1rem;
   display: grid;
