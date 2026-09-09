@@ -119,7 +119,9 @@
   }
 
   async function loadTags() {
-    const learnedSearches = window.BuddyPrefs?.topSearches(16) || [];
+    const learnedSearches = window.BuddyPrefs?.recommendationQueries?.(16) ||
+      window.BuddyPrefs?.topSearches(16) ||
+      [];
     const liked = (window.BuddyPrefs?.topTags(6) || []).map((t) => t.tag);
     let tags = [];
     if (learnedSearches.length) {
