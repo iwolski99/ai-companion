@@ -843,6 +843,18 @@ body {
   display: none;
 }
 
+/* Production main still ships this overlay; it steals every click from the player. */
+.player-hit,
+#rg-hit {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+button.icon-btn[data-skip],
+button.icon-btn[aria-label="Skip"] {
+  display: none !important;
+}
+
 .sound-badge {
   position: absolute;
   right: 0.45rem;
