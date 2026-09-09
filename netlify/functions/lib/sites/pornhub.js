@@ -17,7 +17,7 @@
  */
 
 const cheerio = require('cheerio');
-const { collectFromPages, eachSourcePage, absolutize, result, parseViews } = require('../http');
+const { collectFromPages, eachSourcePage, absolutize, result, parseViews, pickChannelText } = require('../http');
 
 const SOURCE = 'PornHub';
 const BASE = 'https://www.pornhub.com';
@@ -95,6 +95,7 @@ function parseHtml(html) {
           source: SOURCE,
           views: parseViews(viewsRaw),
           rating: rating ? rating.trim() : null,
+          studio: pickChannelText($el),
           rank: i,
         })
       );
@@ -122,6 +123,7 @@ function parseHtml(html) {
           ),
           duration: $a.parent().find('.duration').text() || null,
           source: SOURCE,
+          studio: pickChannelText($a.parent()),
           rank: i,
         })
       );

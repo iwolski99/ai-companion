@@ -13,6 +13,7 @@
     dislikes: {},
     searches: [],
     performers: [],
+    studios: [],
     avClicks: [],
     calendar: {},
   });
@@ -84,8 +85,128 @@
       'new',
       'best',
       'top',
+      'scene',
+      'scenes',
+      'official',
+      'compilation',
+      'starring',
+      'presents',
+      'gets',
+      'wrecked',
     ].map((s) => s.toLowerCase())
   );
+
+  /** Longest-first so "blacked raw" wins over "blacked". */
+  const KNOWN_STUDIOS = [
+    'naughty america',
+    'digital playground',
+    'reality kings',
+    'new sensations',
+    'elegant angel',
+    'jules jordan',
+    'evil angel',
+    'property sex',
+    'passion hd',
+    'nubile films',
+    'fake taxi',
+    'fake hostel',
+    'fake agent',
+    'public agent',
+    'blacked raw',
+    'tushy raw',
+    'true anal',
+    'hookup hotshot',
+    'pure taboo',
+    'adult time',
+    'bellesa films',
+    'sis loves me',
+    'family strokes',
+    'my pervy family',
+    'freeuse fantasy',
+    'nuru massage',
+    'fantasy massage',
+    'kinky spa',
+    'dirty masseur',
+    'massage rooms',
+    'dane jones',
+    'bangbros',
+    'brazzers',
+    'teamskeet',
+    'blacked',
+    'tushy',
+    'vixen',
+    'deeper',
+    'mofos',
+    'fakehub',
+    'nubiles',
+    'swallowed',
+    'hardx',
+    'darkx',
+    'erotica x',
+    'xempire',
+    'mylf',
+    'pervmom',
+    'filthy kings',
+    'shoplyfter',
+    'legalporno',
+    'analized',
+    'penthouse',
+    'twistys',
+    'sexyhub',
+    'milehigh',
+    'sweet sinner',
+    'zero tolerance',
+    'burning angel',
+    'pornfidelity',
+    'netvideogirls',
+    'culioneros',
+    'ass parade',
+    'rk prime',
+    'nympho',
+    'allanal',
+  ].sort((a, b) => b.length - a.length);
+
+  const STUDIO_ALIASES = {
+    'naughtyamerica': 'naughty america',
+    'realitykings': 'reality kings',
+    'team skeet': 'teamskeet',
+    'bang bros': 'bangbros',
+    'bang brothers': 'bangbros',
+    'fake hub': 'fakehub',
+    'passion-hd': 'passion hd',
+    'passionhd': 'passion hd',
+    'trueanal': 'true anal',
+    'blackedraw': 'blacked raw',
+    'tushyraw': 'tushy raw',
+    'hookuphotshot': 'hookup hotshot',
+    'familystrokes': 'family strokes',
+    'danejones': 'dane jones',
+    'puretaboo': 'pure taboo',
+    'adulttime': 'adult time',
+    'bellesa': 'bellesa films',
+    'sislovesme': 'sis loves me',
+    'perv mom': 'pervmom',
+    'gotmylf': 'mylf',
+    'momlover': 'mylf',
+    'newsensations': 'new sensations',
+    'julesjordan': 'jules jordan',
+    'evilangel': 'evil angel',
+    'digitalplayground': 'digital playground',
+    'propertysex': 'property sex',
+    'faketaxi': 'fake taxi',
+    'publicagent': 'public agent',
+  };
+
+  function canonicalizeStudio(name) {
+    const key = normalizeQuery(name)
+      .replace(/official$/i, '')
+      .replace(/\b(channel|tv|studios?|productions?)\b/g, '')
+      .replace(/\.com$/i, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (!key || key.length < 3) return '';
+    return STUDIO_ALIASES[key] || key;
+  }
 
   function normalizeQuery(q) {
     return String(q || '')
@@ -130,7 +251,18 @@
     ) {
       names.unshift(words.join(' '));
     }
-    return [...new Set(names)];
+    const blob = words.join(' ');
+    const studioWords = new Set(
+      KNOWN_STUDIOS.filter((s) => blob.includes(s))
+        .join(' ')
+        .split(' ')
+        .filter((w) => w.length > 2)
+    );
+    return [...new Set(names)].filter((n) => {
+      if (KNOWN_STUDIOS.includes(canonicalizeStudio(n))) return false;
+      if (!studioWords.size) return true;
+      return n.split(' ').every((w) => !studioWords.has(w));
+    });
   }
 
   function namesFromItem(item) {
@@ -138,6 +270,33 @@
     const names = [];
     for (const blob of blobs) names.push(...extractPerformers(blob));
     return [...new Set(names)];
+  }
+
+  function extractStudios(item) {
+    const found = [];
+    const explicit = canonicalizeStudio(
+      item?.studio || item?.channel || item?.uploader || ''
+    );
+    if (explicit) found.push(explicit);
+
+    const blob = normalizeQuery(
+      [item?.title, item?.url, ...(item?.tags || [])].filter(Boolean).join(' ')
+    );
+    for (const name of KNOWN_STUDIOS) {
+      const pattern = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '[\\s._-]+');
+      const re = new RegExp(`(?:^|[^a-z0-9])${pattern}(?:[^a-z0-9]|$)`);
+      if (re.test(blob)) found.push(canonicalizeStudio(name));
+    }
+    return [...new Set(found.filter(Boolean))];
+  }
+
+  function learnStudios(state, names, weight, source) {
+    if (!names.length) return;
+    if (!Array.isArray(state.studios)) state.studios = [];
+    for (const name of names) {
+      bumpNamed(state.studios, name, weight, { source });
+    }
+    state.studios = state.studios.slice(0, 40);
   }
 
   function learnPerformers(state, names, weight, source) {
@@ -212,6 +371,7 @@
     }
     bumpTags(state, item.tags, 2);
     learnPerformers(state, namesFromItem(item), 4, 'like');
+    learnStudios(state, extractStudios(item), 3, 'like');
     delete state.skips[item.id];
     if (state.dislikes) delete state.dislikes[item.id];
     return save(state);
@@ -241,6 +401,7 @@
     }
     bumpTags(state, item.tags, 3);
     learnPerformers(state, namesFromItem(item), 5, 'bookmark');
+    learnStudios(state, extractStudios(item), 4, 'bookmark');
     return save(state);
   }
 
@@ -347,16 +508,19 @@
       ) {
         return;
       }
+      const studioName = canonicalizeStudio(key);
+      if (KNOWN_STUDIOS.includes(studioName)) kind = 'studio';
       if (kind === 'performer' && SEARCH_STOP.has(key)) return;
       const prev = seen.get(key);
       if (prev) {
         prev.weight += weight;
         prev.ts = Math.max(prev.ts || 0, ts || 0);
+        if (kind === 'studio') prev.kind = 'studio';
         return;
       }
       seen.set(key, {
         tag: key,
-        label: titleCase(key),
+        label: titleCase(studioName || key),
         weight,
         kind: kind || 'search',
         ts: ts || now,
@@ -368,6 +532,9 @@
     }
     for (const t of topTags(8)) {
       add(t.tag, t.weight || 1, 'tag');
+    }
+    for (const studio of load().studios || []) {
+      add(studio.q, (studio.weight || 0) + (studio.count || 1) * 2, 'studio', studio.ts);
     }
 
     const state = load();
@@ -384,15 +551,33 @@
       for (const name of extractPerformers(click.title)) {
         add(name, 3, 'performer', click.ts);
       }
+      for (const studio of extractStudios(click)) {
+        add(studio, 4, 'studio', click.ts);
+      }
     }
     for (const d of Object.values(state.dislikes || {})) {
       for (const name of namesFromItem(d)) add(name, -10, 'dislike', d.ts);
     }
 
-    return [...seen.values()]
+    const ranked = [...seen.values()]
       .filter((x) => x.weight > 0)
-      .sort((a, b) => b.weight - a.weight || (b.ts || 0) - (a.ts || 0))
-      .slice(0, n);
+      .sort((a, b) => b.weight - a.weight || (b.ts || 0) - (a.ts || 0));
+
+    const picked = [];
+    const used = new Set();
+    function take(pred, count) {
+      for (const r of ranked) {
+        if (picked.length >= n || count <= 0) return;
+        if (used.has(r.tag) || !pred(r)) continue;
+        picked.push(r);
+        used.add(r.tag);
+        count -= 1;
+      }
+    }
+    take((r) => r.kind === 'performer', 2);
+    take((r) => r.kind === 'studio', 1);
+    take(() => true, n);
+    return picked;
   }
 
   function tasteBlurb() {
@@ -401,12 +586,21 @@
     const tags = topTags(8);
     const clicks = (load().avClicks || []).slice(0, 8);
     const likes = (load().likes || []).slice(0, 6);
+    const studios = (load().studios || [])
+      .slice()
+      .sort((a, b) => (b.weight || 0) - (a.weight || 0))
+      .slice(0, 6);
     const lines = [];
     if (stars.length) {
       lines.push(`stars he searches: ${stars.map((s) => s.label).join(', ')}`);
     }
     if (searches.length) {
       lines.push(`recent tube/gif searches: ${searches.map((s) => s.tag).join(', ')}`);
+    }
+    if (studios.length) {
+      lines.push(
+        `studios/companies he clicks: ${studios.map((s) => titleCase(s.q)).join(', ')}`
+      );
     }
     if (tags.length) {
       lines.push(`liked tags: ${tags.map((t) => t.tag).join(', ')}`);
@@ -426,10 +620,12 @@
 
   function trackAvClick(item) {
     const state = load();
+    const studios = extractStudios(item);
     state.avClicks.unshift({
       title: item.title,
       source: item.source,
       url: item.url,
+      studio: studios[0] || item.studio || null,
       ts: Date.now(),
     });
     state.avClicks = state.avClicks.slice(0, 150);
@@ -443,6 +639,10 @@
       if (!Array.isArray(state.performers)) state.performers = [];
       for (const name of names) bumpNamed(state.performers, name, 2, { source: 'click' });
       state.performers = state.performers.slice(0, 40);
+    }
+    if (studios.length) {
+      learnStudios(state, studios, 4, 'click');
+      bumpTags(state, studios, 2);
     }
     return save(state);
   }
@@ -564,6 +764,7 @@
     trackSearch,
     topSearches,
     extractPerformers,
+    extractStudios,
     recommendationQueries,
     tasteBlurb,
     trackAvClick,

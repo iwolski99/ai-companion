@@ -750,6 +750,11 @@ body {
   color: var(--text-dim);
 }
 
+body.fy-chips-hidden #taste-tags,
+body.fy-chips-hidden #fy-picks-queries {
+  display: none;
+}
+
 .rg-grid {
   margin-top: 1rem;
   display: grid;
