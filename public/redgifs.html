@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0a0a0b" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>RedGifs · Buddy</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="bg-glow" aria-hidden="true"></div>
+
+    <header class="top">
+      <div class="top-row">
+        <a class="brand" href="/">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <h1>Buddy</h1>
+        </a>
+        <nav class="nav" aria-label="Main">
+          <a class="nav-link" href="/">Tubes</a>
+          <a class="nav-link is-active" href="/redgifs.html">RedGifs</a>
+          <a class="nav-link" href="/foryou.html">For You</a>
+          <a class="nav-link" href="/calendar.html">Calendar</a>
+        </nav>
+      </div>
+      <p class="tagline">Tag-driven clips · likes train your taste · straight only</p>
+    </header>
+
+    <main class="shell">
+      <form id="rg-form" class="search" autocomplete="off">
+        <label class="sr-only" for="rg-q">RedGifs search</label>
+        <div class="search-row">
+          <input
+            id="rg-q"
+            type="search"
+            enterkeyhint="search"
+            placeholder="Search tags… e.g. amateur blonde"
+            maxlength="120"
+          />
+          <button type="submit" class="btn-primary" id="rg-search-btn">Search</button>
+        </div>
+        <div class="rg-toolbar">
+          <label class="field compact">
+            <span>Order</span>
+            <select id="rg-order">
+              <option value="trending">Trending</option>
+              <option value="top">Top</option>
+              <option value="latest">Latest</option>
+            </select>
+          </label>
+          <button type="button" class="btn-ghost" id="rg-export">Export bookmarks</button>
+        </div>
+      </form>
+
+      <section id="rg-chips" class="chip-row" aria-label="Tags"></section>
+      <section id="rg-status" class="status" aria-live="polite" hidden></section>
+      <section id="rg-grid" class="rg-grid" aria-label="RedGifs results"></section>
+      <div id="rg-sentinel" class="sentinel" hidden></div>
+    </main>
+
+    <dialog id="rg-modal" class="player-modal">
+      <div class="player-bar">
+        <button type="button" class="btn-ghost" id="rg-close">Close</button>
+        <a id="rg-open-ext" class="btn-ghost" target="_blank" rel="noopener">Open on RedGifs</a>
+      </div>
+      <div class="player-frame-wrap">
+        <iframe id="rg-iframe" title="RedGifs player" allow="autoplay; fullscreen" allowfullscreen></iframe>
+      </div>
+    </dialog>
+
+    <footer class="foot">
+      <p>Straight-only. Likes and bookmarks stay in this browser.</p>
+    </footer>
+
+    <script src="/prefs.js"></script>
+    <script src="/redgifs.js" defer></script>
+  </body>
+</html>

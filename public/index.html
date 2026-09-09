@@ -9,7 +9,7 @@
     <meta name="color-scheme" content="dark" />
     <meta name="theme-color" content="#0a0a0b" />
     <meta name="robots" content="noindex, nofollow" />
-    <title>AV Search</title>
+    <title>Tubes · Buddy</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -22,11 +22,19 @@
     <div class="bg-glow" aria-hidden="true"></div>
 
     <header class="top">
-      <div class="brand">
-        <span class="brand-mark" aria-hidden="true"></span>
-        <h1>AV Search</h1>
+      <div class="top-row">
+        <a class="brand" href="/">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <h1>Buddy</h1>
+        </a>
+        <nav class="nav" aria-label="Main">
+          <a class="nav-link is-active" href="/">Tubes</a>
+          <a class="nav-link" href="/redgifs.html">RedGifs</a>
+          <a class="nav-link" href="/foryou.html">For You</a>
+          <a class="nav-link" href="/calendar.html">Calendar</a>
+        </nav>
       </div>
-      <p class="tagline">Personal multi-site search · private use only</p>
+      <p class="tagline">Multi-site tube search · straight only · personal use</p>
     </header>
 
     <main class="shell">
@@ -56,8 +64,7 @@
                 Sources
                 <span id="site-count" class="site-count">0/5</span>
               </legend>
-              <p class="sources-hint">Pick up to 5 sites per search.</p>
-              <!-- Default 5 match server DEFAULT_SITE_IDS -->
+              <p class="sources-hint">Pick up to 5 sites per search. Gay / bi results are filtered out.</p>
               <label><input type="checkbox" name="site" value="xvideos" checked /> XVideos</label>
               <label><input type="checkbox" name="site" value="xnxx" checked /> XNXX</label>
               <label><input type="checkbox" name="site" value="xhamster" checked /> xHamster</label>
@@ -96,16 +103,15 @@
       </form>
 
       <section id="status" class="status" aria-live="polite" hidden></section>
-
       <section id="meta" class="meta" hidden></section>
-
       <section id="results" class="results" aria-label="Search results"></section>
     </main>
 
     <footer class="foot">
-      <p>Personal use only. Be polite to upstream sites. Results open on original hosts.</p>
+      <p>Personal use only. Clicks train your For You tags. Results open on original hosts.</p>
     </footer>
 
+    <script src="/prefs.js"></script>
     <script src="/app.js" defer></script>
   </body>
 </html>

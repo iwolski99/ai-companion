@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0a0a0b" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Calendar · Buddy</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="bg-glow" aria-hidden="true"></div>
+    <header class="top">
+      <div class="top-row">
+        <a class="brand" href="/">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <h1>Buddy</h1>
+        </a>
+        <nav class="nav" aria-label="Main">
+          <a class="nav-link" href="/">Tubes</a>
+          <a class="nav-link" href="/redgifs.html">RedGifs</a>
+          <a class="nav-link" href="/foryou.html">For You</a>
+          <a class="nav-link is-active" href="/calendar.html">Calendar</a>
+        </nav>
+      </div>
+      <p class="tagline">Private orgasm log · stays on this device</p>
+    </header>
+
+    <main class="shell">
+      <div class="cal-nav">
+        <button type="button" class="btn-ghost" id="cal-prev">Prev</button>
+        <h2 id="cal-label" class="panel-title"></h2>
+        <button type="button" class="btn-ghost" id="cal-next">Next</button>
+      </div>
+      <div class="cal-weekdays" aria-hidden="true">
+        <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+      </div>
+      <div id="cal-grid" class="cal-grid"></div>
+
+      <section class="panel" id="cal-editor" hidden>
+        <h2 class="panel-title" id="cal-day-label">Log</h2>
+        <label class="field">
+          <span>Count</span>
+          <input id="cal-count" type="number" min="0" max="20" value="1" />
+        </label>
+        <label class="field">
+          <span>Note (optional)</span>
+          <input id="cal-note" type="text" maxlength="160" placeholder="mood, tags, whatever" />
+        </label>
+        <button type="button" class="btn-primary" id="cal-save">Save day</button>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <p>This is the tracker you asked about — LLM scene recs can use these logs later.</p>
+    </footer>
+    <script src="/prefs.js"></script>
+    <script src="/calendar.js" defer></script>
+  </body>
+</html>

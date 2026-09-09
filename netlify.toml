@@ -8,6 +8,8 @@
   # Free tier soft target: keep searches under ~10s
   [functions.search]
     timeout = 26
+  [functions.redgifs]
+    timeout = 20
 
 [[redirects]]
   from = "/api/search"
@@ -17,6 +19,11 @@
 [[redirects]]
   from = "/api/thumbnail"
   to = "/.netlify/functions/thumbnail"
+  status = 200
+
+[[redirects]]
+  from = "/api/redgifs"
+  to = "/.netlify/functions/redgifs"
   status = 200
 
 [[headers]]

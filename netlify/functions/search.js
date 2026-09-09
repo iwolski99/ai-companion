@@ -21,6 +21,7 @@
 const { ALL, byId, MAX_SITES, DEFAULT_SITE_IDS } = require('./lib/sites');
 const { checkPassword } = require('./lib/auth');
 const { cacheKey, cacheGet, cacheSet } = require('./lib/cache');
+const { isStraightVideo } = require('./lib/straight');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -133,7 +134,7 @@ exports.handler = async (event) => {
   }
 
   const key = cacheKey(
-    q,
+    `straight:${q}`,
     sites.map((s) => s.id)
   );
 
@@ -162,7 +163,7 @@ exports.handler = async (event) => {
   settled.forEach((outcome, i) => {
     const site = sites[i];
     if (outcome.status === 'fulfilled') {
-      const { results } = outcome.value;
+      const results = outcome.value.results.filter(isStraightVideo);
       meta.sites[site.id] = {
         ok: true,
         name: site.name,

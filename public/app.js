@@ -102,6 +102,14 @@
     if (lastResults.length) renderResults(sortResults(lastResults, sortSelect.value));
   });
 
+  resultsEl.addEventListener('click', (e) => {
+    const card = e.target.closest('a.card');
+    if (!card) return;
+    const url = card.getAttribute('href');
+    const item = lastResults.find((r) => r.url === url);
+    if (item && window.BuddyPrefs) window.BuddyPrefs.trackAvClick(item);
+  });
+
   function setStatus(kind, html) {
     statusEl.hidden = false;
     statusEl.className = `status ${kind || ''}`.trim();
