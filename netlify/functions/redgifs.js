@@ -1,8 +1,8 @@
 /**
- * RedGifs proxy — temporary guest token + search / tags.
+ * Gifs search — RedGifs plus Pornhub GIFs, GifReels, NSFWMonster, Erome.
  *
- * GET /api/redgifs?action=search&q=&order=trending|top|latest&page=1&count=40
- * GET /api/redgifs?action=tags&q=   (tag suggestions; omit q for trending)
+ * GET /api/redgifs?action=search&q=&source=all|redgifs|pornhub|gifreels|nsfwmonster|erome&order=&page=1&count=40
+ * GET /api/redgifs?action=tags&q=
  *
  * Straight-only: gay / bi / trans-coded tags are stripped server-side.
  * Token is cached in memory (~20 min) so we do not hammer /v2/auth/temporary.
@@ -13,6 +13,9 @@ const { checkPassword } = require('./lib/auth');
 const { isStraightGif, isStraightText, isBlockedQuery } = require('./lib/straight');
 const { DEFAULT_UA } = require('./lib/http');
 const erome = require('./lib/erome');
+const pornhubGifs = require('./lib/gifs/pornhub');
+const gifreels = require('./lib/gifs/gifreels');
+const nsfwmonster = require('./lib/gifs/nsfwmonster');
 
 const API = 'https://api.redgifs.com';
 const corsHeaders = {
@@ -83,7 +86,10 @@ function normalizeGif(gif) {
     url: `https://www.redgifs.com/watch/${id}`,
     embed: `https://www.redgifs.com/ifr/${id}`,
     hd: urls.hd || urls.file || null,
-    sd: urls.sd || urls.silent || null,
+    // Never use urls.silent — that file has no audio track.
+    sd: urls.sd || urls.hd || urls.file || null,
+    play: 'proxy',
+    source: 'RedGifs',
     thumbnail:
       urls.poster ||
       urls.thumbnail ||
@@ -151,7 +157,7 @@ exports.handler = async (event) => {
       });
     }
 
-    const source = String(qs.source || 'redgifs').toLowerCase();
+    const source = String(qs.source || 'all').toLowerCase();
 
     const q = (qs.q || qs.query || qs.tags || '').trim();
     if (isBlockedQuery(q)) {
@@ -172,6 +178,46 @@ exports.handler = async (event) => {
     const page = Math.max(1, Number(qs.page || 1) || 1);
     const count = Math.min(80, Math.max(8, Number(qs.count || 40) || 40));
 
+    async function searchRedgifs() {
+      const token = await getToken();
+      const params = new URLSearchParams({
+        type: 'g',
+        order,
+        count: String(count),
+        page: String(page),
+      });
+      if (q) params.set('tags', q);
+      const data = await rgFetch(`/v2/gifs/search?${params.toString()}`, token);
+      return {
+        total: data.total || 0,
+        gifs: (data.gifs || []).filter(isStraightGif).map(normalizeGif),
+      };
+    }
+
+    async function settled(label, fn) {
+      try {
+        const gifs = await fn();
+        return { label, gifs: Array.isArray(gifs) ? gifs : [], error: null };
+      } catch (err) {
+        return { label, gifs: [], error: err.message || String(err) };
+      }
+    }
+
+    function interleave(groups) {
+      const out = [];
+      const seen = new Set();
+      const max = Math.max(0, ...groups.map((g) => g.length));
+      for (let i = 0; i < max; i++) {
+        for (const group of groups) {
+          const item = group[i];
+          if (!item || !item.id || seen.has(item.id)) continue;
+          seen.add(item.id);
+          out.push(item);
+        }
+      }
+      return out;
+    }
+
     if (source === 'erome') {
       const gifs = await erome.search(q || 'amateur', page);
       return json(200, {
@@ -185,29 +231,78 @@ exports.handler = async (event) => {
       });
     }
 
-    const token = await getToken();
+    if (source === 'pornhub') {
+      const gifs = await pornhubGifs.search(q || 'amateur', page);
+      return json(200, {
+        query: q,
+        source: 'pornhub',
+        order,
+        page,
+        count: gifs.length,
+        total: gifs.length,
+        gifs,
+      });
+    }
 
-    const params = new URLSearchParams({
-      type: 'g',
-      order,
-      count: String(count),
-      page: String(page),
-    });
-    if (q) params.set('tags', q);
+    if (source === 'gifreels') {
+      const gifs = await gifreels.search(q || 'amateur', page);
+      return json(200, {
+        query: q,
+        source: 'gifreels',
+        order,
+        page,
+        count: gifs.length,
+        total: gifs.length,
+        gifs,
+      });
+    }
 
-    const data = await rgFetch(`/v2/gifs/search?${params.toString()}`, token);
-    const gifs = (data.gifs || [])
-      .filter(isStraightGif)
-      .map(normalizeGif);
+    if (source === 'nsfwmonster') {
+      const gifs = await nsfwmonster.search(q || 'amateur', page);
+      return json(200, {
+        query: q,
+        source: 'nsfwmonster',
+        order,
+        page,
+        count: gifs.length,
+        total: gifs.length,
+        gifs,
+      });
+    }
 
+    if (source === 'all') {
+      const [rg, ph, gr, nm, er] = await Promise.all([
+        settled('redgifs', async () => (await searchRedgifs()).gifs.slice(0, 24)),
+        settled('pornhub', async () => (await pornhubGifs.search(q || 'amateur', page)).slice(0, 24)),
+        settled('gifreels', async () => (await gifreels.search(q || 'amateur', page)).slice(0, 24)),
+        settled('nsfwmonster', async () => (await nsfwmonster.search(q || 'amateur', page)).slice(0, 24)),
+        settled('erome', async () => (await erome.search(q || 'amateur', page)).slice(0, 24)),
+      ]);
+      const gifs = interleave([rg.gifs, ph.gifs, gr.gifs, nm.gifs, er.gifs]);
+      const errors = [rg, ph, gr, nm, er]
+        .filter((r) => r.error)
+        .map((r) => ({ source: r.label, message: r.error }));
+      return json(200, {
+        query: q,
+        source: 'all',
+        order,
+        page,
+        count: gifs.length,
+        total: gifs.length,
+        gifs,
+        errors: errors.length ? errors : undefined,
+      });
+    }
+
+    const data = await searchRedgifs();
     return json(200, {
       query: q,
       source: 'redgifs',
       order,
       page,
-      count: gifs.length,
-      total: data.total || gifs.length,
-      gifs,
+      count: data.gifs.length,
+      total: data.total || data.gifs.length,
+      gifs: data.gifs,
     });
   } catch (err) {
     return json(err.status && err.status >= 400 ? err.status : 502, {

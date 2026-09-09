@@ -826,7 +826,8 @@ body {
   border: 1px solid var(--border);
 }
 
-.player-frame-wrap iframe {
+.player-frame-wrap iframe,
+.player-frame-wrap video {
   display: block;
   width: 100%;
   height: 100%;
@@ -835,6 +836,24 @@ body {
   pointer-events: auto;
   position: relative;
   z-index: 1;
+}
+
+.player-frame-wrap iframe[hidden],
+.player-frame-wrap video[hidden] {
+  display: none;
+}
+
+.sound-badge {
+  position: absolute;
+  right: 0.45rem;
+  bottom: 0.45rem;
+  padding: 0.12rem 0.4rem;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: rgba(10, 10, 12, 0.78);
+  color: var(--accent);
 }
 
 .panel {

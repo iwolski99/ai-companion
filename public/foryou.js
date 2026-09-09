@@ -37,6 +37,7 @@
       const params = new URLSearchParams({
         action: 'search',
         q: q || '',
+        source: 'redgifs',
         order: 'trending',
         page: '1',
         count: '24',
@@ -46,7 +47,7 @@
       const gifs = data.gifs || [];
       if (!gifs.length) {
         statusEl.className = 'status empty';
-        statusEl.textContent = 'No feed yet — like a few RedGifs clips first.';
+        statusEl.textContent = 'No feed yet — like a few clips on Gifs first.';
         return;
       }
       statusEl.hidden = true;

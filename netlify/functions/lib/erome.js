@@ -53,6 +53,7 @@ async function search(query, page = 1) {
       thumbnail: thumb && !String(thumb).startsWith('data:') ? thumb : null,
       source: 'Erome',
       hasAudio: true,
+      play: 'iframe',
     });
   });
 

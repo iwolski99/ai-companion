@@ -26,6 +26,14 @@ const ALLOWED_HOST_HINTS = [
   'trafficjunky',
   'minutemedia',
   'erome',
+  'redgifs',
+  'xcdn',
+  'p5rn',
+  'gifreels',
+  'redd.it',
+  'reddit',
+  'nsfwmonster',
+  'hardgif',
   'cdn',
 ];
 
