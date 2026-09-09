@@ -297,6 +297,12 @@
     }
   }
 
+  function previewTag(gif) {
+    const src = mediaSrc(gif);
+    if (!src || gif.play === 'iframe') return '';
+    return `<video class="rg-preview" data-preview muted loop playsinline preload="none" poster="${escapeHtml(gif.thumbnail || '')}" data-src="${escapeHtml(src)}" referrerpolicy="no-referrer"></video>`;
+  }
+
   function cardHtml(gif) {
     if (window.BuddyPrefs?.isDisliked?.(gif.id)) return '';
     const prefs = window.BuddyPrefs?.load() || { likes: [], bookmarks: [] };
@@ -315,6 +321,7 @@
               ? `<img src="${escapeHtml(gifThumb(gif))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" />`
               : ''
           }
+          ${previewTag(gif)}
           ${dur ? `<span class="badge">${escapeHtml(dur)}</span>` : ''}
           ${srcLabel}
           ${sound}
@@ -411,6 +418,7 @@
     }
 
     modal.showModal();
+    window.BuddyGifPreview?.pauseAll();
     if (gif.id) window.BuddyPrefs?.like({ ...gif, thumbnail: gif.thumbnail });
   }
 
@@ -420,6 +428,7 @@
     currentGifId = '';
     watchUrl = '';
     if (modal.open) modal.close();
+    window.BuddyGifPreview?.resume();
   }
 
   gridEl.addEventListener('click', (e) => {
@@ -451,6 +460,7 @@
       const gif = gifCache.get(dislikeBtn.dataset.dislike);
       if (gif) window.BuddyPrefs.dislike(gif);
       dislikeBtn.closest('.rg-card')?.remove();
+      window.BuddyGifPreview?.scan(gridEl);
     }
   });
 
@@ -476,6 +486,7 @@
     document.querySelectorAll('.rg-card').forEach((el) => {
       if (el.dataset.id === gif.id) el.remove();
     });
+    window.BuddyGifPreview?.scan(gridEl);
     closePlayer();
   });
   document.getElementById('rg-close')?.addEventListener('click', (e) => {
@@ -486,6 +497,7 @@
     clearVideo();
     iframe.src = '';
     currentGifId = '';
+    window.BuddyGifPreview?.resume();
   });
   modal?.addEventListener('click', (e) => {
     if (!e.target.closest('.player-stage')) closePlayer();
@@ -532,6 +544,7 @@
       }
       statusEl.hidden = true;
       gridEl.innerHTML = gifs.slice(0, 24).map(cardHtml).join('');
+      window.BuddyGifPreview?.scan(gridEl);
     } catch (err) {
       statusEl.className = 'status error';
       statusEl.textContent = err.message || String(err);

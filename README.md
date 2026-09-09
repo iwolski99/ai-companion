@@ -56,7 +56,7 @@ Same as before: publish `public`, functions `netlify/functions`. Optional env:
 | Variable | Purpose |
 |---|---|
 | `SITE_PASSWORD` | Gate search / thumbnail / redgifs / buddy |
-| `PROFILE_PIN` | Optional hard lock. If set (e.g. `69420`), only that key works. If unset, the first key you save a profile with becomes the only key. |
+| `PROFILE_PIN` | Optional hard lock. If set, only that key works. If unset, the first key you save a profile with becomes the only key. |
 | `VAULT_SALT` | Optional extra salt for storing the vault (default is fine) |
 | `CACHE_TTL_SECONDS` | AV Search cache TTL (default 180) |
 | `DEEPSEEK_API_KEY` / `OPENROUTER_API_KEY` | Buddy chat |
