@@ -435,7 +435,7 @@
       .join('');
   }
 
-  async function runSearch(query) {
+  async function runSearch(query, { remember = false } = {}) {
     const sites = selectedSites();
     if (!sites.length) {
       setStatus('error', 'Select at least one source site.');
@@ -444,6 +444,11 @@
     if (sites.length > MAX_SITES) {
       setStatus('error', `Select at most ${MAX_SITES} sites per search.`);
       return;
+    }
+
+    if (remember && window.BuddyPrefs?.trackSearch) {
+      window.BuddyPrefs.trackSearch(query, 'tubes');
+      fillSearchHistory();
     }
 
     searchBtn.disabled = true;
@@ -510,21 +515,37 @@
     }
   }
 
+  function fillSearchHistory() {
+    const list = document.getElementById('q-history');
+    if (!list || !window.BuddyPrefs?.topSearches) return;
+    const items = window.BuddyPrefs.topSearches(16);
+    list.innerHTML = items
+      .map((s) => `<option value="${escapeHtml(s.tag)}"></option>`)
+      .join('');
+  }
+
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     const q = qInput.value.trim();
     if (!q) return;
-    runSearch(q);
+    runSearch(q, { remember: true });
   });
+
+  fillSearchHistory();
 
   const bootQ = new URLSearchParams(location.search).get('q');
   if (bootQ) {
     qInput.value = bootQ;
-    runSearch(bootQ.trim());
+    runSearch(bootQ.trim(), { remember: true });
   } else {
+    const learnedSearches = (
+      window.BuddyPrefs?.recommendationQueries?.(4) ||
+      window.BuddyPrefs?.topSearches(4) ||
+      []
+    ).map((t) => t.tag);
     const learned = (window.BuddyPrefs?.topTags(4) || []).map((t) => t.tag);
     const fallbacks = ['pawg', 'amateur', 'big ass', 'blonde', 'milf'];
-    const pool = [...new Set([...learned, ...fallbacks])];
+    const pool = [...new Set([...learnedSearches, ...learned, ...fallbacks])];
     const pick = pool[Math.floor(Math.random() * Math.min(pool.length, 5))] || 'pawg';
     qInput.value = pick;
     runSearch(pick);

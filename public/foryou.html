@@ -16,7 +16,7 @@
       href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/styles.css?v=taste-2" />
   </head>
   <body>
     <div class="bg-glow" aria-hidden="true"></div>
@@ -34,21 +34,38 @@
           <a class="nav-link" href="/calendar.html">Calendar</a>
         </nav>
       </div>
-      <p class="tagline">Learned from your likes, bookmarks, and tube clicks</p>
+      <p class="tagline">
+        Tube picks and gif picks from the same likes, bookmarks, and searches
+      </p>
     </header>
 
     <main class="shell">
       <section class="panel">
         <h2 class="panel-title">Your taste so far</h2>
         <p class="muted" id="taste-empty" hidden>
-          Like or bookmark clips on Gifs (or click tube results) and weights show up here.
+          Like or bookmark clips, search Tubes, or click results — those names show up here.
         </p>
         <div id="taste-tags" class="chip-row"></div>
       </section>
 
       <section class="panel">
-        <h2 class="panel-title">Feed from your top tags</h2>
-        <p class="muted">Straight-only gifs ranked toward tags you’ve reinforced. An LLM scene recommender can plug into this same store later.</p>
+        <div class="panel-head">
+          <h2 class="panel-title">Tube picks for you</h2>
+        </div>
+        <p class="muted" id="fy-picks-hint">
+          High-view / trending results for names you’ve liked on Gifs or searched on
+          Tubes. These recommendation searches are not saved to your history.
+        </p>
+        <div id="fy-picks-queries" class="chip-row"></div>
+        <div id="fy-picks-status" class="status" hidden></div>
+        <div id="fy-picks" class="results fy-picks"></div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Gif picks from your taste</h2>
+        <p class="muted">
+          Straight-only gifs ranked toward the same names and tags. Disliked clips stay out.
+        </p>
         <div id="fy-status" class="status" hidden></div>
         <div id="fy-grid" class="rg-grid"></div>
       </section>
@@ -65,7 +82,7 @@
     <footer class="foot">
       <p>Preferences never leave this device unless you export them.</p>
     </footer>
-    <script src="/prefs.js"></script>
-    <script src="/foryou.js" defer></script>
+    <script src="/prefs.js?v=taste-2"></script>
+    <script src="/foryou.js?v=taste-2" defer></script>
   </body>
 </html>
