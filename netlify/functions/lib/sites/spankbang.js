@@ -13,7 +13,7 @@
  */
 
 const cheerio = require('cheerio');
-const { collectFromPages, eachSourcePage, absolutize, result, parseViews } = require('../http');
+const { collectFromPages, eachSourcePage, absolutize, result, parseViews, pickChannelText } = require('../http');
 
 const SOURCE = 'SpankBang';
 const BASE = 'https://spankbang.com';
@@ -100,6 +100,7 @@ function parseHtml(html, res) {
         duration,
         source: SOURCE,
         views: parseViews(viewsRaw),
+        studio: pickChannelText($el),
         rank: i,
       })
     );
@@ -125,6 +126,7 @@ function parseHtml(html, res) {
           ),
           duration: $a.parent().find('.l, .length').first().text() || null,
           source: SOURCE,
+          studio: pickChannelText($a.parent()),
           rank: i,
         })
       );

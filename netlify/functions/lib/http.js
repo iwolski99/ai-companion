@@ -107,6 +107,34 @@ function parseViews(raw) {
 /**
  * Build a normalized video result object.
  */
+function pickChannelText($el) {
+  if (!$el || typeof $el.find !== 'function') return null;
+  const $link = $el
+    .find(
+      [
+        'a[href*="/channels/"]',
+        'a[href*="/channel/"]',
+        'a[href*="/studios/"]',
+        'a[href*="/producers/"]',
+        'a[href*="/creators/"]',
+        'a[href*="/creator/"]',
+        'a[href*="/profiles/"]',
+      ].join(', ')
+    )
+    .first();
+  if (!$link.length) return null;
+  const text = String(
+    $link.attr('title') || $link.attr('data-name') || $link.text() || ''
+  )
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (text.length < 2 || text.length > 48) return null;
+  if (/^(hd|4k|vr|verified|premium|views?|video|videos|more)$/i.test(text)) {
+    return null;
+  }
+  return text;
+}
+
 function result({
   title,
   url,
@@ -117,7 +145,9 @@ function result({
   rating,
   uploaded,
   rank,
+  studio,
 }) {
+  const studioName = studio ? String(studio).replace(/\s+/g, ' ').trim() : '';
   return {
     title: (title || '').trim() || 'Untitled',
     url,
@@ -128,6 +158,7 @@ function result({
     rating: rating || null,
     uploaded: uploaded || null,
     rank: typeof rank === 'number' ? rank : null,
+    studio: studioName && studioName.length <= 48 ? studioName : null,
   };
 }
 
@@ -237,5 +268,6 @@ module.exports = {
   normalizeDuration,
   parseViews,
   result,
+  pickChannelText,
   DEFAULT_UA,
 };

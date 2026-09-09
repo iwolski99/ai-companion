@@ -13,7 +13,7 @@
  */
 
 const cheerio = require('cheerio');
-const { collectFromPages, eachSourcePage, absolutize, result, parseViews } = require('../http');
+const { collectFromPages, eachSourcePage, absolutize, result, parseViews, pickChannelText } = require('../http');
 
 const SOURCE = 'xHamster';
 const BASE = 'https://xhamster.com';
@@ -98,6 +98,7 @@ function parseHtml(html) {
         source: SOURCE,
         views: parseViews(viewsRaw),
         rating,
+        studio: pickChannelText($el),
         rank: i,
       })
     );
@@ -120,6 +121,7 @@ function parseHtml(html) {
           thumbnail: absolutize($img.attr('src') || $img.attr('data-src'), BASE),
           duration: $a.find('.duration').text() || null,
           source: SOURCE,
+          studio: pickChannelText($a.parent()),
           rank: i,
         })
       );
