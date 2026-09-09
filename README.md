@@ -11,13 +11,33 @@ Private, personal-use web app: multi-site **tube search**, **RedGifs** discovery
 | `/` Tubes | Existing AV Search across XVideos, XNXX, SpankBang, xHamster, PornHub, YouPorn, BDSMStreak (max 5 sites per query) |
 | `/redgifs.html` | RedGifs tag search, chips, infinite grid, iframe player, likes / bookmarks / skips |
 | `/foryou.html` | Ranked feed from tags you’ve reinforced + bookmark export |
+| `/chat.html` | Horny goon buddy via DeepSeek V4 Flash (DeepSeek API or OpenRouter) |
 | `/calendar.html` | Local orgasm log by day |
 
 Preference learning is **on-device** (`localStorage`). Likes, bookmarks, skips, tube clicks, and calendar entries never leave the browser unless you export JSON.
 
 ## Straight-only
 
-Both Tubes and RedGifs drop gay / bi / trans-coded titles and tags (word-boundary matching so “bikini” / “big” are kept). RedGifs filtering also inspects GIF tags from the API.
+Tubes and RedGifs keep cis-straight / M/F results only:
+
+- RedGifs `sexuality` must be straight. Clips tagged `trans`, `gay`, `bisexual`, or `lesbian` (including `["straight","trans"]`) are dropped.
+- Titles and tags are scanned for trans / gay / bi wording (`Trans girls`, `shemale`, etc.).
+- Those queries return an empty list instead of mixed results.
+
+## Chat (DeepSeek V4 Flash)
+
+`POST /api/buddy` talks to **DeepSeek V4 Flash**.
+
+Set **one** of these in Netlify → Environment variables:
+
+| Variable | Purpose |
+|---|---|
+| `DEEPSEEK_API_KEY` | Official DeepSeek API (`https://api.deepseek.com`, model `deepseek-v4-flash`) |
+| `OPENROUTER_API_KEY` | OpenRouter (`deepseek/deepseek-v4-flash-0731`) |
+| `LLM_PROVIDER` | Optional: `deepseek` or `openrouter` (default: DeepSeek if both keys exist) |
+| `LLM_MODEL` | Optional model override |
+
+The buddy prompt is straight-only, filthy, and uses your liked tags as context. No key → Chat shows a config error.
 
 ## RedGifs
 
@@ -29,25 +49,15 @@ Serverless proxy at `/api/redgifs` (Netlify Function):
 
 No RedGifs API key / env vars required. Thumbnails and embeds come from RedGifs CDN / `https://www.redgifs.com/ifr/{id}`.
 
-## Future: LLM scene recs
-
-Yes — that’s a natural next step. The local store already has:
-
-- weighted tags
-- liked / bookmarked RedGifs
-- tube click history
-- calendar logs
-
-A later function can send a **summary of those tags** (not raw video files) to an LLM and return suggested tube queries or RedGifs tags. Nothing in the current deploy calls an LLM.
-
 ## Deploy
 
 Same as before: publish `public`, functions `netlify/functions`. Optional env:
 
 | Variable | Purpose |
 |---|---|
-| `SITE_PASSWORD` | Gate search / thumbnail / redgifs |
+| `SITE_PASSWORD` | Gate search / thumbnail / redgifs / buddy |
 | `CACHE_TTL_SECONDS` | AV Search cache TTL (default 180) |
+| `DEEPSEEK_API_KEY` / `OPENROUTER_API_KEY` | Buddy chat |
 
 ```bash
 npm install
@@ -61,11 +71,13 @@ public/
   index.html          Tubes (AV Search)
   redgifs.html
   foryou.html
+  chat.html
   calendar.html
   prefs.js            shared local store
 netlify/functions/
   search.js
   redgifs.js
+  buddy.js
   thumbnail.js
   lib/straight.js     shared orientation filter
 ```

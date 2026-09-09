@@ -10,6 +10,8 @@
     timeout = 26
   [functions.redgifs]
     timeout = 20
+  [functions.buddy]
+    timeout = 26
 
 [[redirects]]
   from = "/api/search"
@@ -24,6 +26,11 @@
 [[redirects]]
   from = "/api/redgifs"
   to = "/.netlify/functions/redgifs"
+  status = 200
+
+[[redirects]]
+  from = "/api/buddy"
+  to = "/.netlify/functions/buddy"
   status = 200
 
 [[headers]]

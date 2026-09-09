@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0a0a0b" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Chat · Buddy</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="chat-page">
+    <div class="bg-glow" aria-hidden="true"></div>
+    <header class="top">
+      <div class="top-row">
+        <a class="brand" href="/">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <h1>Buddy</h1>
+        </a>
+        <nav class="nav" aria-label="Main">
+          <a class="nav-link" href="/">Tubes</a>
+          <a class="nav-link" href="/redgifs.html">RedGifs</a>
+          <a class="nav-link" href="/foryou.html">For You</a>
+          <a class="nav-link is-active" href="/chat.html">Chat</a>
+          <a class="nav-link" href="/calendar.html">Calendar</a>
+        </nav>
+      </div>
+      <p class="tagline">DeepSeek V4 Flash · horny goon buddy · straight only</p>
+    </header>
+
+    <main class="shell chat-shell">
+      <div id="chat-log" class="chat-log" aria-live="polite"></div>
+      <form id="chat-form" class="chat-form" autocomplete="off">
+        <label class="sr-only" for="chat-input">Message</label>
+        <textarea
+          id="chat-input"
+          rows="2"
+          maxlength="4000"
+          placeholder="Tell Buddy what you’re in the mood for…"
+          required
+        ></textarea>
+        <button type="submit" class="btn-primary" id="chat-send">Send</button>
+      </form>
+      <p class="muted chat-hint" id="chat-hint">
+        Needs <code>DEEPSEEK_API_KEY</code> or <code>OPENROUTER_API_KEY</code> in Netlify env.
+      </p>
+    </main>
+
+    <script src="/prefs.js"></script>
+    <script src="/chat.js" defer></script>
+  </body>
+</html>

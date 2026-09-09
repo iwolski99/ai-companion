@@ -214,12 +214,22 @@
     }
   });
 
-  document.getElementById('rg-close').addEventListener('click', () => {
-    modal.close();
+  function closePlayer() {
+    if (modal.open) modal.close();
     iframe.src = '';
-  });
+  }
+
+  document.getElementById('rg-close').addEventListener('click', closePlayer);
   modal.addEventListener('close', () => {
     iframe.src = '';
+  });
+  // Click the dimmed backdrop or anywhere that isn't the video stage to close.
+  modal.addEventListener('click', (e) => {
+    // Anything outside the iframe (backdrop, chrome, empty padding) closes.
+    if (!e.target.closest('.player-frame-wrap')) closePlayer();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal.open) closePlayer();
   });
 
   const io = new IntersectionObserver((entries) => {

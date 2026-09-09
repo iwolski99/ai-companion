@@ -10,7 +10,7 @@
 
 const fetch = require('node-fetch');
 const { checkPassword } = require('./lib/auth');
-const { isStraightGif, isStraightText } = require('./lib/straight');
+const { isStraightGif, isStraightText, isBlockedQuery } = require('./lib/straight');
 const { DEFAULT_UA } = require('./lib/http');
 
 const API = 'https://api.redgifs.com';
@@ -150,6 +150,17 @@ exports.handler = async (event) => {
     }
 
     const q = (qs.q || qs.query || qs.tags || '').trim();
+    if (isBlockedQuery(q)) {
+      return json(200, {
+        query: q,
+        order: 'trending',
+        page: 1,
+        count: 0,
+        total: 0,
+        gifs: [],
+        blocked: true,
+      });
+    }
     const orderRaw = (qs.order || 'trending').toLowerCase();
     const order = ['trending', 'top', 'latest', 'latest-by-likes'].includes(orderRaw)
       ? orderRaw

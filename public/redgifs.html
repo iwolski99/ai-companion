@@ -31,6 +31,7 @@
           <a class="nav-link" href="/">Tubes</a>
           <a class="nav-link is-active" href="/redgifs.html">RedGifs</a>
           <a class="nav-link" href="/foryou.html">For You</a>
+          <a class="nav-link" href="/chat.html">Chat</a>
           <a class="nav-link" href="/calendar.html">Calendar</a>
         </nav>
       </div>
@@ -70,12 +71,14 @@
     </main>
 
     <dialog id="rg-modal" class="player-modal">
-      <div class="player-bar">
-        <button type="button" class="btn-ghost" id="rg-close">Close</button>
-        <a id="rg-open-ext" class="btn-ghost" target="_blank" rel="noopener">Open on RedGifs</a>
-      </div>
-      <div class="player-frame-wrap">
-        <iframe id="rg-iframe" title="RedGifs player" allow="autoplay; fullscreen" allowfullscreen></iframe>
+      <div class="player-stage">
+        <div class="player-bar">
+          <button type="button" class="btn-ghost" id="rg-close">Close</button>
+          <a id="rg-open-ext" class="btn-ghost" target="_blank" rel="noopener">Open on RedGifs</a>
+        </div>
+        <div class="player-frame-wrap">
+          <iframe id="rg-iframe" title="RedGifs player" allow="autoplay; fullscreen" allowfullscreen></iframe>
+        </div>
       </div>
     </dialog>
 
