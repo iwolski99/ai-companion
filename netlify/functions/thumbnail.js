@@ -25,6 +25,7 @@ const ALLOWED_HOST_HINTS = [
   'mespeaks',
   'trafficjunky',
   'minutemedia',
+  'erome',
   'cdn',
 ];
 

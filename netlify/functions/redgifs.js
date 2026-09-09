@@ -12,6 +12,7 @@ const fetch = require('node-fetch');
 const { checkPassword } = require('./lib/auth');
 const { isStraightGif, isStraightText, isBlockedQuery } = require('./lib/straight');
 const { DEFAULT_UA } = require('./lib/http');
+const erome = require('./lib/erome');
 
 const API = 'https://api.redgifs.com';
 const corsHeaders = {
@@ -117,9 +118,8 @@ exports.handler = async (event) => {
   const action = (qs.action || 'search').toLowerCase();
 
   try {
-    const token = await getToken();
-
     if (action === 'tags') {
+      const token = await getToken();
       const q = (qs.q || '').trim();
       let tags = [];
       if (q) {
@@ -151,6 +151,8 @@ exports.handler = async (event) => {
       });
     }
 
+    const source = String(qs.source || 'redgifs').toLowerCase();
+
     const q = (qs.q || qs.query || qs.tags || '').trim();
     if (isBlockedQuery(q)) {
       return json(200, {
@@ -170,6 +172,21 @@ exports.handler = async (event) => {
     const page = Math.max(1, Number(qs.page || 1) || 1);
     const count = Math.min(80, Math.max(8, Number(qs.count || 40) || 40));
 
+    if (source === 'erome') {
+      const gifs = await erome.search(q || 'amateur', page);
+      return json(200, {
+        query: q,
+        source: 'erome',
+        order: 'latest',
+        page,
+        count: gifs.length,
+        total: gifs.length,
+        gifs,
+      });
+    }
+
+    const token = await getToken();
+
     const params = new URLSearchParams({
       type: 'g',
       order,
@@ -185,6 +202,7 @@ exports.handler = async (event) => {
 
     return json(200, {
       query: q,
+      source: 'redgifs',
       order,
       page,
       count: gifs.length,

@@ -1,20 +1,21 @@
 /**
- * RedGifs page — search, chips, infinite grid, modal embed, local prefs.
+ * Gif page — RedGifs / Erome search, chips, infinite grid, iframe player.
+ * RedGifs audio only works in their own embed (not a hotlinked MP4).
  */
 (() => {
   const form = document.getElementById('rg-form');
   const qInput = document.getElementById('rg-q');
   const orderEl = document.getElementById('rg-order');
+  const sourceEl = document.getElementById('rg-source');
   const chipsEl = document.getElementById('rg-chips');
   const statusEl = document.getElementById('rg-status');
   const gridEl = document.getElementById('rg-grid');
   const sentinel = document.getElementById('rg-sentinel');
   const searchBtn = document.getElementById('rg-search-btn');
   const modal = document.getElementById('rg-modal');
-  const video = document.getElementById('rg-video');
+  const iframe = document.getElementById('rg-iframe');
   const likeBtnEl = document.getElementById('rg-like');
   const saveBtnEl = document.getElementById('rg-save');
-  const muteBtn = document.getElementById('rg-mute');
   const openExt = document.getElementById('rg-open-ext');
 
   const selectedTags = new Set();
@@ -22,9 +23,9 @@
   let loading = false;
   let done = false;
   let lastQuery = '';
-  let lastOrder = 'trending';
-  let watchUrl = '';
   let landing = null;
+  let currentGifId = '';
+  let watchUrl = '';
 
   const LANDING_TAGS = [
     'pawg',
@@ -71,6 +72,10 @@
     statusEl.textContent = '';
   }
 
+  function currentSource() {
+    return (sourceEl?.value || 'redgifs').toLowerCase();
+  }
+
   function queryFromUi() {
     const typed = qInput.value.trim();
     const tags = [...selectedTags];
@@ -92,6 +97,14 @@
     orderEl.value = landing.order;
     page = landing.page;
     qInput.placeholder = `Showing ${landing.q} · ${landing.order}`;
+  }
+
+  function thumbSrc(gif) {
+    if (!gif.thumbnail) return '';
+    if (currentSource() === 'erome') {
+      return `/api/thumbnail?url=${encodeURIComponent(gif.thumbnail)}`;
+    }
+    return gif.thumbnail;
   }
 
   async function loadTags() {
@@ -128,22 +141,23 @@
     const liked = prefs.likes.some((x) => x.id === gif.id);
     const saved = prefs.bookmarks.some((x) => x.id === gif.id);
     const dur = gif.duration ? `${Math.round(gif.duration)}s` : '';
+    const srcLabel = gif.source ? `<span class="source-badge">${escapeHtml(gif.source)}</span>` : '';
     return `
       <article class="rg-card" data-id="${escapeHtml(gif.id)}">
-        <button type="button" class="rg-thumb" data-play="${escapeHtml(gif.id)}" data-url="${escapeHtml(gif.url)}" data-hd="${escapeHtml(gif.hd || '')}" data-sd="${escapeHtml(gif.sd || '')}" data-embed="${escapeHtml(gif.embed || '')}">
+        <button type="button" class="rg-thumb" data-play="${escapeHtml(gif.id)}" data-url="${escapeHtml(gif.url)}" data-embed="${escapeHtml(gif.embed || gif.url || '')}">
           ${
             gif.thumbnail
-              ? `<img src="${escapeHtml(gif.thumbnail)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" />`
+              ? `<img src="${escapeHtml(thumbSrc(gif))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" />`
               : ''
           }
           ${dur ? `<span class="badge">${escapeHtml(dur)}</span>` : ''}
+          ${srcLabel}
         </button>
         <div class="rg-body">
           <p class="card-title">${escapeHtml(gif.title)}</p>
           <div class="rg-actions">
             <button type="button" class="icon-btn ${liked ? 'is-on' : ''}" data-like="${escapeHtml(gif.id)}" aria-label="Like">♥</button>
             <button type="button" class="icon-btn ${saved ? 'is-on' : ''}" data-save="${escapeHtml(gif.id)}" aria-label="Bookmark">★</button>
-            <button type="button" class="icon-btn" data-sound="${escapeHtml(gif.id)}" aria-label="Watch with sound">🔊</button>
             <button type="button" class="icon-btn" data-skip="${escapeHtml(gif.id)}" aria-label="Skip">✕</button>
           </div>
         </div>
@@ -155,16 +169,31 @@
 
   async function fetchPage(reset) {
     if (loading || done) return;
+    const source = currentSource();
+    const q = queryFromUi();
+
+    if (source === 'fyptt') {
+      loading = false;
+      done = true;
+      sentinel.hidden = true;
+      gridEl.innerHTML = '';
+      const href = `https://fyptt.to/?s=${encodeURIComponent(q || 'amateur')}`;
+      setStatus(
+        'empty',
+        `FYPTT blocks datacenter search (Cloudflare). Open results on their site: <a href="${escapeHtml(href)}" target="_blank" rel="noopener">Search “${escapeHtml(q || 'amateur')}” on FYPTT</a>`
+      );
+      return;
+    }
+
     loading = true;
-    if (reset) setStatus('loading', '<span class="spinner"></span>Loading RedGifs…');
+    if (reset) setStatus('loading', '<span class="spinner"></span>Loading clips…');
     searchBtn.disabled = true;
 
-    const q = queryFromUi();
-    const order = orderEl.value;
     const params = new URLSearchParams({
       action: 'search',
       q,
-      order,
+      source,
+      order: orderEl.value,
       page: String(page),
       count: '40',
     });
@@ -173,7 +202,7 @@
       const res = await fetch(`/api/redgifs?${params}`);
       const data = await res.json();
       if (!res.ok) {
-        setStatus('error', escapeHtml(data.message || data.error || 'RedGifs failed'));
+        setStatus('error', escapeHtml(data.message || data.error || 'Search failed'));
         done = true;
         return;
       }
@@ -181,7 +210,7 @@
       gifs.forEach((g) => gifCache.set(g.id, g));
 
       if (reset && !gifs.length) {
-        setStatus('empty', 'No straight results for that search. Try another tag.');
+        setStatus('empty', 'No straight results for that search. Try another tag or source.');
         gridEl.innerHTML = '';
         return;
       }
@@ -203,10 +232,9 @@
   }
 
   function resetAndSearch() {
-    page = landing ? landing.page : 1;
+    page = landing && currentSource() === 'redgifs' ? landing.page : 1;
     done = false;
     lastQuery = queryFromUi();
-    lastOrder = orderEl.value;
     gridEl.innerHTML = '';
     sentinel.hidden = false;
     fetchPage(true);
@@ -221,21 +249,14 @@
     landing = null;
     resetAndSearch();
   });
+  sourceEl?.addEventListener('change', () => {
+    landing = null;
+    resetAndSearch();
+  });
 
   document.getElementById('rg-export').addEventListener('click', () => {
     window.BuddyPrefs?.exportBookmarks();
   });
-
-  let currentGifId = '';
-
-  function syncMuteBtn() {
-    if (!muteBtn) return;
-    const on = !video.muted && video.volume > 0;
-    muteBtn.classList.toggle('is-on', on);
-    muteBtn.textContent = on ? '🔊 Mute' : '🔇 Unmute';
-    muteBtn.setAttribute('aria-label', on ? 'Mute' : 'Unmute');
-    muteBtn.title = on ? 'Mute' : 'Unmute';
-  }
 
   function syncPlayerActions() {
     const gif = gifCache.get(currentGifId);
@@ -248,81 +269,31 @@
       'is-on',
       Boolean(gif && prefs.bookmarks.some((x) => x.id === gif.id))
     );
-    syncMuteBtn();
   }
 
-  function setSoundOn() {
-    video.muted = false;
-    video.defaultMuted = false;
-    video.volume = 1;
-    syncMuteBtn();
-  }
-
-  function stopVideo() {
-    video.pause();
-    video.removeAttribute('src');
-    video.load();
-    currentGifId = '';
-    syncMuteBtn();
-  }
-
-  function playFile(src, wantSound) {
-    video.referrerPolicy = 'no-referrer';
-    video.src = src;
-    video.loop = true;
-    // Autoplay is allowed muted. Unmute in this click if the user asked for sound.
-    video.muted = !wantSound;
-    video.defaultMuted = !wantSound;
-    video.volume = 1;
-    const attempt = video.play();
-    if (attempt && typeof attempt.then === 'function') {
-      attempt
-        .then(() => {
-          if (wantSound) setSoundOn();
-          else syncMuteBtn();
-        })
-        .catch(() => {
-          video.muted = true;
-          video.play()
-            .then(() => {
-              if (wantSound) setSoundOn();
-              else syncMuteBtn();
-            })
-            .catch(() => syncMuteBtn());
-        });
-    } else {
-      syncMuteBtn();
-    }
-  }
-
-  function openPlayer(play, { sound = false } = {}) {
-    const id = play.dataset.play || play.dataset.sound;
+  function openPlayer(play) {
+    const id = play.dataset.play;
     const gif = gifCache.get(id) || {};
-    const src = gif.hd || gif.sd || play.dataset.hd || play.dataset.sd;
-    if (!src) return;
+    const embed =
+      gif.embed ||
+      play.dataset.embed ||
+      (String(id).startsWith('erome-')
+        ? play.dataset.url
+        : `https://www.redgifs.com/ifr/${id}`);
+    if (!embed) return;
     currentGifId = id;
-    watchUrl = gif.url || play.dataset.url || `https://www.redgifs.com/watch/${id}`;
+    watchUrl = gif.url || play.dataset.url || embed;
     openExt.href = watchUrl;
-    video.poster = gif.thumbnail || '';
+    iframe.src = embed;
     modal.showModal();
     syncPlayerActions();
-    playFile(src, sound);
     if (gif.id) window.BuddyPrefs?.like({ ...gif, thumbnail: gif.thumbnail });
   }
 
   gridEl.addEventListener('click', (e) => {
-    const soundBtn = e.target.closest('[data-sound]');
-    if (soundBtn) {
-      const id = soundBtn.dataset.sound;
-      const card = soundBtn.closest('.rg-card');
-      const play = card?.querySelector('[data-play]') || soundBtn;
-      play.dataset.play = id;
-      openPlayer(play, { sound: true });
-      return;
-    }
     const play = e.target.closest('[data-play]');
     if (play) {
-      openPlayer(play, { sound: false });
+      openPlayer(play);
       return;
     }
     const likeBtn = e.target.closest('[data-like]');
@@ -352,24 +323,11 @@
   });
 
   function closePlayer() {
-    stopVideo();
-    if (modal.open) modal.close();
+    iframe.src = '';
+    currentGifId = '';
     watchUrl = '';
+    if (modal.open) modal.close();
   }
-
-  muteBtn?.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (video.muted || video.volume === 0) {
-      setSoundOn();
-      video.play().catch(() => {});
-    } else {
-      video.muted = true;
-      syncMuteBtn();
-    }
-  });
-  video.addEventListener('volumechange', syncMuteBtn);
-  video.addEventListener('play', syncMuteBtn);
 
   likeBtnEl?.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -390,7 +348,10 @@
     e.stopPropagation();
     closePlayer();
   });
-  modal.addEventListener('close', stopVideo);
+  modal.addEventListener('close', () => {
+    iframe.src = '';
+    currentGifId = '';
+  });
   modal.addEventListener('click', (e) => {
     if (!e.target.closest('.player-stage')) closePlayer();
   });
