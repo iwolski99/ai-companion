@@ -51,3 +51,9 @@
   for = "/redgifs.html"
   [headers.values]
     Referrer-Policy = "no-referrer"
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
