@@ -12,6 +12,7 @@
   const searchBtn = document.getElementById('rg-search-btn');
   const modal = document.getElementById('rg-modal');
   const video = document.getElementById('rg-video');
+  const iframe = document.getElementById('rg-iframe');
   const pauseBtn = document.getElementById('rg-pause');
   const openExt = document.getElementById('rg-open-ext');
 
@@ -128,7 +129,7 @@
     const dur = gif.duration ? `${Math.round(gif.duration)}s` : '';
     return `
       <article class="rg-card" data-id="${escapeHtml(gif.id)}">
-        <button type="button" class="rg-thumb" data-play="${escapeHtml(gif.id)}" data-url="${escapeHtml(gif.url)}" data-hd="${escapeHtml(gif.hd || '')}" data-sd="${escapeHtml(gif.sd || '')}">
+        <button type="button" class="rg-thumb" data-play="${escapeHtml(gif.id)}" data-url="${escapeHtml(gif.url)}" data-hd="${escapeHtml(gif.hd || '')}" data-sd="${escapeHtml(gif.sd || '')}" data-embed="${escapeHtml(gif.embed || '')}">
           ${
             gif.thumbnail
               ? `<img src="${escapeHtml(gif.thumbnail)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" />`
@@ -225,7 +226,25 @@
 
   function syncPauseBtn() {
     if (!pauseBtn) return;
-    pauseBtn.textContent = video.paused ? 'Play' : 'Pause';
+    const paused = iframe && !iframe.hidden ? false : video.paused;
+    pauseBtn.textContent = paused ? 'Play' : 'Pause';
+  }
+
+  function showVideo() {
+    video.hidden = false;
+    if (iframe) {
+      iframe.hidden = true;
+      iframe.src = '';
+    }
+  }
+
+  function showIframe(embedUrl) {
+    video.hidden = true;
+    stopVideo();
+    if (iframe) {
+      iframe.hidden = false;
+      iframe.src = embedUrl;
+    }
   }
 
   function stopVideo() {
@@ -239,9 +258,20 @@
     const id = play.dataset.play;
     const gif = gifCache.get(id) || {};
     const src = gif.hd || gif.sd || play.dataset.hd || play.dataset.sd;
-    if (!src) return;
+    const embed =
+      gif.embed || play.dataset.embed || `https://www.redgifs.com/ifr/${id}`;
     watchUrl = gif.url || play.dataset.url || `https://www.redgifs.com/watch/${id}`;
     openExt.href = watchUrl;
+    modal.showModal();
+
+    if (!src) {
+      showIframe(embed);
+      pauseBtn.textContent = 'Pause';
+      if (gif.id) window.BuddyPrefs?.like({ ...gif, thumbnail: gif.thumbnail });
+      return;
+    }
+
+    showVideo();
     video.poster = gif.thumbnail || '';
     video.referrerPolicy = 'no-referrer';
     video.src = src;
@@ -249,7 +279,6 @@
     video.defaultMuted = false;
     video.volume = 1;
     video.loop = true;
-    modal.showModal();
     const tryPlay = () => {
       video.muted = false;
       video.volume = 1;
@@ -263,15 +292,16 @@
       'error',
       () => {
         const fallback = gif.sd || play.dataset.sd;
-        if (fallback && video.src !== fallback && src !== fallback) {
+        if (fallback && video.currentSrc !== fallback && src !== fallback) {
           video.src = fallback;
           tryPlay();
+          return;
         }
+        showIframe(embed);
       },
       { once: true }
     );
     tryPlay();
-    syncPauseBtn();
     if (gif.id) window.BuddyPrefs?.like({ ...gif, thumbnail: gif.thumbnail });
   }
 
@@ -309,6 +339,10 @@
 
   function closePlayer() {
     stopVideo();
+    if (iframe) {
+      iframe.src = '';
+      iframe.hidden = true;
+    }
     if (modal.open) modal.close();
     watchUrl = '';
   }
@@ -316,6 +350,18 @@
   pauseBtn?.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
+    if (iframe && !iframe.hidden) {
+      // Iframe fallback: RedGifs' own player handles pause; reload stops it.
+      if (iframe.src) {
+        iframe.dataset.playSrc = iframe.src;
+        iframe.src = '';
+        pauseBtn.textContent = 'Play';
+      } else if (iframe.dataset.playSrc) {
+        iframe.src = iframe.dataset.playSrc;
+        pauseBtn.textContent = 'Pause';
+      }
+      return;
+    }
     if (video.paused) {
       video.muted = false;
       video.play().catch(() => {});

@@ -16,7 +16,7 @@
       href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/styles.css?v=rg-player-3" />
   </head>
   <body>
     <div class="bg-glow" aria-hidden="true"></div>
@@ -74,10 +74,10 @@
       <div class="player-stage">
         <div class="player-bar">
           <button type="button" class="btn-ghost" id="rg-close">Close</button>
-          <div class="player-bar-actions">
-            <button type="button" class="btn-primary" id="rg-pause">Pause</button>
-            <a id="rg-open-ext" class="btn-ghost" target="_blank" rel="noopener">Open on RedGifs</a>
-          </div>
+          <a id="rg-open-ext" class="btn-ghost" target="_blank" rel="noopener">Open on RedGifs</a>
+        </div>
+        <div class="player-bar player-bar-playback">
+          <button type="button" class="btn-primary player-pause-btn" id="rg-pause">Pause</button>
         </div>
         <div class="player-frame-wrap">
           <video
@@ -89,6 +89,13 @@
             preload="auto"
             referrerpolicy="no-referrer"
           ></video>
+          <iframe
+            id="rg-iframe"
+            title="RedGifs player"
+            allow="autoplay; fullscreen; encrypted-media"
+            allowfullscreen
+            hidden
+          ></iframe>
         </div>
       </div>
     </dialog>
@@ -97,7 +104,7 @@
       <p>Straight-only. Likes and bookmarks stay in this browser.</p>
     </footer>
 
-    <script src="/prefs.js"></script>
-    <script src="/redgifs.js" defer></script>
+    <script src="/prefs.js?v=rg-player-3"></script>
+    <script src="/redgifs.js?v=rg-player-3" defer></script>
   </body>
 </html>
