@@ -12,8 +12,9 @@
   const searchBtn = document.getElementById('rg-search-btn');
   const modal = document.getElementById('rg-modal');
   const video = document.getElementById('rg-video');
-  const iframe = document.getElementById('rg-iframe');
-  const pauseBtn = document.getElementById('rg-pause');
+  const likeBtnEl = document.getElementById('rg-like');
+  const saveBtnEl = document.getElementById('rg-save');
+  const muteBtn = document.getElementById('rg-mute');
   const openExt = document.getElementById('rg-open-ext');
 
   const selectedTags = new Set();
@@ -142,6 +143,7 @@
           <div class="rg-actions">
             <button type="button" class="icon-btn ${liked ? 'is-on' : ''}" data-like="${escapeHtml(gif.id)}" aria-label="Like">♥</button>
             <button type="button" class="icon-btn ${saved ? 'is-on' : ''}" data-save="${escapeHtml(gif.id)}" aria-label="Bookmark">★</button>
+            <button type="button" class="icon-btn" data-sound="${escapeHtml(gif.id)}" aria-label="Watch with sound">🔊</button>
             <button type="button" class="icon-btn" data-skip="${escapeHtml(gif.id)}" aria-label="Skip">✕</button>
           </div>
         </div>
@@ -224,91 +226,103 @@
     window.BuddyPrefs?.exportBookmarks();
   });
 
-  function syncPauseBtn() {
-    if (!pauseBtn) return;
-    const paused = iframe && !iframe.hidden ? false : video.paused;
-    pauseBtn.textContent = paused ? 'Play' : 'Pause';
+  let currentGifId = '';
+
+  function syncMuteBtn() {
+    if (!muteBtn) return;
+    const on = !video.muted && video.volume > 0;
+    muteBtn.classList.toggle('is-on', on);
+    muteBtn.textContent = on ? '🔊 Mute' : '🔇 Unmute';
+    muteBtn.setAttribute('aria-label', on ? 'Mute' : 'Unmute');
+    muteBtn.title = on ? 'Mute' : 'Unmute';
   }
 
-  function showVideo() {
-    video.hidden = false;
-    if (iframe) {
-      iframe.hidden = true;
-      iframe.src = '';
-    }
+  function syncPlayerActions() {
+    const gif = gifCache.get(currentGifId);
+    const prefs = window.BuddyPrefs?.load() || { likes: [], bookmarks: [] };
+    likeBtnEl?.classList.toggle(
+      'is-on',
+      Boolean(gif && prefs.likes.some((x) => x.id === gif.id))
+    );
+    saveBtnEl?.classList.toggle(
+      'is-on',
+      Boolean(gif && prefs.bookmarks.some((x) => x.id === gif.id))
+    );
+    syncMuteBtn();
   }
 
-  function showIframe(embedUrl) {
-    video.hidden = true;
-    stopVideo();
-    if (iframe) {
-      iframe.hidden = false;
-      iframe.src = embedUrl;
-    }
+  function setSoundOn() {
+    video.muted = false;
+    video.defaultMuted = false;
+    video.volume = 1;
+    syncMuteBtn();
   }
 
   function stopVideo() {
     video.pause();
     video.removeAttribute('src');
     video.load();
-    syncPauseBtn();
+    currentGifId = '';
+    syncMuteBtn();
   }
 
-  function openPlayer(play) {
-    const id = play.dataset.play;
-    const gif = gifCache.get(id) || {};
-    const src = gif.hd || gif.sd || play.dataset.hd || play.dataset.sd;
-    const embed =
-      gif.embed || play.dataset.embed || `https://www.redgifs.com/ifr/${id}`;
-    watchUrl = gif.url || play.dataset.url || `https://www.redgifs.com/watch/${id}`;
-    openExt.href = watchUrl;
-    modal.showModal();
-
-    if (!src) {
-      showIframe(embed);
-      pauseBtn.textContent = 'Pause';
-      if (gif.id) window.BuddyPrefs?.like({ ...gif, thumbnail: gif.thumbnail });
-      return;
-    }
-
-    showVideo();
-    video.poster = gif.thumbnail || '';
+  function playFile(src, wantSound) {
     video.referrerPolicy = 'no-referrer';
     video.src = src;
-    video.muted = false;
-    video.defaultMuted = false;
-    video.volume = 1;
     video.loop = true;
-    const tryPlay = () => {
-      video.muted = false;
-      video.volume = 1;
-      const playAttempt = video.play();
-      if (playAttempt && typeof playAttempt.catch === 'function') {
-        playAttempt.catch(() => {});
-      }
-      syncPauseBtn();
-    };
-    video.addEventListener(
-      'error',
-      () => {
-        const fallback = gif.sd || play.dataset.sd;
-        if (fallback && video.currentSrc !== fallback && src !== fallback) {
-          video.src = fallback;
-          tryPlay();
-          return;
-        }
-        showIframe(embed);
-      },
-      { once: true }
-    );
-    tryPlay();
+    // Autoplay is allowed muted. Unmute in this click if the user asked for sound.
+    video.muted = !wantSound;
+    video.defaultMuted = !wantSound;
+    video.volume = 1;
+    const attempt = video.play();
+    if (attempt && typeof attempt.then === 'function') {
+      attempt
+        .then(() => {
+          if (wantSound) setSoundOn();
+          else syncMuteBtn();
+        })
+        .catch(() => {
+          video.muted = true;
+          video.play()
+            .then(() => {
+              if (wantSound) setSoundOn();
+              else syncMuteBtn();
+            })
+            .catch(() => syncMuteBtn());
+        });
+    } else {
+      syncMuteBtn();
+    }
+  }
+
+  function openPlayer(play, { sound = false } = {}) {
+    const id = play.dataset.play || play.dataset.sound;
+    const gif = gifCache.get(id) || {};
+    const src = gif.hd || gif.sd || play.dataset.hd || play.dataset.sd;
+    if (!src) return;
+    currentGifId = id;
+    watchUrl = gif.url || play.dataset.url || `https://www.redgifs.com/watch/${id}`;
+    openExt.href = watchUrl;
+    video.poster = gif.thumbnail || '';
+    modal.showModal();
+    syncPlayerActions();
+    playFile(src, sound);
     if (gif.id) window.BuddyPrefs?.like({ ...gif, thumbnail: gif.thumbnail });
   }
 
   gridEl.addEventListener('click', (e) => {
+    const soundBtn = e.target.closest('[data-sound]');
+    if (soundBtn) {
+      const id = soundBtn.dataset.sound;
+      const card = soundBtn.closest('.rg-card');
+      const play = card?.querySelector('[data-play]') || soundBtn;
+      play.dataset.play = id;
+      openPlayer(play, { sound: true });
+      return;
+    }
     const play = e.target.closest('[data-play]');
     if (play) {
-      openPlayer(play);
+      openPlayer(play, { sound: false });
       return;
     }
     const likeBtn = e.target.closest('[data-like]');
@@ -339,46 +353,44 @@
 
   function closePlayer() {
     stopVideo();
-    if (iframe) {
-      iframe.src = '';
-      iframe.hidden = true;
-    }
     if (modal.open) modal.close();
     watchUrl = '';
   }
 
-  pauseBtn?.addEventListener('click', (e) => {
+  muteBtn?.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (iframe && !iframe.hidden) {
-      // Iframe fallback: RedGifs' own player handles pause; reload stops it.
-      if (iframe.src) {
-        iframe.dataset.playSrc = iframe.src;
-        iframe.src = '';
-        pauseBtn.textContent = 'Play';
-      } else if (iframe.dataset.playSrc) {
-        iframe.src = iframe.dataset.playSrc;
-        pauseBtn.textContent = 'Pause';
-      }
-      return;
-    }
-    if (video.paused) {
-      video.muted = false;
+    if (video.muted || video.volume === 0) {
+      setSoundOn();
       video.play().catch(() => {});
     } else {
-      video.pause();
+      video.muted = true;
+      syncMuteBtn();
     }
-    syncPauseBtn();
   });
-  video.addEventListener('play', syncPauseBtn);
-  video.addEventListener('pause', syncPauseBtn);
+  video.addEventListener('volumechange', syncMuteBtn);
+  video.addEventListener('play', syncMuteBtn);
+
+  likeBtnEl?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const gif = gifCache.get(currentGifId);
+    if (!gif) return;
+    window.BuddyPrefs.like(gif);
+    likeBtnEl.classList.add('is-on');
+  });
+  saveBtnEl?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const gif = gifCache.get(currentGifId);
+    if (!gif) return;
+    window.BuddyPrefs.bookmark(gif);
+    saveBtnEl.classList.add('is-on');
+  });
 
   document.getElementById('rg-close').addEventListener('click', (e) => {
     e.stopPropagation();
     closePlayer();
   });
   modal.addEventListener('close', stopVideo);
-  // Backdrop click closes; clicks on the video or chrome stay in the player.
   modal.addEventListener('click', (e) => {
     if (!e.target.closest('.player-stage')) closePlayer();
   });
