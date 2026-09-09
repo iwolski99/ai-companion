@@ -11,9 +11,9 @@
   const sentinel = document.getElementById('rg-sentinel');
   const searchBtn = document.getElementById('rg-search-btn');
   const modal = document.getElementById('rg-modal');
-  const iframe = document.getElementById('rg-iframe');
+  const video = document.getElementById('rg-video');
+  const pauseBtn = document.getElementById('rg-pause');
   const openExt = document.getElementById('rg-open-ext');
-  const hitEl = document.getElementById('rg-hit');
 
   const selectedTags = new Set();
   let page = 1;
@@ -128,7 +128,7 @@
     const dur = gif.duration ? `${Math.round(gif.duration)}s` : '';
     return `
       <article class="rg-card" data-id="${escapeHtml(gif.id)}">
-        <button type="button" class="rg-thumb" data-play="${escapeHtml(gif.id)}" data-url="${escapeHtml(gif.url)}" data-embed="${escapeHtml(gif.embed)}">
+        <button type="button" class="rg-thumb" data-play="${escapeHtml(gif.id)}" data-url="${escapeHtml(gif.url)}" data-hd="${escapeHtml(gif.hd || '')}" data-sd="${escapeHtml(gif.sd || '')}">
           ${
             gif.thumbnail
               ? `<img src="${escapeHtml(gif.thumbnail)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" />`
@@ -223,16 +223,48 @@
     window.BuddyPrefs?.exportBookmarks();
   });
 
+  function syncPauseBtn() {
+    if (!pauseBtn) return;
+    pauseBtn.textContent = video.paused ? 'Play' : 'Pause';
+  }
+
+  function stopVideo() {
+    video.pause();
+    video.removeAttribute('src');
+    video.load();
+    syncPauseBtn();
+  }
+
+  function openPlayer(play) {
+    const id = play.dataset.play;
+    const gif = gifCache.get(id) || {};
+    const src = gif.hd || gif.sd || play.dataset.hd || play.dataset.sd;
+    if (!src) return;
+    watchUrl = gif.url || play.dataset.url || `https://www.redgifs.com/watch/${id}`;
+    openExt.href = watchUrl;
+    video.poster = gif.thumbnail || '';
+    video.src = src;
+    video.muted = false;
+    video.defaultMuted = false;
+    video.volume = 1;
+    video.loop = true;
+    modal.showModal();
+    const playAttempt = video.play();
+    if (playAttempt && typeof playAttempt.catch === 'function') {
+      playAttempt.catch(() => {
+        video.muted = false;
+        video.volume = 1;
+        video.play().catch(() => {});
+      });
+    }
+    syncPauseBtn();
+    if (gif.id) window.BuddyPrefs?.like({ ...gif, thumbnail: gif.thumbnail });
+  }
+
   gridEl.addEventListener('click', (e) => {
     const play = e.target.closest('[data-play]');
     if (play) {
-      const id = play.dataset.play;
-      const gif = gifCache.get(id);
-      iframe.src = play.dataset.embed || `https://www.redgifs.com/ifr/${id}`;
-      watchUrl = play.dataset.url || `https://www.redgifs.com/watch/${id}`;
-      openExt.href = watchUrl;
-      if (gif) window.BuddyPrefs?.like({ ...gif, thumbnail: gif.thumbnail });
-      modal.showModal();
+      openPlayer(play);
       return;
     }
     const likeBtn = e.target.closest('[data-like]');
@@ -262,27 +294,33 @@
   });
 
   function closePlayer() {
+    stopVideo();
     if (modal.open) modal.close();
-    iframe.src = '';
     watchUrl = '';
   }
 
-  hitEl.addEventListener('click', (e) => {
+  pauseBtn?.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    const url = watchUrl;
-    closePlayer();
-    if (url) window.open(url, '_blank', 'noopener,noreferrer');
+    if (video.paused) {
+      video.muted = false;
+      video.play().catch(() => {});
+    } else {
+      video.pause();
+    }
+    syncPauseBtn();
   });
+  video.addEventListener('play', syncPauseBtn);
+  video.addEventListener('pause', syncPauseBtn);
 
-  document.getElementById('rg-close').addEventListener('click', closePlayer);
-  modal.addEventListener('close', () => {
-    iframe.src = '';
+  document.getElementById('rg-close').addEventListener('click', (e) => {
+    e.stopPropagation();
+    closePlayer();
   });
-  // Click the dimmed backdrop or anywhere that isn't the video stage to close.
+  modal.addEventListener('close', stopVideo);
+  // Backdrop click closes; clicks on the video or chrome stay in the player.
   modal.addEventListener('click', (e) => {
-    // Anything outside the iframe (backdrop, chrome, empty padding) closes.
-    if (!e.target.closest('.player-frame-wrap')) closePlayer();
+    if (!e.target.closest('.player-stage')) closePlayer();
   });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && modal.open) closePlayer();

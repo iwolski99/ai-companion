@@ -74,11 +74,20 @@
       <div class="player-stage">
         <div class="player-bar">
           <button type="button" class="btn-ghost" id="rg-close">Close</button>
-          <a id="rg-open-ext" class="btn-ghost" target="_blank" rel="noopener">Open on RedGifs</a>
+          <div class="player-bar-actions">
+            <button type="button" class="btn-primary" id="rg-pause">Pause</button>
+            <a id="rg-open-ext" class="btn-ghost" target="_blank" rel="noopener">Open on RedGifs</a>
+          </div>
         </div>
         <div class="player-frame-wrap">
-          <iframe id="rg-iframe" title="RedGifs player" allow="autoplay; fullscreen" allowfullscreen></iframe>
-          <button type="button" class="player-hit" id="rg-hit" aria-label="Open on RedGifs and pause"></button>
+          <video
+            id="rg-video"
+            class="player-video"
+            controls
+            playsinline
+            loop
+            preload="auto"
+          ></video>
         </div>
       </div>
     </dialog>

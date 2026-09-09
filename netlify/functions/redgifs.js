@@ -81,6 +81,8 @@ function normalizeGif(gif) {
     tags: Array.isArray(gif.tags) ? gif.tags : [],
     url: `https://www.redgifs.com/watch/${id}`,
     embed: `https://www.redgifs.com/ifr/${id}`,
+    hd: urls.hd || urls.file || null,
+    sd: urls.sd || urls.silent || null,
     thumbnail:
       urls.poster ||
       urls.thumbnail ||
