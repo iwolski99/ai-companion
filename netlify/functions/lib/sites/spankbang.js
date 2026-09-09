@@ -13,37 +13,38 @@
  */
 
 const cheerio = require('cheerio');
-const { fetchHtml, absolutize, result, parseViews } = require('../http');
+const { collectFromPages, absolutize, result, parseViews } = require('../http');
 
 const SOURCE = 'SpankBang';
 const BASE = 'https://spankbang.com';
 
-async function search(query, { limit = 24 } = {}) {
+async function search(query, { limit = 120, pages = 4 } = {}) {
   const slug = encodeURIComponent(query).replace(/%20/g, '+');
-  // Prefer www — some edge caches behave differently
-  const url = `https://www.spankbang.com/s/${slug}/`;
-  const { ok, status, html } = await fetchHtml(url, {
-    timeoutMs: 7000,
-    referer: 'https://www.spankbang.com/',
-    headers: {
-      Cookie: 'age_verified=1',
+  const urls = Array.from({ length: pages }, (_, i) =>
+    i === 0
+      ? `https://www.spankbang.com/s/${slug}/`
+      : `https://www.spankbang.com/s/${slug}/${i + 1}/`
+  );
+  return collectFromPages(
+    urls,
+    {
+      referer: 'https://www.spankbang.com/',
+      headers: { Cookie: 'age_verified=1' },
     },
-  });
+    parseHtml,
+    { limit }
+  );
+}
 
-  // Cloudflare interstitial (common from datacenter / Netlify IPs)
+function parseHtml(html, res) {
   if (
-    status === 403 ||
+    (res && res.status === 403) ||
     /Just a moment\.\.\.|cf-browser-verification|challenge-platform/i.test(html)
   ) {
     throw new Error(
       'Cloudflare challenge (site blocks this network). Works from some residential IPs; Cheerio cannot solve CF.'
     );
   }
-
-  if (!ok) {
-    throw new Error(`HTTP ${status}`);
-  }
-
   const $ = cheerio.load(html);
   const items = [];
   const seen = new Set();
@@ -55,7 +56,6 @@ async function search(query, { limit = 24 } = {}) {
     : $('a[href*="/video/"]').parent().toArray();
 
   $(nodes).each((i, el) => {
-    if (items.length >= limit) return false;
     const $el = $(el);
 
     const $link = $el.find('a[href*="/video/"]').first().length
@@ -108,7 +108,6 @@ async function search(query, { limit = 24 } = {}) {
   // Broad fallback
   if (items.length === 0) {
     $('a[href*="/video/"]').each((i, el) => {
-      if (items.length >= limit) return false;
       const $a = $(el);
       const videoUrl = absolutize($a.attr('href'), BASE);
       if (!videoUrl || seen.has(videoUrl)) return;

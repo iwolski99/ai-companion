@@ -17,37 +17,39 @@
  */
 
 const cheerio = require('cheerio');
-const { fetchHtml, absolutize, result, parseViews } = require('../http');
+const { collectFromPages, absolutize, result, parseViews } = require('../http');
 
 const SOURCE = 'PornHub';
 const BASE = 'https://www.pornhub.com';
 
-async function search(query, { limit = 24 } = {}) {
-  const url = `${BASE}/video/search?search=${encodeURIComponent(query)}`;
-  const { ok, status, html } = await fetchHtml(url, {
-    timeoutMs: 7500,
-    referer: BASE + '/',
-    headers: {
-      Cookie: 'accessAgeDisclaimerPH=1; platform=pc',
+async function search(query, { limit = 120, pages = 4 } = {}) {
+  const q = encodeURIComponent(query);
+  const urls = Array.from({ length: pages }, (_, i) =>
+    i === 0
+      ? `${BASE}/video/search?search=${q}`
+      : `${BASE}/video/search?search=${q}&page=${i + 1}`
+  );
+  return collectFromPages(
+    urls,
+    {
+      referer: BASE + '/',
+      headers: { Cookie: 'accessAgeDisclaimerPH=1; platform=pc' },
     },
-  });
+    parseHtml,
+    { limit }
+  );
+}
 
-  if (!ok) {
-    throw new Error(`HTTP ${status}`);
-  }
-
-  // Soft detect age-gate / challenge pages
+function parseHtml(html) {
   if (/Access Denied|cf-browser-verification|Just a moment/i.test(html) && !/pcVideoListItem|view_video\.php/i.test(html)) {
     throw new Error('Blocked or age-gated by site');
   }
-
   const $ = cheerio.load(html);
   const items = [];
   const seen = new Set();
 
   $('li.pcVideoListItem, li.videoBox, ul.videos li, .videoPreviewBg').each(
     (i, el) => {
-      if (items.length >= limit) return false;
       const $el = $(el);
 
       const $link = $el.find('a[href*="view_video.php"]').first();
@@ -101,7 +103,6 @@ async function search(query, { limit = 24 } = {}) {
 
   if (items.length === 0) {
     $('a[href*="view_video.php"]').each((i, el) => {
-      if (items.length >= limit) return false;
       const $a = $(el);
       const videoUrl = absolutize($a.attr('href'), BASE);
       if (!videoUrl || seen.has(videoUrl)) return;

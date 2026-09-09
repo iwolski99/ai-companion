@@ -414,11 +414,48 @@ body {
   }
 }
 
-.meta {
-  margin-top: 0.85rem;
+.pager {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.45rem;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0.9rem 0 0.2rem;
+}
+
+.pager-label {
+  margin-right: 0.4rem;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+}
+
+.pager-btn {
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.pager-btn.is-active {
+  background: var(--accent-dim);
+  border-color: rgba(61, 214, 198, 0.4);
+  color: var(--accent);
+}
+
+.pager-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.pager-gap {
+  color: var(--text-dim);
+  padding: 0 0.2rem;
 }
 
 .chip {

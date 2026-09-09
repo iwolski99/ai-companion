@@ -13,11 +13,15 @@
   const statusEl = document.getElementById('status');
   const metaEl = document.getElementById('meta');
   const resultsEl = document.getElementById('results');
+  const pagerTop = document.getElementById('pager-top');
+  const pagerBottom = document.getElementById('pager-bottom');
   const siteCountEl = document.getElementById('site-count');
   const siteInputs = [...form.querySelectorAll('input[name="site"]')];
 
+  const PAGE_SIZE = 36;
   /** @type {any[]} */
   let lastResults = [];
+  let currentPage = 1;
 
   // Restore saved prefs for convenience on personal devices
   try {
@@ -95,11 +99,12 @@
     } catch {
       /* ignore */
     }
-    if (lastResults.length) renderResults(sortResults(lastResults, sortSelect.value));
+    if (lastResults.length) showPage();
   });
 
   sortSelect.addEventListener('change', () => {
-    if (lastResults.length) renderResults(sortResults(lastResults, sortSelect.value));
+    currentPage = 1;
+    if (lastResults.length) showPage();
   });
 
   resultsEl.addEventListener('click', (e) => {
@@ -204,6 +209,78 @@
     metaEl.innerHTML = chips.join('');
   }
 
+  function renderPager(total, page) {
+    const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    const pagers = [pagerTop, pagerBottom].filter(Boolean);
+    if (pageCount <= 1) {
+      pagers.forEach((el) => {
+        el.hidden = true;
+        el.innerHTML = '';
+      });
+      return;
+    }
+
+    const buttons = [];
+    buttons.push(
+      `<button type="button" class="pager-btn" data-page="${page - 1}" ${
+        page <= 1 ? 'disabled' : ''
+      }>Prev</button>`
+    );
+    const windowSize = 7;
+    let start = Math.max(1, page - 3);
+    let end = Math.min(pageCount, start + windowSize - 1);
+    start = Math.max(1, end - windowSize + 1);
+    if (start > 1) {
+      buttons.push(`<button type="button" class="pager-btn" data-page="1">1</button>`);
+      if (start > 2) buttons.push(`<span class="pager-gap">…</span>`);
+    }
+    for (let n = start; n <= end; n++) {
+      buttons.push(
+        `<button type="button" class="pager-btn ${
+          n === page ? 'is-active' : ''
+        }" data-page="${n}">${n}</button>`
+      );
+    }
+    if (end < pageCount) {
+      if (end < pageCount - 1) buttons.push(`<span class="pager-gap">…</span>`);
+      buttons.push(
+        `<button type="button" class="pager-btn" data-page="${pageCount}">${pageCount}</button>`
+      );
+    }
+    buttons.push(
+      `<button type="button" class="pager-btn" data-page="${page + 1}" ${
+        page >= pageCount ? 'disabled' : ''
+      }>Next</button>`
+    );
+    const html = `<span class="pager-label">${total} videos</span>${buttons.join('')}`;
+    pagers.forEach((el) => {
+      el.hidden = false;
+      el.innerHTML = html;
+    });
+  }
+
+  function showPage() {
+    const sorted = sortResults(lastResults, sortSelect.value);
+    const pageCount = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+    currentPage = Math.min(Math.max(1, currentPage), pageCount);
+    const start = (currentPage - 1) * PAGE_SIZE;
+    renderResults(sorted.slice(start, start + PAGE_SIZE));
+    renderPager(sorted.length, currentPage);
+  }
+
+  function onPagerClick(e) {
+    const btn = e.target.closest('[data-page]');
+    if (!btn || btn.disabled) return;
+    const next = Number(btn.dataset.page);
+    if (!Number.isFinite(next) || next < 1) return;
+    currentPage = next;
+    showPage();
+    resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  pagerTop?.addEventListener('click', onPagerClick);
+  pagerBottom?.addEventListener('click', onPagerClick);
+
   function renderResults(items) {
     if (!items.length) {
       resultsEl.innerHTML = '';
@@ -264,11 +341,15 @@
     metaEl.hidden = true;
     resultsEl.innerHTML = '';
     lastResults = [];
+    currentPage = 1;
+    pagerTop && (pagerTop.hidden = true);
+    pagerBottom && (pagerBottom.hidden = true);
 
     const params = new URLSearchParams({
       q: query,
       sites: sites.join(','),
-      limit: '20',
+      limit: '120',
+      pages: '4',
     });
     if (passwordInput.value) params.set('password', passwordInput.value);
 
@@ -307,11 +388,13 @@
           'No results found. Try another query, or some sites may be blocking this network.'
         );
         renderResults([]);
+        renderPager(0, 1);
         return;
       }
 
       clearStatus();
-      renderResults(sortResults(lastResults, sortSelect.value));
+      currentPage = 1;
+      showPage();
     } catch (err) {
       setStatus(
         'error',

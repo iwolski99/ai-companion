@@ -131,8 +131,53 @@ function result({
   };
 }
 
+/**
+ * Fetch several result pages in parallel and merge unique videos.
+ * Used by tube scrapers so one search isn't stuck on page 1 (~20 items).
+ */
+async function collectFromPages(urls, fetchOpts, parseHtml, { limit = 120 } = {}) {
+  const settled = await Promise.allSettled(
+    urls.map((url) =>
+      fetchHtml(url, { timeoutMs: 6500, ...fetchOpts })
+    )
+  );
+
+  const seen = new Set();
+  const items = [];
+  let lastError = null;
+
+  for (const outcome of settled) {
+    if (outcome.status === 'rejected') {
+      lastError = outcome.reason;
+      continue;
+    }
+    const res = outcome.value;
+    if (!res.ok) {
+      lastError = new Error(`HTTP ${res.status}`);
+      continue;
+    }
+    let parsed = [];
+    try {
+      parsed = parseHtml(res.html, res) || [];
+    } catch (err) {
+      lastError = err;
+      continue;
+    }
+    for (const item of parsed) {
+      if (!item?.url || seen.has(item.url)) continue;
+      seen.add(item.url);
+      items.push({ ...item, rank: items.length });
+      if (items.length >= limit) return items;
+    }
+  }
+
+  if (!items.length && lastError) throw lastError;
+  return items;
+}
+
 module.exports = {
   fetchHtml,
+  collectFromPages,
   absolutize,
   normalizeDuration,
   parseViews,

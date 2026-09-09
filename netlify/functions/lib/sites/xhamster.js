@@ -13,27 +13,29 @@
  */
 
 const cheerio = require('cheerio');
-const { fetchHtml, absolutize, result, parseViews } = require('../http');
+const { collectFromPages, absolutize, result, parseViews } = require('../http');
 
 const SOURCE = 'xHamster';
 const BASE = 'https://xhamster.com';
 
-async function search(query, { limit = 24 } = {}) {
+async function search(query, { limit = 120, pages = 4 } = {}) {
   const pathQuery = encodeURIComponent(query).replace(/%20/g, '+');
-  const url = `${BASE}/search/${pathQuery}`;
-  const { ok, status, html } = await fetchHtml(url, {
-    timeoutMs: 7000,
-    referer: BASE + '/',
-    headers: {
-      // xHamster sometimes soft-blocks without a plausible cookie age banner skip
-      Cookie: 'cookie_accept=1; lang=en',
-    },
+  const urls = Array.from({ length: pages }, (_, i) => {
+    const base = `${BASE}/search/${pathQuery}`;
+    return i === 0 ? base : `${base}?page=${i + 1}`;
   });
+  return collectFromPages(
+    urls,
+    {
+      referer: BASE + '/',
+      headers: { Cookie: 'cookie_accept=1; lang=en' },
+    },
+    parseHtml,
+    { limit }
+  );
+}
 
-  if (!ok) {
-    throw new Error(`HTTP ${status}`);
-  }
-
+function parseHtml(html) {
   const $ = cheerio.load(html);
   const items = [];
   const seen = new Set();
@@ -43,7 +45,6 @@ async function search(query, { limit = 24 } = {}) {
   ).toArray();
 
   $(cards).each((i, el) => {
-    if (items.length >= limit) return false;
     const $el = $(el);
 
     const $link = $el
@@ -104,7 +105,6 @@ async function search(query, { limit = 24 } = {}) {
 
   if (items.length === 0) {
     $('a[href*="/videos/"]').each((i, el) => {
-      if (items.length >= limit) return false;
       const $a = $(el);
       const videoUrl = absolutize($a.attr('href'), BASE);
       if (!videoUrl || seen.has(videoUrl)) return;

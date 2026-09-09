@@ -13,35 +13,38 @@
  */
 
 const cheerio = require('cheerio');
-const { fetchHtml, absolutize, result, parseViews } = require('../http');
+const { collectFromPages, absolutize, result, parseViews } = require('../http');
 
 const SOURCE = 'YouPorn';
 const BASE = 'https://www.youporn.com';
 
-async function search(query, { limit = 24 } = {}) {
-  const url = `${BASE}/search/?query=${encodeURIComponent(query)}`;
-  const { ok, status, html } = await fetchHtml(url, {
-    timeoutMs: 7000,
-    referer: BASE + '/',
-    headers: {
-      Cookie: 'age_verified=1; age_gate=1; platform=pc',
+async function search(query, { limit = 120, pages = 4 } = {}) {
+  const q = encodeURIComponent(query);
+  const urls = Array.from({ length: pages }, (_, i) =>
+    i === 0
+      ? `${BASE}/search/?query=${q}`
+      : `${BASE}/search/?query=${q}&page=${i + 1}`
+  );
+  return collectFromPages(
+    urls,
+    {
+      referer: BASE + '/',
+      headers: { Cookie: 'age_verified=1; age_gate=1; platform=pc' },
     },
-  });
+    parseHtml,
+    { limit }
+  );
+}
 
-  if (!ok) {
-    throw new Error(`HTTP ${status}`);
-  }
-
+function parseHtml(html, res) {
   if (/Just a moment|cf-browser-verification/i.test(html) && !/video-box/i.test(html)) {
     throw new Error('Cloudflare challenge / blocked');
   }
-
   const $ = cheerio.load(html);
   const items = [];
   const seen = new Set();
 
   $('article.video-box, .video-box[data-video-id]').each((i, el) => {
-    if (items.length >= limit) return false;
     const $el = $(el);
 
     const $link = $el.find('a[href*="/watch/"]').first();

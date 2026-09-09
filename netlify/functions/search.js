@@ -6,7 +6,8 @@
  *   q          — search query (required)
  *   sites      — comma-separated site ids (optional; default DEFAULT_SITE_IDS)
  *                Max MAX_SITES (5) per request — extras are rejected.
- *   limit      — per-site result cap (default 20, max 40)
+ *   limit      — per-site result cap (default 120, max 200)
+ *   pages      — search-result pages to fetch per site (default 4, max 6)
  *   password   — if SITE_PASSWORD is set
  *   nocache    — "1" to bypass cache
  *
@@ -52,8 +53,12 @@ function parseInput(event) {
 
   const q = (qs.q || qs.query || body.q || body.query || '').trim();
   const limit = Math.min(
-    40,
-    Math.max(1, Number(qs.limit || body.limit || 20) || 20)
+    200,
+    Math.max(1, Number(qs.limit || body.limit || 120) || 120)
+  );
+  const pages = Math.min(
+    6,
+    Math.max(1, Number(qs.pages || body.pages || 4) || 4)
   );
   const nocache = qs.nocache === '1' || body.nocache === true;
 
@@ -66,7 +71,7 @@ function parseInput(event) {
       .filter(Boolean);
   }
 
-  return { q, limit, nocache, siteIds };
+  return { q, limit, pages, nocache, siteIds };
 }
 
 /**
@@ -102,7 +107,7 @@ exports.handler = async (event) => {
     };
   }
 
-  const { q, limit, nocache, siteIds } = parseInput(event);
+  const { q, limit, pages, nocache, siteIds } = parseInput(event);
   if (!q) {
     return json(400, {
       error: 'Missing query',
@@ -134,7 +139,7 @@ exports.handler = async (event) => {
   }
 
   const key = cacheKey(
-    `straight:${q}`,
+    `straight:p${pages}:l${limit}:${q}`,
     sites.map((s) => s.id)
   );
 
@@ -149,7 +154,7 @@ exports.handler = async (event) => {
 
   const settled = await Promise.allSettled(
     sites.map((site) =>
-      site.search(q, { limit }).then((results) => ({
+      site.search(q, { limit, pages }).then((results) => ({
         id: site.id,
         name: site.name,
         results,

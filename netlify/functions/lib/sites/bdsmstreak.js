@@ -12,22 +12,22 @@
  */
 
 const cheerio = require('cheerio');
-const { fetchHtml, absolutize, result, parseViews } = require('../http');
+const { collectFromPages, absolutize, result, parseViews } = require('../http');
 
 const SOURCE = 'BDSMStreak';
 const BASE = 'https://bdsmstreak.com';
 
-async function search(query, { limit = 24 } = {}) {
-  const url = `${BASE}/search?q=${encodeURIComponent(query)}`;
-  const { ok, status, html } = await fetchHtml(url, {
-    timeoutMs: 7000,
-    referer: BASE + '/',
-  });
+async function search(query, { limit = 120, pages = 4 } = {}) {
+  const q = encodeURIComponent(query);
+  const urls = Array.from({ length: pages }, (_, i) =>
+    i === 0
+      ? `${BASE}/search?q=${q}`
+      : `${BASE}/search?q=${q}&page=${i + 1}`
+  );
+  return collectFromPages(urls, { referer: BASE + '/' }, parseHtml, { limit });
+}
 
-  if (!ok) {
-    throw new Error(`HTTP ${status}`);
-  }
-
+function parseHtml(html) {
   const $ = cheerio.load(html);
   const items = [];
   const seen = new Set();
@@ -39,7 +39,6 @@ async function search(query, { limit = 24 } = {}) {
     : $('a[href^="/video/"]').toArray();
 
   $(nodes).each((i, el) => {
-    if (items.length >= limit) return false;
     const $el = $(el);
     const href = $el.attr('href');
     if (!href || !/^\/video\/\d+/.test(href)) return;

@@ -13,28 +13,16 @@
  */
 
 const cheerio = require('cheerio');
-const { fetchHtml, absolutize, result, parseViews } = require('../http');
+const { fetchHtml, collectFromPages, absolutize, result, parseViews } = require('../http');
 
 const SOURCE = 'XVideos';
 const BASE = 'https://www.xvideos.com';
 
-async function search(query, { limit = 24 } = {}) {
-  const url = `${BASE}/?k=${encodeURIComponent(query)}`;
-  const { ok, status, html } = await fetchHtml(url, {
-    timeoutMs: 7000,
-    referer: BASE + '/',
-  });
-
-  if (!ok) {
-    throw new Error(`HTTP ${status}`);
-  }
-
+function parseHtml(html) {
   const $ = cheerio.load(html);
   const items = [];
 
-  // Primary: classic thumb-block mosaic
   $('.mozaique .thumb-block, .thumb-block').each((i, el) => {
-    if (items.length >= limit) return false;
     const $el = $(el);
 
     const $link =
@@ -62,14 +50,12 @@ async function search(query, { limit = 24 } = {}) {
       $link.attr('title') ||
       '';
 
-    // Prefer metadata duration to avoid concatenating title+duration spans
     const duration =
       $el.find('.metadata .duration').first().text() ||
       $el.find('span.duration').first().text() ||
       null;
 
     const viewsText = $el.find('.metadata').text() || '';
-    // Patterns: "8.1M Views", "12k views", etc.
     const viewsMatch =
       viewsText.match(/([\d.,]+\s*[kmb])\s*(?:views?)?/i) ||
       viewsText.match(/([\d.,]+)\s*views?/i);
@@ -87,26 +73,18 @@ async function search(query, { limit = 24 } = {}) {
     );
   });
 
-  // Fallback: any video anchors with nearby images
   if (items.length === 0) {
     $('a[href*="/video"]').each((i, el) => {
-      if (items.length >= limit) return false;
       const $a = $(el);
-      const href = $a.attr('href');
-      const videoUrl = absolutize(href, BASE);
+      const videoUrl = absolutize($a.attr('href'), BASE);
       if (!videoUrl || !/\/video\d+/.test(videoUrl)) return;
-
       const $img = $a.find('img').first();
       if (!$img.length) return;
-
       items.push(
         result({
           title: $a.attr('title') || $img.attr('alt') || $a.text(),
           url: videoUrl,
-          thumbnail: absolutize(
-            $img.attr('data-src') || $img.attr('src'),
-            BASE
-          ),
+          thumbnail: absolutize($img.attr('data-src') || $img.attr('src'), BASE),
           duration: $a.find('.duration').text() || null,
           source: SOURCE,
           rank: i,
@@ -116,6 +94,19 @@ async function search(query, { limit = 24 } = {}) {
   }
 
   return items;
+}
+
+async function search(query, { limit = 120, pages = 4 } = {}) {
+  const k = encodeURIComponent(query);
+  const urls = Array.from({ length: pages }, (_, i) =>
+    i === 0 ? `${BASE}/?k=${k}` : `${BASE}/?k=${k}&p=${i}`
+  );
+  return collectFromPages(
+    urls,
+    { referer: BASE + '/' },
+    parseHtml,
+    { limit }
+  );
 }
 
 module.exports = { id: 'xvideos', name: SOURCE, search };
