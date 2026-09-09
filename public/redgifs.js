@@ -13,6 +13,7 @@
   const modal = document.getElementById('rg-modal');
   const iframe = document.getElementById('rg-iframe');
   const openExt = document.getElementById('rg-open-ext');
+  const hitEl = document.getElementById('rg-hit');
 
   const selectedTags = new Set();
   let page = 1;
@@ -20,6 +21,34 @@
   let done = false;
   let lastQuery = '';
   let lastOrder = 'trending';
+  let watchUrl = '';
+  let landing = null;
+
+  const LANDING_TAGS = [
+    'pawg',
+    'amateur',
+    'big ass',
+    'blonde',
+    'milf',
+    'creampie',
+    'onlyfans',
+    'riding',
+    'blowjob',
+    'cumshot',
+  ];
+
+  function pick(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function shuffle(items) {
+    const a = items.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
 
   function escapeHtml(str) {
     return String(str || '')
@@ -46,9 +75,21 @@
     if (typed && tags.length) return `${typed} ${tags.join(' ')}`.trim();
     if (typed) return typed;
     if (tags.length) return tags.join(',');
-    // Bias first load toward learned tags when present
-    const learned = (window.BuddyPrefs?.topTags(2) || []).map((t) => t.tag);
-    return learned.join(',');
+    if (landing) return landing.q;
+    return 'pawg';
+  }
+
+  function startLandingFeed() {
+    const learned = (window.BuddyPrefs?.topTags(6) || []).map((t) => t.tag);
+    const pool = [...new Set([...learned, ...LANDING_TAGS])];
+    landing = {
+      q: pick(pool) || 'pawg',
+      order: pick(['trending', 'top', 'latest']),
+      page: pick([1, 2, 3]),
+    };
+    orderEl.value = landing.order;
+    page = landing.page;
+    qInput.placeholder = `Showing ${landing.q} · ${landing.order}`;
   }
 
   async function loadTags() {
@@ -75,6 +116,7 @@
     if (selectedTags.has(tag)) selectedTags.delete(tag);
     else selectedTags.add(tag);
     btn.classList.toggle('is-on', selectedTags.has(tag));
+    landing = null;
     resetAndSearch();
   });
 
@@ -132,7 +174,7 @@
         done = true;
         return;
       }
-      const gifs = Array.isArray(data.gifs) ? data.gifs : [];
+      const gifs = shuffle(Array.isArray(data.gifs) ? data.gifs : []);
       gifs.forEach((g) => gifCache.set(g.id, g));
 
       if (reset && !gifs.length) {
@@ -158,7 +200,7 @@
   }
 
   function resetAndSearch() {
-    page = 1;
+    page = landing ? landing.page : 1;
     done = false;
     lastQuery = queryFromUi();
     lastOrder = orderEl.value;
@@ -169,9 +211,13 @@
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
+    landing = null;
     resetAndSearch();
   });
-  orderEl.addEventListener('change', resetAndSearch);
+  orderEl.addEventListener('change', () => {
+    landing = null;
+    resetAndSearch();
+  });
 
   document.getElementById('rg-export').addEventListener('click', () => {
     window.BuddyPrefs?.exportBookmarks();
@@ -183,7 +229,8 @@
       const id = play.dataset.play;
       const gif = gifCache.get(id);
       iframe.src = play.dataset.embed || `https://www.redgifs.com/ifr/${id}`;
-      openExt.href = play.dataset.url || `https://www.redgifs.com/watch/${id}`;
+      watchUrl = play.dataset.url || `https://www.redgifs.com/watch/${id}`;
+      openExt.href = watchUrl;
       if (gif) window.BuddyPrefs?.like({ ...gif, thumbnail: gif.thumbnail });
       modal.showModal();
       return;
@@ -217,7 +264,16 @@
   function closePlayer() {
     if (modal.open) modal.close();
     iframe.src = '';
+    watchUrl = '';
   }
+
+  hitEl.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const url = watchUrl;
+    closePlayer();
+    if (url) window.open(url, '_blank', 'noopener,noreferrer');
+  });
 
   document.getElementById('rg-close').addEventListener('click', closePlayer);
   modal.addEventListener('close', () => {
@@ -238,6 +294,10 @@
   io.observe(sentinel);
 
   const bootQ = new URLSearchParams(location.search).get('q');
-  if (bootQ) qInput.value = bootQ;
+  if (bootQ) {
+    qInput.value = bootQ;
+  } else {
+    startLandingFeed();
+  }
   loadTags().then(resetAndSearch);
 })();

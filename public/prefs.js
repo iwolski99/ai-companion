@@ -148,6 +148,82 @@
     URL.revokeObjectURL(url);
   }
 
+  const CHAT_KEY = 'buddy_chats_v1';
+
+  function emptyChats() {
+    return { activeId: null, chats: [] };
+  }
+
+  function loadChats() {
+    try {
+      const raw = localStorage.getItem(CHAT_KEY);
+      if (!raw) return emptyChats();
+      const data = JSON.parse(raw);
+      return {
+        activeId: data.activeId || null,
+        chats: Array.isArray(data.chats) ? data.chats : [],
+      };
+    } catch {
+      return emptyChats();
+    }
+  }
+
+  function saveChats(state) {
+    try {
+      localStorage.setItem(CHAT_KEY, JSON.stringify(state));
+    } catch {
+      /* quota */
+    }
+    return state;
+  }
+
+  function newChat(greeting) {
+    const state = loadChats();
+    const id = `c_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const chat = {
+      id,
+      title: 'New chat',
+      messages: greeting
+        ? [{ role: 'assistant', content: greeting, ts: Date.now() }]
+        : [],
+      updatedAt: Date.now(),
+    };
+    state.chats.unshift(chat);
+    state.activeId = id;
+    return { state: saveChats(state), chat };
+  }
+
+  function getChat(id) {
+    return loadChats().chats.find((c) => c.id === id) || null;
+  }
+
+  function setActiveChat(id) {
+    const state = loadChats();
+    if (state.chats.some((c) => c.id === id)) {
+      state.activeId = id;
+      saveChats(state);
+    }
+    return state;
+  }
+
+  function upsertChat(id, patch) {
+    const state = loadChats();
+    const chat = state.chats.find((c) => c.id === id);
+    if (!chat) return state;
+    Object.assign(chat, patch, { updatedAt: Date.now() });
+    state.chats.sort((a, b) => b.updatedAt - a.updatedAt);
+    return saveChats(state);
+  }
+
+  function deleteChat(id) {
+    const state = loadChats();
+    state.chats = state.chats.filter((c) => c.id !== id);
+    if (state.activeId === id) {
+      state.activeId = state.chats[0]?.id || null;
+    }
+    return saveChats(state);
+  }
+
   global.BuddyPrefs = {
     load,
     save,
@@ -160,5 +236,12 @@
     logOrgasm,
     topTags,
     exportBookmarks,
+    loadChats,
+    saveChats,
+    newChat,
+    getChat,
+    setActiveChat,
+    upsertChat,
+    deleteChat,
   };
 })(window);

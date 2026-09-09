@@ -1,11 +1,18 @@
 (() => {
+  const GREETING =
+    'fuck, you came back. i’m already stroking. tell me what you’re looking at and i’ll talk you stupid.';
+
   const log = document.getElementById('chat-log');
   const form = document.getElementById('chat-form');
   const input = document.getElementById('chat-input');
   const sendBtn = document.getElementById('chat-send');
   const hint = document.getElementById('chat-hint');
+  const listEl = document.getElementById('chat-list');
+  const sidebar = document.getElementById('chat-sidebar');
+  const scrim = document.getElementById('chat-scrim');
+  const menuBtn = document.getElementById('chat-menu');
 
-  const history = [];
+  let activeId = null;
 
   function escapeHtml(str) {
     return String(str || '')
@@ -14,43 +21,128 @@
       .replace(/>/g, '&gt;');
   }
 
-  function addBubble(role, text) {
-    const div = document.createElement('div');
-    div.className = `bubble bubble-${role}`;
-    div.innerHTML = `<p>${escapeHtml(text).replace(/\n/g, '<br />')}</p>`;
-    log.appendChild(div);
+  function closeDrawer() {
+    sidebar.classList.remove('is-open');
+    scrim.hidden = true;
+  }
+
+  function openDrawer() {
+    sidebar.classList.add('is-open');
+    scrim.hidden = false;
+  }
+
+  function titleFromMessages(messages) {
+    const firstUser = (messages || []).find((m) => m.role === 'user');
+    if (!firstUser) return 'New chat';
+    return firstUser.content.replace(/\s+/g, ' ').slice(0, 42);
+  }
+
+  function renderList() {
+    const { chats, activeId: cur } = window.BuddyPrefs.loadChats();
+    listEl.innerHTML = chats
+      .map((c) => {
+        const title = escapeHtml(c.title || 'New chat');
+        const on = c.id === cur ? 'is-active' : '';
+        return `<li>
+          <button type="button" class="chat-item ${on}" data-open="${c.id}">${title}</button>
+          <button type="button" class="chat-del" data-del="${c.id}" aria-label="Delete chat">✕</button>
+        </li>`;
+      })
+      .join('');
+  }
+
+  function renderLog(messages) {
+    log.innerHTML = '';
+    (messages || []).forEach((m) => {
+      const div = document.createElement('div');
+      div.className = `bubble bubble-${m.role === 'user' ? 'user' : 'assistant'}`;
+      div.innerHTML = `<p>${escapeHtml(m.content).replace(/\n/g, '<br />')}</p>`;
+      log.appendChild(div);
+    });
     log.scrollTop = log.scrollHeight;
   }
 
-  function prefsBlurb() {
-    const tags = (window.BuddyPrefs?.topTags(8) || [])
-      .map((t) => t.tag)
-      .join(', ');
-    if (!tags) return '';
-    return `(My liked tags so far: ${tags}. Stay straight / cis-female only.)`;
+  function loadActive(id) {
+    const chat = window.BuddyPrefs.getChat(id);
+    if (!chat) return;
+    activeId = chat.id;
+    window.BuddyPrefs.setActiveChat(chat.id);
+    renderLog(chat.messages);
+    renderList();
+    closeDrawer();
   }
 
-  addBubble(
-    'assistant',
-    'Hey. I’m Buddy — horny, nosy, and here for it. Tell me what you want to edge to and I’ll talk you through it or throw you search ideas.'
-  );
+  function ensureChat() {
+    const state = window.BuddyPrefs.loadChats();
+    if (state.activeId && window.BuddyPrefs.getChat(state.activeId)) {
+      loadActive(state.activeId);
+      return;
+    }
+    if (state.chats[0]) {
+      loadActive(state.chats[0].id);
+      return;
+    }
+    const { chat } = window.BuddyPrefs.newChat(GREETING);
+    loadActive(chat.id);
+  }
+
+  function prefsBlurb() {
+    const tags = (window.BuddyPrefs.topTags(8) || []).map((t) => t.tag).join(', ');
+    if (!tags) return '';
+    return `(liked tags: ${tags}. stay straight / cis-female only.)`;
+  }
+
+  document.getElementById('chat-new').addEventListener('click', () => {
+    const { chat } = window.BuddyPrefs.newChat(GREETING);
+    loadActive(chat.id);
+  });
+
+  listEl.addEventListener('click', (e) => {
+    const open = e.target.closest('[data-open]');
+    if (open) {
+      loadActive(open.dataset.open);
+      return;
+    }
+    const del = e.target.closest('[data-del]');
+    if (del) {
+      e.stopPropagation();
+      window.BuddyPrefs.deleteChat(del.dataset.del);
+      const state = window.BuddyPrefs.loadChats();
+      if (state.activeId) loadActive(state.activeId);
+      else {
+        const { chat } = window.BuddyPrefs.newChat(GREETING);
+        loadActive(chat.id);
+      }
+    }
+  });
+
+  menuBtn.addEventListener('click', openDrawer);
+  scrim.addEventListener('click', closeDrawer);
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const text = input.value.trim();
-    if (!text) return;
+    if (!text || !activeId) return;
     input.value = '';
-    addBubble('user', text);
-    history.push({ role: 'user', content: text });
 
-    const payload = {
-      messages: history.slice(),
-    };
+    const chat = window.BuddyPrefs.getChat(activeId);
+    const messages = [...(chat.messages || []), { role: 'user', content: text, ts: Date.now() }];
+    window.BuddyPrefs.upsertChat(activeId, {
+      messages,
+      title: titleFromMessages(messages),
+    });
+    renderLog(messages);
+    renderList();
+
+    const apiMessages = messages
+      .filter((m) => m.role === 'user' || m.role === 'assistant')
+      .map((m) => ({ role: m.role, content: m.content }));
+    const firstUser = apiMessages.findIndex((m) => m.role === 'user');
     const blurb = prefsBlurb();
-    if (blurb && payload.messages.length === 1) {
-      payload.messages[0] = {
+    if (blurb && firstUser >= 0) {
+      apiMessages[firstUser] = {
         role: 'user',
-        content: `${text}\n\n${blurb}`,
+        content: `${apiMessages[firstUser].content}\n\n${blurb}`,
       };
     }
 
@@ -66,23 +158,33 @@
       const res = await fetch('/api/buddy', {
         method: 'POST',
         headers,
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ messages: apiMessages }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         const msg = data.message || data.error || `Request failed (${res.status})`;
-        addBubble('assistant', msg);
+        const failed = [
+          ...messages,
+          { role: 'assistant', content: msg, ts: Date.now() },
+        ];
+        window.BuddyPrefs.upsertChat(activeId, { messages: failed });
+        renderLog(failed);
         hint.textContent = msg;
         return;
       }
       const reply = data.reply || '…';
-      history.push({ role: 'assistant', content: reply });
-      addBubble('assistant', reply);
+      const next = [
+        ...messages,
+        { role: 'assistant', content: reply, ts: Date.now() },
+      ];
+      window.BuddyPrefs.upsertChat(activeId, { messages: next });
+      renderLog(next);
+      renderList();
       if (data.provider) {
-        hint.textContent = `${data.provider} · ${data.model || 'DeepSeek V4 Flash'}`;
+        hint.textContent = `${data.provider} · ${data.model || 'DeepSeek V4 Flash'} · saved`;
       }
     } catch (err) {
-      addBubble('assistant', err.message || String(err));
+      hint.textContent = err.message || String(err);
     } finally {
       sendBtn.disabled = false;
       input.focus();
@@ -95,4 +197,6 @@
       form.requestSubmit();
     }
   });
+
+  ensureChat();
 })();

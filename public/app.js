@@ -333,5 +333,12 @@
   if (bootQ) {
     qInput.value = bootQ;
     runSearch(bootQ.trim());
+  } else {
+    const learned = (window.BuddyPrefs?.topTags(4) || []).map((t) => t.tag);
+    const fallbacks = ['pawg', 'amateur', 'big ass', 'blonde', 'milf'];
+    const pool = [...new Set([...learned, ...fallbacks])];
+    const pick = pool[Math.floor(Math.random() * Math.min(pool.length, 5))] || 'pawg';
+    qInput.value = pick;
+    runSearch(pick);
   }
 })();

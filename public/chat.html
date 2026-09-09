@@ -34,25 +34,33 @@
           <a class="nav-link" href="/calendar.html">Calendar</a>
         </nav>
       </div>
-      <p class="tagline">DeepSeek V4 Flash · horny goon buddy · straight only</p>
+      <p class="tagline">Saved locally · filthy goon buddy · straight only</p>
     </header>
 
-    <main class="shell chat-shell">
-      <div id="chat-log" class="chat-log" aria-live="polite"></div>
-      <form id="chat-form" class="chat-form" autocomplete="off">
-        <label class="sr-only" for="chat-input">Message</label>
-        <textarea
-          id="chat-input"
-          rows="2"
-          maxlength="4000"
-          placeholder="Tell Buddy what you’re in the mood for…"
-          required
-        ></textarea>
-        <button type="submit" class="btn-primary" id="chat-send">Send</button>
-      </form>
-      <p class="muted chat-hint" id="chat-hint">
-        Needs <code>DEEPSEEK_API_KEY</code> or <code>OPENROUTER_API_KEY</code> in Netlify env.
-      </p>
+    <main class="chat-layout">
+      <button type="button" class="btn-ghost chat-menu-btn" id="chat-menu" aria-label="Open chats">
+        Chats
+      </button>
+      <div class="chat-scrim" id="chat-scrim" hidden></div>
+      <aside class="chat-sidebar" id="chat-sidebar">
+        <button type="button" class="btn-primary chat-new" id="chat-new">New chat</button>
+        <ul class="chat-list" id="chat-list"></ul>
+      </aside>
+      <section class="chat-main">
+        <div id="chat-log" class="chat-log" aria-live="polite"></div>
+        <form id="chat-form" class="chat-form" autocomplete="off">
+          <label class="sr-only" for="chat-input">Message</label>
+          <textarea
+            id="chat-input"
+            rows="2"
+            maxlength="4000"
+            placeholder="Talk filthy…"
+            required
+          ></textarea>
+          <button type="submit" class="btn-primary" id="chat-send">Send</button>
+        </form>
+        <p class="muted chat-hint" id="chat-hint">Chats stay on this device until you delete them.</p>
+      </section>
     </main>
 
     <script src="/prefs.js"></script>
