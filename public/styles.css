@@ -777,6 +777,12 @@ body {
   border-color: rgba(61, 214, 198, 0.4);
 }
 
+.icon-btn-dislike:hover,
+.icon-btn-dislike:focus {
+  color: var(--danger);
+  border-color: rgba(255, 107, 122, 0.45);
+}
+
 .sentinel {
   height: 48px;
 }

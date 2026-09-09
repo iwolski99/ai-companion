@@ -10,9 +10,146 @@
     likes: [],
     bookmarks: [],
     skips: {},
+    dislikes: {},
+    searches: [],
+    performers: [],
     avClicks: [],
     calendar: {},
   });
+
+  const SEARCH_STOP = new Set(
+    [
+      'a',
+      'an',
+      'the',
+      'and',
+      'or',
+      'of',
+      'in',
+      'on',
+      'with',
+      'for',
+      'to',
+      'vs',
+      'pov',
+      'xxx',
+      'porn',
+      'sex',
+      'video',
+      'videos',
+      'gif',
+      'gifs',
+      'clip',
+      'free',
+      'hd',
+      'amateur',
+      'milf',
+      'pawg',
+      'blonde',
+      'brunette',
+      'redhead',
+      'asian',
+      'latina',
+      'ebony',
+      'teen',
+      'anal',
+      'oral',
+      'blowjob',
+      'creampie',
+      'cumshot',
+      'doggystyle',
+      'missionary',
+      'riding',
+      'onlyfans',
+      'homemade',
+      'hardcore',
+      'threesome',
+      'gangbang',
+      'big',
+      'ass',
+      'tits',
+      'boobs',
+      'booty',
+      'pussy',
+      'cock',
+      'dick',
+      'bbc',
+      'bwc',
+      'hot',
+      'sexy',
+      'slut',
+      'wife',
+      'mom',
+      'step',
+      'new',
+      'best',
+      'top',
+    ].map((s) => s.toLowerCase())
+  );
+
+  function normalizeQuery(q) {
+    return String(q || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[_]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .slice(0, 80);
+  }
+
+  function titleCase(q) {
+    return String(q || '')
+      .split(' ')
+      .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w))
+      .join(' ');
+  }
+
+  function extractPerformers(query) {
+    const words = normalizeQuery(query)
+      .replace(/[^a-z0-9\s-]/g, ' ')
+      .split(/\s+/)
+      .filter(Boolean);
+    const names = [];
+    for (let i = 0; i < words.length - 1; i++) {
+      const a = words[i];
+      const b = words[i + 1];
+      if (SEARCH_STOP.has(a) || SEARCH_STOP.has(b)) continue;
+      if (a.length < 3 || b.length < 2) continue;
+      if (/^\d+$/.test(a) || /^\d+$/.test(b)) continue;
+      names.push(`${a} ${b}`);
+      if (i + 2 < words.length) {
+        const c = words[i + 2];
+        if (!SEARCH_STOP.has(c) && c.length >= 2 && !/^\d+$/.test(c)) {
+          names.push(`${a} ${b} ${c}`);
+        }
+      }
+    }
+    if (
+      words.length >= 2 &&
+      words.length <= 3 &&
+      words.every((w) => !SEARCH_STOP.has(w) && w.length >= 2)
+    ) {
+      names.unshift(words.join(' '));
+    }
+    return [...new Set(names)];
+  }
+
+  function bumpNamed(list, key, weight, extra) {
+    const found = list.find((x) => x.q === key);
+    if (found) {
+      found.count = (found.count || 1) + 1;
+      found.ts = Date.now();
+      found.weight = (found.weight || 0) + weight;
+      Object.assign(found, extra || {});
+    } else {
+      list.unshift({
+        q: key,
+        count: 1,
+        ts: Date.now(),
+        weight,
+        ...(extra || {}),
+      });
+    }
+  }
 
   function load() {
     try {
@@ -59,6 +196,7 @@
     }
     bumpTags(state, item.tags, 2);
     delete state.skips[item.id];
+    if (state.dislikes) delete state.dislikes[item.id];
     return save(state);
   }
 
@@ -103,6 +241,105 @@
     return save(state);
   }
 
+  /** Fresh dislike store — does not reuse old accidental skips. */
+  function dislike(item) {
+    const state = load();
+    if (!state.dislikes) state.dislikes = {};
+    state.dislikes[item.id] = {
+      ts: Date.now(),
+      tags: item.tags || [],
+      title: item.title || '',
+    };
+    bumpTags(state, item.tags, -4);
+    const words = String(item.title || '')
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter((w) => w.length > 3 && w.length < 24 && !SEARCH_STOP.has(w));
+    bumpTags(state, words.slice(0, 5), -2);
+    state.likes = state.likes.filter((x) => x.id !== item.id);
+    return save(state);
+  }
+
+  function isDisliked(id) {
+    const state = load();
+    return Boolean(state.dislikes && state.dislikes[id]);
+  }
+
+  function trackSearch(query, source = 'tubes') {
+    const key = normalizeQuery(query);
+    if (!key || key.length < 2) return load();
+    const state = load();
+    if (!Array.isArray(state.searches)) state.searches = [];
+    if (!Array.isArray(state.performers)) state.performers = [];
+    const weight = source === 'tubes' ? 5 : 2;
+    bumpNamed(state.searches, key, weight, { source });
+    state.searches = state.searches.slice(0, 80);
+    const performers = extractPerformers(key);
+    for (const name of performers) {
+      bumpNamed(state.performers, name, weight + 3, { source });
+    }
+    state.performers = state.performers.slice(0, 40);
+    bumpTags(state, performers.length ? performers : [key], weight);
+    return save(state);
+  }
+
+  function topSearches(n = 12) {
+    const state = load();
+    const scored = [];
+    for (const p of state.performers || []) {
+      scored.push({
+        tag: p.q,
+        label: titleCase(p.q),
+        weight: (p.weight || 0) + (p.count || 1) * 3,
+        kind: 'performer',
+        ts: p.ts || 0,
+      });
+    }
+    for (const s of state.searches || []) {
+      if (scored.some((x) => x.tag === s.q)) continue;
+      scored.push({
+        tag: s.q,
+        label: titleCase(s.q),
+        weight: s.weight || s.count || 1,
+        kind: 'search',
+        ts: s.ts || 0,
+      });
+    }
+    return scored
+      .filter((x) => x.weight > 0)
+      .sort((a, b) => b.weight - a.weight || b.ts - a.ts)
+      .slice(0, n);
+  }
+
+  function tasteBlurb() {
+    const searches = topSearches(10);
+    const stars = searches.filter((s) => s.kind === 'performer').slice(0, 8);
+    const tags = topTags(8);
+    const clicks = (load().avClicks || []).slice(0, 8);
+    const likes = (load().likes || []).slice(0, 6);
+    const lines = [];
+    if (stars.length) {
+      lines.push(`stars he searches: ${stars.map((s) => s.label).join(', ')}`);
+    }
+    if (searches.length) {
+      lines.push(`recent tube/gif searches: ${searches.map((s) => s.tag).join(', ')}`);
+    }
+    if (tags.length) {
+      lines.push(`liked tags: ${tags.map((t) => t.tag).join(', ')}`);
+    }
+    const titles = [
+      ...clicks.map((c) => c.title).filter(Boolean),
+      ...likes.map((l) => l.title).filter(Boolean),
+    ].slice(0, 10);
+    if (titles.length) {
+      lines.push(
+        `real titles he opened/liked (quote these, do not invent others): ${titles.join(' | ')}`
+      );
+    }
+    if (!lines.length) return '';
+    return `(${lines.join('. ')}. stay straight / cis-female only.)`;
+  }
+
   function trackAvClick(item) {
     const state = load();
     state.avClicks.unshift({
@@ -115,8 +352,14 @@
     const words = String(item.title || '')
       .toLowerCase()
       .split(/[^a-z0-9]+/)
-      .filter((w) => w.length > 3 && w.length < 24);
+      .filter((w) => w.length > 3 && w.length < 24 && !SEARCH_STOP.has(w));
     bumpTags(state, words.slice(0, 6), 1);
+    const names = extractPerformers(item.title);
+    if (names.length) {
+      if (!Array.isArray(state.performers)) state.performers = [];
+      for (const name of names) bumpNamed(state.performers, name, 2, { source: 'click' });
+      state.performers = state.performers.slice(0, 40);
+    }
     return save(state);
   }
 
@@ -232,10 +475,17 @@
     bookmark,
     unbookmark,
     skip,
+    dislike,
+    isDisliked,
+    trackSearch,
+    topSearches,
+    extractPerformers,
+    tasteBlurb,
     trackAvClick,
     logOrgasm,
     topTags,
     exportBookmarks,
+    titleCase,
     loadChats,
     saveChats,
     newChat,

@@ -13,20 +13,25 @@
       .replace(/"/g, '&quot;');
   }
 
+  const searches = window.BuddyPrefs.topSearches(8) || [];
   const top = window.BuddyPrefs.topTags(12);
-  if (!top.length) {
+  const taste = [
+    ...searches.map((s) => ({ tag: s.tag, label: s.label || s.tag, weight: s.weight })),
+    ...top.filter((t) => !searches.some((s) => s.tag === t.tag)),
+  ].slice(0, 12);
+  if (!taste.length) {
     emptyEl.hidden = false;
   } else {
-    tagsEl.innerHTML = top
+    tagsEl.innerHTML = taste
       .map(
         (t) =>
-          `<a class="chip-btn is-on" href="/redgifs.html?q=${encodeURIComponent(t.tag)}">${escapeHtml(t.tag)} · ${t.weight}</a>`
+          `<a class="chip-btn is-on" href="/redgifs.html?q=${encodeURIComponent(t.tag)}">${escapeHtml(t.label || t.tag)}${t.weight ? ` · ${t.weight}` : ''}</a>`
       )
       .join('');
   }
 
   async function loadFeed() {
-    const q = top
+    const q = (searches.length ? searches : top)
       .slice(0, 3)
       .map((t) => t.tag)
       .join(',');
