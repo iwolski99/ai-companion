@@ -12,17 +12,17 @@
  */
 
 const cheerio = require('cheerio');
-const { collectFromPages, absolutize, result, parseViews } = require('../http');
+const { collectFromPages, eachSourcePage, absolutize, result, parseViews } = require('../http');
 
 const SOURCE = 'BDSMStreak';
 const BASE = 'https://bdsmstreak.com';
 
-async function search(query, { limit = 120, pages = 4 } = {}) {
+async function search(query, { limit = 360, pages = 8, startPage = 1 } = {}) {
   const q = encodeURIComponent(query);
-  const urls = Array.from({ length: pages }, (_, i) =>
-    i === 0
+  const urls = eachSourcePage(startPage, pages, (n) =>
+    n === 1
       ? `${BASE}/search?q=${q}`
-      : `${BASE}/search?q=${q}&page=${i + 1}`
+      : `${BASE}/search?q=${q}&page=${n}`
   );
   return collectFromPages(urls, { referer: BASE + '/' }, parseHtml, { limit });
 }

@@ -9,6 +9,8 @@
   [functions.search]
     timeout = 26
   [functions.redgifs]
+    timeout = 26
+  [functions.gifmedia]
     timeout = 20
   [functions.buddy]
     timeout = 26
@@ -29,6 +31,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/gifmedia"
+  to = "/.netlify/functions/gifmedia"
+  status = 200
+
+[[redirects]]
   from = "/api/buddy"
   to = "/.netlify/functions/buddy"
   status = 200
@@ -39,3 +46,8 @@
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[headers]]
+  for = "/redgifs.html"
+  [headers.values]
+    Referrer-Policy = "no-referrer"

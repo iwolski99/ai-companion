@@ -17,17 +17,17 @@
  */
 
 const cheerio = require('cheerio');
-const { collectFromPages, absolutize, result, parseViews } = require('../http');
+const { collectFromPages, eachSourcePage, absolutize, result, parseViews } = require('../http');
 
 const SOURCE = 'PornHub';
 const BASE = 'https://www.pornhub.com';
 
-async function search(query, { limit = 120, pages = 4 } = {}) {
+async function search(query, { limit = 360, pages = 8, startPage = 1 } = {}) {
   const q = encodeURIComponent(query);
-  const urls = Array.from({ length: pages }, (_, i) =>
-    i === 0
+  const urls = eachSourcePage(startPage, pages, (n) =>
+    n === 1
       ? `${BASE}/video/search?search=${q}`
-      : `${BASE}/video/search?search=${q}&page=${i + 1}`
+      : `${BASE}/video/search?search=${q}&page=${n}`
   );
   return collectFromPages(
     urls,

@@ -1,6 +1,6 @@
 /**
  * Shared HTTP helpers for polite, browser-like scraping.
- * Keep requests gentle: one page per site per search, realistic headers, short timeouts.
+ * Realistic headers, short timeouts, and bounded concurrency across result pages.
  */
 
 const fetch = require('node-fetch');
@@ -131,27 +131,80 @@ function result({
   };
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 /**
- * Fetch several result pages in parallel and merge unique videos.
- * Used by tube scrapers so one search isn't stuck on page 1 (~20 items).
+ * 1-based source page numbers for a fetch batch.
+ * startPage=1, pages=8 → [1,2,3,4,5,6,7,8]
  */
-async function collectFromPages(urls, fetchOpts, parseHtml, { limit = 120 } = {}) {
-  const settled = await Promise.allSettled(
-    urls.map((url) =>
-      fetchHtml(url, { timeoutMs: 6500, ...fetchOpts })
-    )
-  );
+function eachSourcePage(startPage, pages, makeUrl) {
+  const start = Math.max(1, Number(startPage) || 1);
+  const count = Math.max(1, Number(pages) || 1);
+  return Array.from({ length: count }, (_, i) => makeUrl(start + i));
+}
+
+async function fetchHtmlRetry(url, opts = {}, retries = 1) {
+  let last = null;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    if (attempt > 0) {
+      await sleep(350 * attempt + Math.floor(Math.random() * 250));
+    }
+    try {
+      last = await fetchHtml(url, opts);
+    } catch (err) {
+      last = err;
+      continue;
+    }
+    if (last.ok) return last;
+    if (![403, 429, 503].includes(last.status)) return last;
+  }
+  if (last && typeof last.status === 'number') return last;
+  throw last || new Error('Fetch failed');
+}
+
+/**
+ * Fetch several result pages with bounded concurrency and merge unique videos.
+ * Merges in source-page order so ranking stays stable.
+ */
+async function collectFromPages(
+  urls,
+  fetchOpts,
+  parseHtml,
+  { limit = 360, concurrency = 4 } = {}
+) {
+  const timeoutMs = fetchOpts.timeoutMs ?? 8000;
+  const pool = Math.max(1, Math.min(concurrency, urls.length));
+  const responses = new Array(urls.length);
+  let next = 0;
+
+  async function worker() {
+    while (true) {
+      const idx = next++;
+      if (idx >= urls.length) return;
+      try {
+        responses[idx] = await fetchHtmlRetry(urls[idx], {
+          ...fetchOpts,
+          timeoutMs,
+        });
+      } catch (err) {
+        responses[idx] = err;
+      }
+    }
+  }
+
+  await Promise.all(Array.from({ length: pool }, () => worker()));
 
   const seen = new Set();
   const items = [];
   let lastError = null;
 
-  for (const outcome of settled) {
-    if (outcome.status === 'rejected') {
-      lastError = outcome.reason;
+  for (const res of responses) {
+    if (!res || typeof res.ok !== 'boolean') {
+      lastError = res instanceof Error ? res : new Error('Fetch failed');
       continue;
     }
-    const res = outcome.value;
     if (!res.ok) {
       lastError = new Error(`HTTP ${res.status}`);
       continue;
@@ -177,7 +230,9 @@ async function collectFromPages(urls, fetchOpts, parseHtml, { limit = 120 } = {}
 
 module.exports = {
   fetchHtml,
+  fetchHtmlRetry,
   collectFromPages,
+  eachSourcePage,
   absolutize,
   normalizeDuration,
   parseViews,

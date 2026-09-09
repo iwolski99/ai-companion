@@ -13,16 +13,16 @@
  */
 
 const cheerio = require('cheerio');
-const { collectFromPages, absolutize, result, parseViews } = require('../http');
+const { collectFromPages, eachSourcePage, absolutize, result, parseViews } = require('../http');
 
 const SOURCE = 'xHamster';
 const BASE = 'https://xhamster.com';
 
-async function search(query, { limit = 120, pages = 4 } = {}) {
+async function search(query, { limit = 360, pages = 8, startPage = 1 } = {}) {
   const pathQuery = encodeURIComponent(query).replace(/%20/g, '+');
-  const urls = Array.from({ length: pages }, (_, i) => {
+  const urls = eachSourcePage(startPage, pages, (n) => {
     const base = `${BASE}/search/${pathQuery}`;
-    return i === 0 ? base : `${base}?page=${i + 1}`;
+    return n === 1 ? base : `${base}?page=${n}`;
   });
   return collectFromPages(
     urls,
