@@ -13,7 +13,7 @@
  */
 
 const cheerio = require('cheerio');
-const { collectFromPages, absolutize, result, parseViews } = require('../http');
+const { collectFromPages, eachSourcePage, absolutize, result, parseViews } = require('../http');
 
 const SOURCE = 'XNXX';
 const BASE = 'https://www.xnxx.com';
@@ -28,12 +28,12 @@ function extractDurationFromMetadata(metaText) {
   return m ? m[1].replace(/(\d)min/i, '$1 min') : null;
 }
 
-async function search(query, { limit = 120, pages = 4 } = {}) {
+async function search(query, { limit = 360, pages = 8, startPage = 1 } = {}) {
   const pathQuery = encodeURIComponent(query).replace(/%20/g, '+');
-  const urls = Array.from({ length: pages }, (_, i) =>
-    i === 0
+  const urls = eachSourcePage(startPage, pages, (n) =>
+    n === 1
       ? `${BASE}/search/${pathQuery}`
-      : `${BASE}/search/${pathQuery}/${i}`
+      : `${BASE}/search/${pathQuery}/${n - 1}`
   );
   return collectFromPages(urls, { referer: BASE + '/' }, parseHtml, { limit });
 }

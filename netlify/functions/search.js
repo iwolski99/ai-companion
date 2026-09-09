@@ -6,14 +6,15 @@
  *   q          — search query (required)
  *   sites      — comma-separated site ids (optional; default DEFAULT_SITE_IDS)
  *                Max MAX_SITES (5) per request — extras are rejected.
- *   limit      — per-site result cap (default 120, max 200)
- *   pages      — search-result pages to fetch per site (default 4, max 6)
+ *   limit      — per-site result cap (default 360, max 500)
+ *   pages      — search-result pages to fetch per site (default 8, max 12)
+ *   startPage  — 1-based first source page (default 1, max 60)
  *   password   — if SITE_PASSWORD is set
  *   nocache    — "1" to bypass cache
  *
  * Response:
  *   {
- *     query, cached, tookMs,
+ *     query, cached, tookMs, count, hasMore, nextStartPage,
  *     results: [...normalized videos],
  *     meta: { sites: { id: { ok, count, error? } } }
  *   }
@@ -53,12 +54,16 @@ function parseInput(event) {
 
   const q = (qs.q || qs.query || body.q || body.query || '').trim();
   const limit = Math.min(
-    200,
-    Math.max(1, Number(qs.limit || body.limit || 120) || 120)
+    500,
+    Math.max(1, Number(qs.limit || body.limit || 360) || 360)
   );
   const pages = Math.min(
-    6,
-    Math.max(1, Number(qs.pages || body.pages || 4) || 4)
+    12,
+    Math.max(1, Number(qs.pages || body.pages || 8) || 8)
+  );
+  const startPage = Math.min(
+    60,
+    Math.max(1, Number(qs.startPage || body.startPage || 1) || 1)
   );
   const nocache = qs.nocache === '1' || body.nocache === true;
 
@@ -71,7 +76,7 @@ function parseInput(event) {
       .filter(Boolean);
   }
 
-  return { q, limit, pages, nocache, siteIds };
+  return { q, limit, pages, startPage, nocache, siteIds };
 }
 
 /**
@@ -107,7 +112,7 @@ exports.handler = async (event) => {
     };
   }
 
-  const { q, limit, pages, nocache, siteIds } = parseInput(event);
+  const { q, limit, pages, startPage, nocache, siteIds } = parseInput(event);
   if (!q) {
     return json(400, {
       error: 'Missing query',
@@ -139,7 +144,7 @@ exports.handler = async (event) => {
   }
 
   const key = cacheKey(
-    `straight:p${pages}:l${limit}:${q}`,
+    `straight:p${pages}:s${startPage}:l${limit}:${q}`,
     sites.map((s) => s.id)
   );
 
@@ -154,7 +159,7 @@ exports.handler = async (event) => {
 
   const settled = await Promise.allSettled(
     sites.map((site) =>
-      site.search(q, { limit, pages }).then((results) => ({
+      site.search(q, { limit, pages, startPage }).then((results) => ({
         id: site.id,
         name: site.name,
         results,
@@ -189,11 +194,19 @@ exports.handler = async (event) => {
   });
 
   const results = interleaveByRank(groups);
+  const nextStartPage = startPage + pages;
+  const hasMore = groups.some(
+    (g) => g.length >= limit || g.length >= pages * 10
+  );
   const payload = {
     query: q,
     cached: false,
     tookMs: Date.now() - started,
     count: results.length,
+    startPage,
+    pages,
+    nextStartPage,
+    hasMore,
     results,
     meta,
   };

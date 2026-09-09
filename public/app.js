@@ -18,10 +18,18 @@
   const siteCountEl = document.getElementById('site-count');
   const siteInputs = [...form.querySelectorAll('input[name="site"]')];
 
-  const PAGE_SIZE = 36;
+  const PAGE_SIZE = 32;
+  const SOURCE_PAGES = 8;
+  const PER_SITE_LIMIT = 360;
   /** @type {any[]} */
   let lastResults = [];
   let currentPage = 1;
+  let lastQuery = '';
+  let hasMore = false;
+  let nextStartPage = 1;
+  let moreLoading = false;
+  let lastMeta = null;
+  let lastTookMs = 0;
 
   // Restore saved prefs for convenience on personal devices
   try {
@@ -209,10 +217,31 @@
     metaEl.innerHTML = chips.join('');
   }
 
+  function mergeSiteMeta(prev, incoming) {
+    const sites = { ...(prev?.sites || {}) };
+    if (!incoming?.sites) return { sites };
+    for (const [id, info] of Object.entries(incoming.sites)) {
+      const old = sites[id];
+      if (!old) {
+        sites[id] = { ...info };
+        continue;
+      }
+      sites[id] = {
+        ...old,
+        ...info,
+        ok: Boolean(old.ok || info.ok),
+        count: (Number(old.count) || 0) + (info.ok ? Number(info.count) || 0 : 0),
+        error: info.ok ? old.error : info.error || old.error,
+      };
+    }
+    return { sites };
+  }
+
   function renderPager(total, page) {
     const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
     const pagers = [pagerTop, pagerBottom].filter(Boolean);
-    if (pageCount <= 1) {
+    const show = pageCount > 1 || hasMore;
+    if (!show) {
       pagers.forEach((el) => {
         el.hidden = true;
         el.innerHTML = '';
@@ -220,6 +249,7 @@
       return;
     }
 
+    const canNext = page < pageCount || hasMore;
     const buttons = [];
     buttons.push(
       `<button type="button" class="pager-btn" data-page="${page - 1}" ${
@@ -249,10 +279,12 @@
     }
     buttons.push(
       `<button type="button" class="pager-btn" data-page="${page + 1}" ${
-        page >= pageCount ? 'disabled' : ''
-      }>Next</button>`
+        canNext ? '' : 'disabled'
+      }>${moreLoading ? '…' : 'Next'}</button>`
     );
-    const html = `<span class="pager-label">${total} videos</span>${buttons.join('')}`;
+    const html = `<span class="pager-label">${total}${
+      hasMore ? '+' : ''
+    } videos</span>${buttons.join('')}`;
     pagers.forEach((el) => {
       el.hidden = false;
       el.innerHTML = html;
@@ -261,18 +293,96 @@
 
   function showPage() {
     const sorted = sortResults(lastResults, sortSelect.value);
-    const pageCount = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
-    currentPage = Math.min(Math.max(1, currentPage), pageCount);
+    const pageCount = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE) || 1);
+    if (!(hasMore && currentPage > pageCount)) {
+      currentPage = Math.min(Math.max(1, currentPage), pageCount);
+    }
     const start = (currentPage - 1) * PAGE_SIZE;
     renderResults(sorted.slice(start, start + PAGE_SIZE));
     renderPager(sorted.length, currentPage);
   }
 
-  function onPagerClick(e) {
+  function authHeaders() {
+    return passwordInput.value
+      ? { 'X-Search-Password': passwordInput.value }
+      : {};
+  }
+
+  function searchParams(query, startPage) {
+    const params = new URLSearchParams({
+      q: query,
+      sites: selectedSites().join(','),
+      limit: String(PER_SITE_LIMIT),
+      pages: String(SOURCE_PAGES),
+      startPage: String(startPage),
+    });
+    if (passwordInput.value) params.set('password', passwordInput.value);
+    return params;
+  }
+
+  function mergeUnique(existing, incoming) {
+    const seen = new Set(existing.map((v) => v.url));
+    const extra = (incoming || []).filter((v) => v.url && !seen.has(v.url));
+    return existing.concat(extra);
+  }
+
+  async function fetchBatch(query, startPage) {
+    const res = await fetch(`/api/search?${searchParams(query, startPage)}`, {
+      method: 'GET',
+      headers: authHeaders(),
+    });
+    const data = await res.json().catch(() => ({}));
+    return { res, data };
+  }
+
+  async function loadMore() {
+    if (moreLoading || !hasMore || !lastQuery) return false;
+    moreLoading = true;
+    renderPager(lastResults.length, currentPage);
+    setStatus('loading', '<span class="spinner"></span>Loading more videos…');
+    try {
+      const { res, data } = await fetchBatch(lastQuery, nextStartPage);
+      if (!res.ok) {
+        hasMore = false;
+        setStatus(
+          'error',
+          escapeHtml(data.message || data.error || `Request failed (${res.status})`)
+        );
+        return false;
+      }
+      const incoming = Array.isArray(data.results) ? data.results : [];
+      const before = lastResults.length;
+      lastResults = mergeUnique(lastResults, incoming);
+      lastMeta = mergeSiteMeta(lastMeta, data.meta);
+      lastTookMs = data.tookMs || lastTookMs;
+      nextStartPage = Number(data.nextStartPage) || nextStartPage + SOURCE_PAGES;
+      hasMore =
+        lastResults.length > before && Boolean(data.hasMore);
+      renderMeta(lastMeta, lastTookMs, data.cached);
+      clearStatus();
+      return true;
+    } catch (err) {
+      setStatus(
+        'error',
+        `Network error: ${escapeHtml(err.message || String(err))}`
+      );
+      return false;
+    } finally {
+      moreLoading = false;
+      showPage();
+    }
+  }
+
+  async function onPagerClick(e) {
     const btn = e.target.closest('[data-page]');
     if (!btn || btn.disabled) return;
     const next = Number(btn.dataset.page);
     if (!Number.isFinite(next) || next < 1) return;
+    const loadedPages = Math.max(1, Math.ceil(lastResults.length / PAGE_SIZE));
+    if (next > loadedPages) {
+      const ok = await loadMore();
+      if (!ok) return;
+    }
     currentPage = next;
     showPage();
     resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -341,27 +451,18 @@
     metaEl.hidden = true;
     resultsEl.innerHTML = '';
     lastResults = [];
+    lastQuery = query;
+    lastMeta = null;
+    lastTookMs = 0;
+    hasMore = false;
+    nextStartPage = 1;
+    moreLoading = false;
     currentPage = 1;
     pagerTop && (pagerTop.hidden = true);
     pagerBottom && (pagerBottom.hidden = true);
 
-    const params = new URLSearchParams({
-      q: query,
-      sites: sites.join(','),
-      limit: '120',
-      pages: '4',
-    });
-    if (passwordInput.value) params.set('password', passwordInput.value);
-
     try {
-      const res = await fetch(`/api/search?${params.toString()}`, {
-        method: 'GET',
-        headers: passwordInput.value
-          ? { 'X-Search-Password': passwordInput.value }
-          : {},
-      });
-
-      const data = await res.json().catch(() => ({}));
+      const { res, data } = await fetchBatch(query, 1);
 
       if (res.status === 401) {
         setStatus(
@@ -380,7 +481,11 @@
       }
 
       lastResults = Array.isArray(data.results) ? data.results : [];
-      renderMeta(data.meta, data.tookMs, data.cached);
+      lastMeta = data.meta || null;
+      lastTookMs = data.tookMs || 0;
+      hasMore = Boolean(data.hasMore);
+      nextStartPage = Number(data.nextStartPage) || 1 + SOURCE_PAGES;
+      renderMeta(lastMeta, lastTookMs, data.cached);
 
       if (!lastResults.length) {
         setStatus(

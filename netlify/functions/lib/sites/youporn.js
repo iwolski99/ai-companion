@@ -13,26 +13,30 @@
  */
 
 const cheerio = require('cheerio');
-const { collectFromPages, absolutize, result, parseViews } = require('../http');
+const { collectFromPages, eachSourcePage, absolutize, result, parseViews } = require('../http');
 
 const SOURCE = 'YouPorn';
 const BASE = 'https://www.youporn.com';
 
-async function search(query, { limit = 120, pages = 4 } = {}) {
+async function search(query, { limit = 360, pages = 8, startPage = 1 } = {}) {
   const q = encodeURIComponent(query);
-  const urls = Array.from({ length: pages }, (_, i) =>
-    i === 0
+  const urls = eachSourcePage(startPage, pages, (n) =>
+    n === 1
       ? `${BASE}/search/?query=${q}`
-      : `${BASE}/search/?query=${q}&page=${i + 1}`
+      : `${BASE}/search/?query=${q}&page=${n}`
   );
   return collectFromPages(
     urls,
     {
       referer: BASE + '/',
-      headers: { Cookie: 'age_verified=1; age_gate=1; platform=pc' },
+      timeoutMs: 9000,
+      headers: {
+        Cookie:
+          'age_verified=1; age_gate=1; platform=pc; yp_age_verified=1; accessAgeDisclaimerYP=1',
+      },
     },
     parseHtml,
-    { limit }
+    { limit, concurrency: 2 }
   );
 }
 

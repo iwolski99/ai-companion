@@ -13,17 +13,17 @@
  */
 
 const cheerio = require('cheerio');
-const { collectFromPages, absolutize, result, parseViews } = require('../http');
+const { collectFromPages, eachSourcePage, absolutize, result, parseViews } = require('../http');
 
 const SOURCE = 'SpankBang';
 const BASE = 'https://spankbang.com';
 
-async function search(query, { limit = 120, pages = 4 } = {}) {
+async function search(query, { limit = 360, pages = 8, startPage = 1 } = {}) {
   const slug = encodeURIComponent(query).replace(/%20/g, '+');
-  const urls = Array.from({ length: pages }, (_, i) =>
-    i === 0
+  const urls = eachSourcePage(startPage, pages, (n) =>
+    n === 1
       ? `https://www.spankbang.com/s/${slug}/`
-      : `https://www.spankbang.com/s/${slug}/${i + 1}/`
+      : `https://www.spankbang.com/s/${slug}/${n}/`
   );
   return collectFromPages(
     urls,
@@ -32,7 +32,7 @@ async function search(query, { limit = 120, pages = 4 } = {}) {
       headers: { Cookie: 'age_verified=1' },
     },
     parseHtml,
-    { limit }
+    { limit, concurrency: 2 }
   );
 }
 

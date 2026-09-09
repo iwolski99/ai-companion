@@ -13,7 +13,7 @@
  */
 
 const cheerio = require('cheerio');
-const { fetchHtml, collectFromPages, absolutize, result, parseViews } = require('../http');
+const { collectFromPages, eachSourcePage, absolutize, result, parseViews } = require('../http');
 
 const SOURCE = 'XVideos';
 const BASE = 'https://www.xvideos.com';
@@ -96,10 +96,10 @@ function parseHtml(html) {
   return items;
 }
 
-async function search(query, { limit = 120, pages = 4 } = {}) {
+async function search(query, { limit = 360, pages = 8, startPage = 1 } = {}) {
   const k = encodeURIComponent(query);
-  const urls = Array.from({ length: pages }, (_, i) =>
-    i === 0 ? `${BASE}/?k=${k}` : `${BASE}/?k=${k}&p=${i}`
+  const urls = eachSourcePage(startPage, pages, (n) =>
+    n === 1 ? `${BASE}/?k=${k}` : `${BASE}/?k=${k}&p=${n - 1}`
   );
   return collectFromPages(
     urls,
