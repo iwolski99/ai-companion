@@ -243,20 +243,34 @@
     watchUrl = gif.url || play.dataset.url || `https://www.redgifs.com/watch/${id}`;
     openExt.href = watchUrl;
     video.poster = gif.thumbnail || '';
+    video.referrerPolicy = 'no-referrer';
     video.src = src;
     video.muted = false;
     video.defaultMuted = false;
     video.volume = 1;
     video.loop = true;
     modal.showModal();
-    const playAttempt = video.play();
-    if (playAttempt && typeof playAttempt.catch === 'function') {
-      playAttempt.catch(() => {
-        video.muted = false;
-        video.volume = 1;
-        video.play().catch(() => {});
-      });
-    }
+    const tryPlay = () => {
+      video.muted = false;
+      video.volume = 1;
+      const playAttempt = video.play();
+      if (playAttempt && typeof playAttempt.catch === 'function') {
+        playAttempt.catch(() => {});
+      }
+      syncPauseBtn();
+    };
+    video.addEventListener(
+      'error',
+      () => {
+        const fallback = gif.sd || play.dataset.sd;
+        if (fallback && video.src !== fallback && src !== fallback) {
+          video.src = fallback;
+          tryPlay();
+        }
+      },
+      { once: true }
+    );
+    tryPlay();
     syncPauseBtn();
     if (gif.id) window.BuddyPrefs?.like({ ...gif, thumbnail: gif.thumbnail });
   }
