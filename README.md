@@ -14,7 +14,7 @@ Private, personal-use web app: multi-site **tube search**, **RedGifs** discovery
 | `/chat.html` | Horny goon buddy via DeepSeek V4 Flash (DeepSeek API or OpenRouter) |
 | `/calendar.html` | Local orgasm log by day |
 
-Preference learning is **on-device** (`localStorage`). Likes, bookmarks, skips, tube clicks, and calendar entries never leave the browser unless you export JSON.
+Preference learning is **on-device** (`localStorage`) and, when you unlock with a profile key, **synced** through `/api/vault` so your phone and desktop share likes, chats, and recommendations. The key is not baked into the site — visitors without it see a lock screen.
 
 ## Straight-only
 
@@ -56,6 +56,8 @@ Same as before: publish `public`, functions `netlify/functions`. Optional env:
 | Variable | Purpose |
 |---|---|
 | `SITE_PASSWORD` | Gate search / thumbnail / redgifs / buddy |
+| `PROFILE_PIN` | Optional hard lock. If set (e.g. `69420`), only that key works. If unset, the first key you save a profile with becomes the only key. |
+| `VAULT_SALT` | Optional extra salt for storing the vault (default is fine) |
 | `CACHE_TTL_SECONDS` | AV Search cache TTL (default 180) |
 | `DEEPSEEK_API_KEY` / `OPENROUTER_API_KEY` | Buddy chat |
 

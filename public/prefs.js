@@ -1,6 +1,6 @@
 /**
- * Local preference store — likes, bookmarks, skips, tag weights, calendar.
- * Privacy-first: everything stays in this browser's localStorage.
+ * Preference store — likes, bookmarks, chats, calendar.
+ * Cached in this browser; synced to /api/vault when a profile key is unlocked.
  */
 (function (global) {
   const KEY = 'buddy_prefs_v1';
@@ -341,6 +341,13 @@
       localStorage.setItem(KEY, JSON.stringify(state));
     } catch {
       /* quota — ignore */
+    }
+    try {
+      if (global.BuddyVault && typeof global.BuddyVault.schedulePush === 'function') {
+        global.BuddyVault.schedulePush();
+      }
+    } catch {
+      /* ignore */
     }
     return state;
   }
@@ -700,6 +707,13 @@
       localStorage.setItem(CHAT_KEY, JSON.stringify(state));
     } catch {
       /* quota */
+    }
+    try {
+      if (global.BuddyVault && typeof global.BuddyVault.schedulePush === 'function') {
+        global.BuddyVault.schedulePush();
+      }
+    } catch {
+      /* ignore */
     }
     return state;
   }
