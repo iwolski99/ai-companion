@@ -16,6 +16,8 @@ Private, personal-use web app: multi-site **tube search**, **RedGifs** discovery
 
 Preference learning is **on-device** (`localStorage`) and, when you unlock with a profile key, **synced** through `/api/vault` so your phone and desktop share likes, chats, and recommendations. The key is not baked into the site — visitors without it see a lock screen.
 
+A new Netlify site has its own empty blob store. The same profile key does **not** copy likes from an old account. If the old URL is still live, unlock with **Restore from old site** (or **Profile → From old site**). Otherwise export `buddy-profile.json` from a browser that still has the old origin, then import that file. For You also has a **Seed tastes** box if you only remember names and tags.
+
 ## Straight-only
 
 Tubes and RedGifs keep cis-straight / M/F results only:

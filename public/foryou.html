@@ -17,8 +17,8 @@
       href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=taste-5" />
-    <script src="/vault.js?v=taste-5"></script>
+    <link rel="stylesheet" href="/styles.css?v=taste-6" />
+    <script src="/vault.js?v=taste-6"></script>
   </head>
   <body>
     <div class="bg-glow" aria-hidden="true"></div>
@@ -53,6 +53,21 @@
           Like or bookmark clips, search Tubes, or click results — those names show up here.
         </p>
         <div id="taste-tags" class="chip-row"></div>
+      </section>
+
+      <section class="panel fy-seed">
+        <h2 class="panel-title">Seed tastes</h2>
+        <p class="muted">
+          If the old vault did not come over, paste performer names, studios, or
+          tags — one per line, or commas. For You and Gifs start using them right away.
+        </p>
+        <label class="sr-only" for="fy-seed-input">Names, studios, or tags</label>
+        <textarea
+          id="fy-seed-input"
+          placeholder="one name or tag per line"
+        ></textarea>
+        <button type="button" class="btn-primary" id="fy-seed-btn">Add to taste</button>
+        <p class="muted" id="fy-seed-status" hidden></p>
       </section>
 
       <section class="panel">
@@ -120,8 +135,8 @@
     <footer class="foot">
       <p>Preferences sync with your profile key. Lock this device when you are done.</p>
     </footer>
-    <script src="/prefs.js?v=taste-5"></script>
-    <script src="/gif-preview.js?v=taste-5"></script>
-    <script src="/foryou.js?v=taste-5" defer></script>
+    <script src="/prefs.js?v=taste-6"></script>
+    <script src="/gif-preview.js?v=taste-6"></script>
+    <script src="/foryou.js?v=taste-6" defer></script>
   </body>
 </html>

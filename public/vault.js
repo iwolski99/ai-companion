@@ -100,12 +100,18 @@
   function localHasData(snap) {
     const prefs = snap.prefs || {};
     const chats = snap.chats || {};
+    const tags = prefs.tags && typeof prefs.tags === 'object' ? prefs.tags : {};
+    const dislikes =
+      prefs.dislikes && typeof prefs.dislikes === 'object' ? prefs.dislikes : {};
     return Boolean(
       (prefs.likes && prefs.likes.length) ||
         (prefs.bookmarks && prefs.bookmarks.length) ||
         (prefs.searches && prefs.searches.length) ||
         (prefs.performers && prefs.performers.length) ||
+        (prefs.studios && prefs.studios.length) ||
         (prefs.avClicks && prefs.avClicks.length) ||
+        Object.keys(tags).length ||
+        Object.keys(dislikes).length ||
         (prefs.calendar && Object.keys(prefs.calendar).length) ||
         (chats.chats && chats.chats.length)
     );
@@ -168,6 +174,116 @@
     injectLockButton();
   }
 
+  function payloadHasData(data) {
+    if (!data || data.empty) return false;
+    return localHasData({
+      prefs: data.prefs || {},
+      chats: data.chats || {},
+    });
+  }
+
+  function parseBackup(obj) {
+    if (typeof obj === 'string') {
+      obj = JSON.parse(obj);
+    }
+    if (!obj || typeof obj !== 'object') {
+      throw new Error('Not a Buddy profile file.');
+    }
+    if (Array.isArray(obj)) {
+      return {
+        prefs: { bookmarks: obj, likes: [], tags: {}, searches: [], performers: [] },
+        chats: { activeId: null, chats: [] },
+        settings: {},
+        updatedAt: Date.now(),
+      };
+    }
+    if (obj.buddyProfile === 1 || obj.prefs || obj.chats) {
+      return {
+        prefs: obj.prefs && typeof obj.prefs === 'object' ? obj.prefs : {},
+        chats: obj.chats && typeof obj.chats === 'object' ? obj.chats : { activeId: null, chats: [] },
+        settings: obj.settings && typeof obj.settings === 'object' ? obj.settings : {},
+        updatedAt: Date.now(),
+      };
+    }
+    if (obj.likes || obj.bookmarks || obj.searches || obj.performers || obj.calendar) {
+      return {
+        prefs: obj,
+        chats: { activeId: null, chats: [] },
+        settings: {},
+        updatedAt: Date.now(),
+      };
+    }
+    throw new Error('Not a Buddy profile file.');
+  }
+
+  async function fetchRemoteVault(originRaw, pin) {
+    let origin;
+    try {
+      const href = /:\/\//.test(originRaw) ? originRaw : `https://${originRaw}`;
+      origin = new URL(href).origin;
+    } catch {
+      throw new Error('That old site URL looks invalid.');
+    }
+    const res = await fetch(`${origin}/api/vault`, {
+      headers: { 'X-Profile-Pin': pin },
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(
+        data.message || 'Could not read the old vault. Is that Netlify site still live?'
+      );
+    }
+    if (!payloadHasData(data)) {
+      throw new Error(
+        'Old site opened but the vault there is empty. On that old URL, use Export profile from this browser, then import the file here.'
+      );
+    }
+    return data;
+  }
+
+  function exportProfile() {
+    const body = {
+      buddyProfile: 1,
+      exportedAt: new Date().toISOString(),
+      ...collectPushBody(),
+    };
+    const blob = new Blob([JSON.stringify(body, null, 2)], {
+      type: 'application/json',
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'buddy-profile.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function applyIncoming(pin, incoming) {
+    const payload = {
+      prefs: incoming.prefs || {},
+      chats: incoming.chats || { activeId: null, chats: [] },
+      settings: incoming.settings || {},
+      updatedAt: Date.now(),
+    };
+    applyPayload(payload);
+    try {
+      await api('PUT', pin, payload);
+    } catch {
+      /* keep local even if this site's vault is still empty */
+    }
+    try {
+      localStorage.setItem(META_KEY, JSON.stringify({ updatedAt: payload.updatedAt }));
+    } catch {
+      /* ignore */
+    }
+  }
+
+  async function restoreFromOldSite(origin, pin) {
+    const incoming = await fetchRemoteVault(origin, pin);
+    await applyIncoming(pin, incoming);
+    return incoming;
+  }
+
   function showGate(message) {
     document.documentElement.classList.remove('vault-pending', 'vault-open');
     document.documentElement.classList.add('vault-locked');
@@ -183,8 +299,8 @@
         <p class="vault-kicker">Buddy</p>
         <h1>Profile key</h1>
         <p class="vault-copy">
-          Type the number for this profile. Same key on your phone loads likes,
-          bookmarks, chats, and recommendations. Visitors without it see nothing.
+          Type the key for this profile. A new Netlify account starts with an empty vault —
+          restore from your old site URL or a backup file below.
         </p>
         <label class="sr-only" for="vault-pin">Profile key</label>
         <input
@@ -200,6 +316,17 @@
           autofocus
         />
         <button type="submit" class="btn-primary" id="vault-submit">Unlock</button>
+        <details class="vault-restore">
+          <summary>Restore from old site or backup</summary>
+          <label class="vault-restore-label">
+            Old Buddy URL
+            <input id="vault-old-url" type="url" inputmode="url" placeholder="https://your-old-site.netlify.app" />
+          </label>
+          <label class="vault-restore-label">
+            Or backup JSON
+            <input id="vault-file" type="file" accept="application/json,.json" />
+          </label>
+        </details>
         <p class="vault-status" id="vault-gate-status">${message ? String(message) : ''}</p>
       </form>
     `;
@@ -214,10 +341,18 @@
         if (value.length < 4) return;
         const btn = document.getElementById('vault-submit');
         const status = document.getElementById('vault-gate-status');
+        const file = document.getElementById('vault-file')?.files?.[0];
+        const oldUrl = (document.getElementById('vault-old-url')?.value || '').trim();
         btn.disabled = true;
         status.textContent = 'Opening profile…';
         try {
-          await unlock(value);
+          const extra = {};
+          if (file) {
+            extra.payload = parseBackup(await file.text());
+          } else if (oldUrl) {
+            extra.oldOrigin = oldUrl;
+          }
+          await unlock(value, extra);
         } catch (err) {
           status.textContent = err.message || String(err);
           btn.disabled = false;
@@ -230,26 +365,79 @@
   }
 
   function injectLockButton() {
-    if (document.getElementById('vault-lock-btn')) return;
-    const nav = document.querySelector('header .nav');
-    if (!nav) return;
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.id = 'vault-lock-btn';
-    btn.className = 'nav-link vault-lock';
-    btn.textContent = 'Lock';
-    btn.title = 'Lock this profile on this device';
-    btn.addEventListener('click', () => {
+    if (document.getElementById('vault-profile-menu')) return;
+    const host =
+      document.querySelector('header .top-row') ||
+      document.querySelector('header .nav');
+    if (!host) return;
+    const wrap = document.createElement('details');
+    wrap.id = 'vault-profile-menu';
+    wrap.className = 'vault-menu';
+    wrap.innerHTML = `
+      <summary class="nav-link">Profile</summary>
+      <div class="vault-menu-pop">
+        <button type="button" id="vault-export-btn">Export profile</button>
+        <label class="vault-menu-file">Import JSON<input id="vault-import-file" type="file" accept="application/json,.json" /></label>
+        <button type="button" id="vault-from-old-btn">From old site…</button>
+        <button type="button" id="vault-lock-btn">Lock</button>
+      </div>
+    `;
+    host.appendChild(wrap);
+    document.getElementById('vault-export-btn')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      exportProfile();
+      wrap.open = false;
+    });
+    document.getElementById('vault-import-file')?.addEventListener('change', async (e) => {
+      const file = e.target.files && e.target.files[0];
+      e.target.value = '';
+      if (!file) return;
+      const pin = getPin();
+      if (!pin) return;
+      try {
+        const payload = parseBackup(await file.text());
+        await applyIncoming(pin, payload);
+        location.reload();
+      } catch (err) {
+        alert(err.message || String(err));
+      }
+    });
+    document.getElementById('vault-from-old-btn')?.addEventListener('click', async () => {
+      const origin = prompt('Paste your old Buddy Netlify URL');
+      if (!origin) return;
+      const pin = getPin();
+      if (!pin) return;
+      try {
+        const incoming = await fetchRemoteVault(origin, pin);
+        await applyIncoming(pin, incoming);
+        location.reload();
+      } catch (err) {
+        alert(err.message || String(err));
+      }
+    });
+    document.getElementById('vault-lock-btn')?.addEventListener('click', () => {
       wipeLocalProfile();
       location.reload();
     });
-    nav.appendChild(btn);
   }
 
-  async function unlock(pin) {
+  async function unlock(pin, extra = {}) {
+    let incoming = extra.payload || null;
+    if (!incoming && extra.oldOrigin) {
+      incoming = await fetchRemoteVault(extra.oldOrigin, pin);
+    }
+
     const remote = await api('GET', pin);
     const local = snapshot();
-    const remoteHas = remote && !remote.empty && remote.prefs;
+
+    if (incoming && payloadHasData(incoming)) {
+      await applyIncoming(pin, incoming);
+      setPin(pin);
+      location.reload();
+      return;
+    }
+
+    const remoteHas = payloadHasData(remote);
     if (remoteHas) {
       const remoteTs = Number(remote.updatedAt) || 0;
       const localTs = local.updatedAt || 0;
@@ -384,6 +572,9 @@
 
   global.BuddyVault = {
     schedulePush,
+    exportProfile,
+    restoreFromOldSite,
+    applyIncoming,
     lock() {
       wipeLocalProfile();
       location.reload();
