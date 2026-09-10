@@ -13,7 +13,7 @@
  */
 
 const cheerio = require('cheerio');
-const { collectFromPages, eachSourcePage, absolutize, result, parseViews } = require('../http');
+const { collectFromPages, eachSourcePage, absolutize, result, parseViews, pickChannelText } = require('../http');
 
 const SOURCE = 'YouPorn';
 const BASE = 'https://www.youporn.com';
@@ -87,6 +87,7 @@ function parseHtml(html, res) {
         source: SOURCE,
         views: viewsMatch ? parseViews(viewsMatch[1]) : null,
         rating: ratingMatch ? ratingMatch[1] : null,
+        studio: pickChannelText($el),
         rank: i,
       })
     );

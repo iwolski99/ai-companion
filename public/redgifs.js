@@ -18,6 +18,7 @@
   const iframe = document.getElementById('rg-iframe');
   const likeBtnEl = document.getElementById('rg-like');
   const saveBtnEl = document.getElementById('rg-save');
+  const dislikeBtnEl = document.getElementById('rg-dislike');
   const openExt = document.getElementById('rg-open-ext');
 
   const selectedTags = new Set();
@@ -88,8 +89,9 @@
   }
 
   function startLandingFeed() {
-    const learned = (window.BuddyPrefs?.topTags(6) || []).map((t) => t.tag);
-    const pool = [...new Set([...learned, ...LANDING_TAGS])];
+    const learned = (window.BuddyPrefs?.topSearches(8) || []).map((t) => t.tag);
+    const tags = (window.BuddyPrefs?.topTags(4) || []).map((t) => t.tag);
+    const pool = [...new Set([...learned, ...tags, ...LANDING_TAGS])];
     landing = {
       q: pick(pool) || 'pawg',
       order: pick(['trending', 'top', 'latest']),
@@ -117,20 +119,35 @@
   }
 
   async function loadTags() {
-    try {
-      const res = await fetch('/api/redgifs?action=tags');
-      const data = await res.json();
-      const learned = (window.BuddyPrefs?.topTags(6) || []).map((t) => t.tag);
-      const tags = [...new Set([...(data.tags || []), ...learned])].slice(0, 20);
-      chipsEl.innerHTML = tags
-        .map(
-          (tag) =>
-            `<button type="button" class="chip-btn" data-tag="${escapeHtml(tag)}">${escapeHtml(tag)}</button>`
-        )
-        .join('');
-    } catch {
-      chipsEl.innerHTML = '';
+    const learnedSearches = window.BuddyPrefs?.recommendationQueries?.(16) ||
+      window.BuddyPrefs?.topSearches(16) ||
+      [];
+    const liked = (window.BuddyPrefs?.topTags(6) || []).map((t) => t.tag);
+    let tags = [];
+    if (learnedSearches.length) {
+      tags = [
+        ...learnedSearches.map((s) => ({ tag: s.tag, label: s.label || s.tag })),
+        ...liked
+          .filter((t) => !learnedSearches.some((s) => s.tag === t))
+          .map((t) => ({ tag: t, label: t })),
+      ].slice(0, 20);
+    } else {
+      try {
+        const res = await fetch('/api/redgifs?action=tags');
+        const data = await res.json();
+        tags = [...new Set([...(data.tags || []), ...liked])]
+          .slice(0, 20)
+          .map((t) => ({ tag: t, label: t }));
+      } catch {
+        tags = LANDING_TAGS.map((t) => ({ tag: t, label: t }));
+      }
     }
+    chipsEl.innerHTML = tags
+      .map(
+        (t) =>
+          `<button type="button" class="chip-btn" data-tag="${escapeHtml(t.tag)}">${escapeHtml(t.label)}</button>`
+      )
+      .join('');
   }
 
   chipsEl.addEventListener('click', (e) => {
@@ -144,7 +161,14 @@
     resetAndSearch();
   });
 
+  function previewTag(gif) {
+    const src = mediaSrc(gif);
+    if (!src || gif.play === 'iframe') return '';
+    return `<video class="rg-preview" data-preview muted loop playsinline preload="none" poster="${escapeHtml(gif.thumbnail || '')}" data-src="${escapeHtml(src)}" referrerpolicy="no-referrer"></video>`;
+  }
+
   function cardHtml(gif) {
+    if (window.BuddyPrefs?.isDisliked?.(gif.id)) return '';
     const prefs = window.BuddyPrefs?.load() || { likes: [], bookmarks: [] };
     const liked = prefs.likes.some((x) => x.id === gif.id);
     const saved = prefs.bookmarks.some((x) => x.id === gif.id);
@@ -159,6 +183,7 @@
               ? `<img src="${escapeHtml(thumbSrc(gif))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" />`
               : ''
           }
+          ${previewTag(gif)}
           ${dur ? `<span class="badge">${escapeHtml(dur)}</span>` : ''}
           ${srcLabel}
           ${sound}
@@ -168,6 +193,7 @@
           <div class="rg-actions">
             <button type="button" class="icon-btn ${liked ? 'is-on' : ''}" data-like="${escapeHtml(gif.id)}" aria-label="Like">♥</button>
             <button type="button" class="icon-btn ${saved ? 'is-on' : ''}" data-save="${escapeHtml(gif.id)}" aria-label="Bookmark">★</button>
+            <button type="button" class="icon-btn icon-btn-dislike" data-dislike="${escapeHtml(gif.id)}" aria-label="Dislike">✕</button>
           </div>
         </div>
       </article>
@@ -215,7 +241,9 @@
         done = true;
         return;
       }
-      const gifs = shuffle(Array.isArray(data.gifs) ? data.gifs : []);
+      const gifs = shuffle(Array.isArray(data.gifs) ? data.gifs : []).filter(
+        (g) => !window.BuddyPrefs?.isDisliked?.(g.id)
+      );
       gifs.forEach((g) => gifCache.set(g.id, g));
 
       if (reset && !gifs.length) {
@@ -227,6 +255,7 @@
       const html = gifs.map(cardHtml).join('');
       if (reset) gridEl.innerHTML = html;
       else gridEl.insertAdjacentHTML('beforeend', html);
+      window.BuddyGifPreview?.scan(gridEl);
 
       if (gifs.length < 8) done = true;
       else page += 1;
@@ -244,6 +273,7 @@
     page = 1;
     done = false;
     gridEl.innerHTML = '';
+    window.BuddyGifPreview?.scan(gridEl);
     sentinel.hidden = false;
     fetchPage(true);
   }
@@ -251,6 +281,11 @@
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     landing = null;
+    const typed = qInput.value.trim();
+    if (typed && window.BuddyPrefs?.trackSearch) {
+      window.BuddyPrefs.trackSearch(typed, 'gifs');
+      loadTags();
+    }
     resetAndSearch();
   });
   orderEl.addEventListener('change', () => {
@@ -346,6 +381,7 @@
     }
 
     modal.showModal();
+    window.BuddyGifPreview?.pauseAll();
     if (gif.id) window.BuddyPrefs?.like({ ...gif, thumbnail: gif.thumbnail });
   }
 
@@ -371,6 +407,14 @@
         window.BuddyPrefs.bookmark(gif);
         saveBtn.classList.add('is-on');
       }
+      return;
+    }
+    const dislikeBtn = e.target.closest('[data-dislike]');
+    if (dislikeBtn) {
+      const gif = gifCache.get(dislikeBtn.dataset.dislike);
+      if (gif) window.BuddyPrefs.dislike(gif);
+      dislikeBtn.closest('.rg-card')?.remove();
+      window.BuddyGifPreview?.scan(gridEl);
     }
   });
 
@@ -380,6 +424,7 @@
     currentGifId = '';
     watchUrl = '';
     if (modal.open) modal.close();
+    window.BuddyGifPreview?.resume();
   }
 
   likeBtnEl?.addEventListener('click', (e) => {
@@ -396,6 +441,17 @@
     window.BuddyPrefs.bookmark(gif);
     saveBtnEl.classList.add('is-on');
   });
+  dislikeBtnEl?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const gif = gifCache.get(currentGifId);
+    if (!gif) return;
+    window.BuddyPrefs.dislike(gif);
+    document.querySelectorAll('.rg-card').forEach((el) => {
+      if (el.dataset.id === gif.id) el.remove();
+    });
+    window.BuddyGifPreview?.scan(gridEl);
+    closePlayer();
+  });
 
   document.getElementById('rg-close').addEventListener('click', (e) => {
     e.stopPropagation();
@@ -405,6 +461,7 @@
     clearVideo();
     iframe.src = '';
     currentGifId = '';
+    window.BuddyGifPreview?.resume();
   });
   modal.addEventListener('click', (e) => {
     if (!e.target.closest('.player-stage')) closePlayer();

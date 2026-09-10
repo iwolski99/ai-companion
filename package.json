@@ -5,6 +5,7 @@
   "description": "Personal multi-site adult video search engine (Netlify Functions + static frontend)",
   "scripts": {
     "dev": "netlify dev",
+    "dev:local": "node scripts/dev-server.js",
     "build": "echo 'Static site \u2014 no build step required'"
   },
   "dependencies": {
