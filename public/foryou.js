@@ -566,6 +566,26 @@
     window.BuddyPrefs.exportBookmarks();
   });
 
+  const seedInput = document.getElementById('fy-seed-input');
+  const seedBtn = document.getElementById('fy-seed-btn');
+  const seedStatus = document.getElementById('fy-seed-status');
+  seedBtn?.addEventListener('click', () => {
+    const raw = seedInput?.value || '';
+    const lines = String(raw)
+      .split(/[\n,;]+/)
+      .map((s) => s.trim())
+      .filter((s) => s.length >= 2);
+    if (!lines.length) {
+      if (seedStatus) {
+        seedStatus.hidden = false;
+        seedStatus.textContent = 'Paste at least one name or tag first.';
+      }
+      return;
+    }
+    window.BuddyPrefs.importTasteLines(raw);
+    location.reload();
+  });
+
   loadTubePicks();
   loadGifFeed();
 })();
