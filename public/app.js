@@ -59,10 +59,7 @@
   }
 
   function selectedSites() {
-    const picked = siteInputs.filter((el) => el.checked).map((el) => el.value);
-    return window.BuddySettings?.filterTubeSites
-      ? window.BuddySettings.filterTubeSites(picked)
-      : picked;
+    return siteInputs.filter((el) => el.checked).map((el) => el.value);
   }
 
   function syncSiteLimit() {
@@ -93,16 +90,6 @@
     });
   });
   syncSiteLimit();
-
-  function applyExcludedSites() {
-    const ex = new Set(window.BuddySettings?.tubeExclude?.() || []);
-    siteInputs.forEach((input) => {
-      if (ex.has(input.value)) input.checked = false;
-    });
-    syncSiteLimit();
-  }
-  applyExcludedSites();
-  window.addEventListener('buddy-settings', applyExcludedSites);
 
   passwordInput.addEventListener('change', () => {
     try {

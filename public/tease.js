@@ -86,15 +86,9 @@
         .map((s) => s.trim())
         .filter(Boolean)
         .slice(0, 5);
-      const picked = ids.length ? ids : ['xvideos', 'xnxx', 'xhamster', 'pornhub', 'youporn'];
-      return window.BuddySettings?.filterTubeSites
-        ? window.BuddySettings.filterTubeSites(picked)
-        : picked;
+      return ids.length ? ids : ['xvideos', 'xnxx', 'xhamster', 'pornhub', 'youporn'];
     } catch {
-      const fallback = ['xvideos', 'xnxx', 'xhamster', 'pornhub', 'youporn'];
-      return window.BuddySettings?.filterTubeSites
-        ? window.BuddySettings.filterTubeSites(fallback)
-        : fallback;
+      return ['xvideos', 'xnxx', 'xhamster', 'pornhub', 'youporn'];
     }
   }
 

@@ -59,14 +59,9 @@
         .map((s) => s.trim())
         .filter(Boolean)
         .slice(0, 5);
-      const picked = ids.length ? ids : DEFAULT_SITES;
-      return window.BuddySettings?.filterTubeSites
-        ? window.BuddySettings.filterTubeSites(picked)
-        : picked;
+      return ids.length ? ids : DEFAULT_SITES;
     } catch {
-      return window.BuddySettings?.filterTubeSites
-        ? window.BuddySettings.filterTubeSites(DEFAULT_SITES)
-        : DEFAULT_SITES;
+      return DEFAULT_SITES;
     }
   }
 

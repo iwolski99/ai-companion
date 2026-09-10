@@ -27,19 +27,6 @@
     }
   }
 
-  function setPersona(id) {
-    const next = id === 'goonette' ? 'goonette' : 'pal';
-    try {
-      localStorage.setItem('buddy_chat_persona', next);
-    } catch {
-      /* ignore */
-    }
-    document.querySelectorAll('[data-persona]').forEach((btn) => {
-      btn.classList.toggle('is-on', btn.dataset.persona === next);
-    });
-    return next;
-  }
-
   function greetingFor(id) {
     return GREETINGS[id] || GREETINGS.pal;
   }
@@ -97,7 +84,6 @@
     if (!chat) return;
     activeId = chat.id;
     window.BuddyPrefs.setActiveChat(chat.id);
-    setPersona(chat.persona || personaId());
     renderLog(chat.messages);
     renderList();
     closeDrawer();
@@ -207,7 +193,9 @@
         ];
         window.BuddyPrefs.upsertChat(activeId, { messages: failed });
         renderLog(failed);
+        hint.hidden = false;
         hint.textContent = msg;
+        hint.classList.add('is-on');
         return;
       }
       const reply = data.reply || '…';
@@ -219,9 +207,12 @@
       renderLog(next);
       renderList();
       if (data.provider) {
-        hint.textContent = `${data.provider} · ${data.model || 'DeepSeek V4 Flash'} · saved`;
+        hint.hidden = true;
+        hint.classList.remove('is-on');
       }
     } catch (err) {
+      hint.hidden = false;
+      hint.classList.add('is-on');
       hint.textContent = err.message || String(err);
     } finally {
       sendBtn.disabled = false;
@@ -236,10 +227,8 @@
     }
   });
 
-  document.getElementById('persona-row')?.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-persona]');
-    if (!btn) return;
-    const next = setPersona(btn.dataset.persona);
+  window.addEventListener('buddy-settings', () => {
+    const next = personaId();
     if (!activeId) return;
     const chat = window.BuddyPrefs.getChat(activeId);
     if (!chat) return;
@@ -255,8 +244,5 @@
     window.BuddyPrefs.upsertChat(activeId, patch);
     if (onlyGreeting) renderLog(patch.messages);
   });
-
-  setPersona(personaId());
-  window.addEventListener('buddy-settings', () => setPersona(personaId()));
   ensureChat();
 })();
