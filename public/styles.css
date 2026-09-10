@@ -1180,6 +1180,7 @@ button.vault-lock:hover {
   padding: 0;
   background: transparent;
   color: var(--text);
+  overscroll-behavior: contain;
 }
 
 .player-modal::backdrop {
@@ -1208,7 +1209,7 @@ button.vault-lock:hover {
 .player-frame-wrap {
   position: relative;
   width: 100%;
-  height: min(78vh, 720px);
+  height: min(62vh, 640px);
   background: #000;
   border-radius: var(--radius);
   overflow: hidden;
@@ -1232,25 +1233,34 @@ button.vault-lock:hover {
   display: none;
 }
 
-.player-swipe-layer {
-  position: absolute;
-  inset: 0 0 88px 0;
-  z-index: 3;
-  touch-action: pan-y;
+.player-skip {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0 0.15rem;
 }
 
-.player-swipe-hint {
-  position: absolute;
-  left: 50%;
-  bottom: 96px;
-  z-index: 4;
-  margin: 0;
-  transform: translateX(-50%);
-  font-size: 0.72rem;
-  letter-spacing: 0.04em;
-  color: rgba(255, 255, 255, 0.55);
-  pointer-events: none;
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
+.player-skip-btn {
+  min-width: 3.4rem;
+  min-height: 2.9rem;
+  padding: 0.35rem 0.9rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--panel, #16161a);
+  color: var(--text);
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.player-skip-btn:hover,
+.player-skip-btn:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+body:has(dialog.player-modal[open]) {
+  overflow: hidden;
 }
 
 .load-more-wrap {
