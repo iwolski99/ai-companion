@@ -1055,7 +1055,7 @@ button.vault-lock:hover {
 
 .fy-seed textarea {
   width: 100%;
-  min-height: 7rem;
+  min-height: 4.5rem;
   resize: vertical;
   padding: 0.7rem 0.8rem;
   border-radius: var(--radius-sm);

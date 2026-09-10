@@ -17,6 +17,8 @@
 
   const DEFAULT_SITES = ['xvideos', 'xnxx', 'xhamster', 'pornhub', 'youporn'];
   const FALLBACKS = ['pawg', 'amateur', 'blonde', 'milf', 'onlyfans', 'creampie'];
+  const MIX_TAGS = 6;
+  const PER_TAG = 4;
   const CHIPS_KEY = 'buddy_fy_hide_chips';
   const gifCache = new Map();
   let currentGifId = '';
@@ -266,10 +268,21 @@
 
   let tubePool = tastePool();
   let tubeCursor = 0;
-  let tubePage = 1;
+  const tubePageByTag = new Map();
   const tubeSeen = new Set();
   let tubeItems = [];
   let tubeLoading = false;
+
+  function takeNextTags(count) {
+    const n = Math.min(count, Math.max(1, tubePool.length));
+    const queries = [];
+    for (let i = 0; i < n; i++) {
+      queries.push(tubePool[tubeCursor % tubePool.length]);
+      tubeCursor += 1;
+      if (tubeCursor % tubePool.length === 0) tubePool = shuffle(tubePool);
+    }
+    return queries;
+  }
 
   async function loadMoreTubes() {
     if (tubeLoading) return false;
@@ -277,33 +290,38 @@
     moreTubesBtn.hidden = false;
     moreTubesBtn.disabled = true;
     try {
-      let added = 0;
-      for (let attempt = 0; attempt < Math.max(3, tubePool.length); attempt++) {
-        const q = tubePool[tubeCursor % tubePool.length];
-        const results = await searchTubes(q.tag, tubePage);
-        const fresh = shuffle(results.filter(usableVideo)).filter((v) => {
-          const key = String(v.url).toLowerCase();
-          if (tubeSeen.has(key)) return false;
-          tubeSeen.add(key);
-          return true;
-        });
-        const batch = fresh.map((v) => ({
-          ...v,
-          _recQuery: q.label || q.tag,
-          _queryIndex: tubeCursor % tubePool.length,
-        }));
-        tubeCursor += 1;
-        if (tubeCursor % tubePool.length === 0) {
-          tubePage += 1;
-          tubePool = shuffle(tubePool);
+      const mixed = [];
+      for (let round = 0; round < 2 && mixed.length < MIX_TAGS * 2; round++) {
+        const picked = takeNextTags(MIX_TAGS);
+        const batches = await Promise.all(
+          picked.map(async (q) => {
+            const page = tubePageByTag.get(q.tag) || 1;
+            tubePageByTag.set(q.tag, page + 1);
+            try {
+              const results = await searchTubes(q.tag, page);
+              return { q, results };
+            } catch (err) {
+              if (err.code === 'password') throw err;
+              return { q, results: [] };
+            }
+          })
+        );
+        for (const { q, results } of batches) {
+          const fresh = shuffle(results.filter(usableVideo)).filter((v) => {
+            const key = String(v.url || '').toLowerCase();
+            return key && !tubeSeen.has(key);
+          });
+          for (const v of fresh.slice(0, PER_TAG)) {
+            tubeSeen.add(String(v.url).toLowerCase());
+            mixed.push({ ...v, _recQuery: q.label || q.tag });
+          }
         }
-        if (!batch.length) continue;
-        tubeItems = tubeItems.concat(batch);
-        renderTubeCards(batch, true);
-        added += batch.length;
-        if (added >= 8) break;
       }
-      return added > 0;
+      const batch = shuffle(mixed);
+      if (!batch.length) return false;
+      tubeItems = tubeItems.concat(batch);
+      renderTubeCards(batch, true);
+      return true;
     } finally {
       tubeLoading = false;
       moreTubesBtn.disabled = false;
@@ -602,9 +620,20 @@
 
   let gifPool = tastePool();
   let gifCursor = 0;
-  let gifPage = 1;
+  const gifPageByTag = new Map();
   const gifOrders = shuffle(['trending', 'top', 'latest']);
   let gifLoading = false;
+
+  function takeNextGifTags(count) {
+    const n = Math.min(count, Math.max(1, gifPool.length));
+    const queries = [];
+    for (let i = 0; i < n; i++) {
+      queries.push(gifPool[gifCursor % gifPool.length] || { tag: '' });
+      gifCursor += 1;
+      if (gifCursor % gifPool.length === 0) gifPool = shuffle(gifPool);
+    }
+    return queries;
+  }
 
   async function loadMoreGifs() {
     if (gifLoading) return false;
@@ -612,41 +641,50 @@
     moreGifsBtn.hidden = false;
     moreGifsBtn.disabled = true;
     try {
-      let added = 0;
-      for (let attempt = 0; attempt < Math.max(3, gifPool.length); attempt++) {
-        const q = gifPool[gifCursor % gifPool.length] || { tag: '' };
-        const order = gifOrders[gifCursor % gifOrders.length] || 'trending';
-        const params = new URLSearchParams({
-          action: 'search',
-          q: q.tag || '',
-          source: 'all',
-          order,
-          page: String(gifPage),
-          count: '24',
-        });
-        const res = await fetch(`/api/redgifs?${params}`);
-        const data = await res.json().catch(() => ({}));
-        const batch = shuffle(data.gifs || []).filter((g) => {
-          if (!g.id || gifCache.has(g.id) || window.BuddyPrefs.isDisliked?.(g.id)) {
-            return false;
+      const mixed = [];
+      for (let round = 0; round < 2 && mixed.length < MIX_TAGS * 2; round++) {
+        const picked = takeNextGifTags(MIX_TAGS);
+        const batches = await Promise.all(
+          picked.map(async (q, i) => {
+            const page = gifPageByTag.get(q.tag) || 1;
+            gifPageByTag.set(q.tag, page + 1);
+            const order = gifOrders[(gifCursor + i) % gifOrders.length] || 'trending';
+            const params = new URLSearchParams({
+              action: 'search',
+              q: q.tag || '',
+              source: 'all',
+              order,
+              page: String(page),
+              count: '24',
+            });
+            try {
+              const res = await fetch(`/api/redgifs?${params}`);
+              const data = await res.json().catch(() => ({}));
+              return { q, gifs: data.gifs || [] };
+            } catch {
+              return { q, gifs: [] };
+            }
+          })
+        );
+        for (const { q, gifs } of batches) {
+          const fresh = shuffle(gifs).filter((g) => {
+            if (!g.id || gifCache.has(g.id) || window.BuddyPrefs.isDisliked?.(g.id)) {
+              return false;
+            }
+            const title = String(g.title || '').trim();
+            return Boolean(g.thumbnail && title && !/^untitled$/i.test(title));
+          });
+          for (const g of fresh.slice(0, PER_TAG)) {
+            gifCache.set(g.id, g);
+            mixed.push(g);
           }
-          const title = String(g.title || '').trim();
-          if (!g.thumbnail || !title || /^untitled$/i.test(title)) return false;
-          gifCache.set(g.id, g);
-          return true;
-        });
-        gifCursor += 1;
-        if (gifCursor % gifPool.length === 0) {
-          gifPage += 1;
-          gifPool = shuffle(gifPool);
         }
-        if (!batch.length) continue;
-        gridEl.insertAdjacentHTML('beforeend', batch.map(cardHtml).join(''));
-        window.BuddyGifPreview?.scan(gridEl);
-        added += batch.length;
-        if (added >= 8) break;
       }
-      return added > 0;
+      const batch = shuffle(mixed);
+      if (!batch.length) return false;
+      gridEl.insertAdjacentHTML('beforeend', batch.map(cardHtml).join(''));
+      window.BuddyGifPreview?.scan(gridEl);
+      return true;
     } finally {
       gifLoading = false;
       moreGifsBtn.disabled = false;
