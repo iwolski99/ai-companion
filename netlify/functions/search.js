@@ -193,7 +193,12 @@ exports.handler = async (event) => {
     }
   });
 
-  const results = interleaveByRank(groups);
+  const results = interleaveByRank(groups).filter((v) => {
+    const title = String(v.title || '').trim();
+    if (!v.url || !title || /^untitled$/i.test(title)) return false;
+    if (!v.thumbnail) return false;
+    return true;
+  });
   const nextStartPage = startPage + pages;
   const hasMore = groups.some(
     (g) => g.length >= limit || g.length >= pages * 10

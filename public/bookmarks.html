@@ -10,7 +10,7 @@
     <meta name="theme-color" content="#0a0a0b" />
     <meta name="robots" content="noindex, nofollow" />
     <meta name="referrer" content="no-referrer" />
-    <title>Gifs · GoonHub</title>
+    <title>Saved · GoonHub</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -23,7 +23,6 @@
   </head>
   <body>
     <div class="bg-glow" aria-hidden="true"></div>
-
     <header class="top">
       <div class="top-row">
         <a class="brand" href="/">
@@ -32,57 +31,26 @@
         </a>
         <nav class="nav" aria-label="Main">
           <a class="nav-link" href="/">Tubes</a>
-          <a class="nav-link is-active" href="/redgifs.html">Gifs</a>
+          <a class="nav-link" href="/redgifs.html">Gifs</a>
+          <a class="nav-link" href="/tease.html">Tease</a>
           <a class="nav-link" href="/foryou.html">For You</a>
+          <a class="nav-link is-active" href="/bookmarks.html">Saved</a>
           <a class="nav-link" href="/chat.html">Chat</a>
           <a class="nav-link" href="/calendar.html">Calendar</a>
         </nav>
       </div>
-      <p class="tagline">Clips with sound · native controls · straight only</p>
+      <p class="tagline">Bookmarked clips with the same mute-loop previews as Gifs</p>
     </header>
 
     <main class="shell">
-      <form id="rg-form" class="search" autocomplete="off">
-        <label class="sr-only" for="rg-q">Gif search</label>
-        <div class="search-row">
-          <input
-            id="rg-q"
-            type="search"
-            enterkeyhint="search"
-            placeholder="Search tags… e.g. amateur blonde"
-            maxlength="120"
-          />
-          <button type="submit" class="btn-primary" id="rg-search-btn">Search</button>
+      <section class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">Saved</h2>
+          <button type="button" class="btn-ghost" id="export-bm">Export JSON</button>
         </div>
-        <div class="rg-toolbar">
-          <label class="field compact">
-            <span>Source</span>
-            <select id="rg-source">
-              <option value="all" selected>All sources</option>
-              <option value="redgifs">RedGifs</option>
-              <option value="pornhub">PornHub GIFs</option>
-              <option value="gifreels">GifReels</option>
-              <option value="nsfwmonster">NSFWMonster</option>
-              <option value="erome">Erome</option>
-              <option value="fyptt">FYPTT</option>
-            </select>
-          </label>
-          <label class="field compact">
-            <span>Order</span>
-            <select id="rg-order">
-              <option value="trending">Trending</option>
-              <option value="top">Top</option>
-              <option value="latest">Latest</option>
-            </select>
-          </label>
-          <button type="button" class="btn-ghost" id="rg-export">Export bookmarks</button>
-        </div>
-      </form>
-
-      <section id="rg-chips" class="chip-row" aria-label="Tags"></section>
-      <section id="rg-status" class="status" aria-live="polite" hidden></section>
-      <section id="rg-grid" class="rg-grid" aria-label="Gif results"></section>
-      <div id="rg-sentinel" class="sentinel" hidden></div>
+        <p class="muted" id="bm-empty" hidden>Nothing saved yet — star a clip on Gifs or Tease.</p>
+        <div id="bm-grid" class="rg-grid"></div>
+      </section>
     </main>
 
     <dialog id="rg-modal" class="player-modal">
@@ -90,9 +58,7 @@
         <div class="player-bar">
           <button type="button" class="btn-ghost" id="rg-close">Close</button>
           <div class="rg-actions player-actions">
-            <button type="button" class="icon-btn" id="rg-like" aria-label="Like">♥</button>
-            <button type="button" class="icon-btn" id="rg-save" aria-label="Bookmark">★</button>
-            <button type="button" class="icon-btn icon-btn-dislike" id="rg-dislike" aria-label="Dislike">✕</button>
+            <button type="button" class="icon-btn is-on" id="rg-save" aria-label="Remove bookmark">★</button>
           </div>
           <a id="rg-open-ext" class="btn-ghost" target="_blank" rel="noopener">Open original</a>
         </div>
@@ -117,11 +83,10 @@
     </dialog>
 
     <footer class="foot">
-      <p>Straight-only. Likes and bookmarks stay in this browser.</p>
+      <p>Saved clips sync with your profile key.</p>
     </footer>
-
     <script src="/prefs.js?v=pink-1"></script>
     <script src="/gif-preview.js?v=pink-1"></script>
-    <script src="/redgifs.js?v=pink-1" defer></script>
+    <script src="/bookmarks.js?v=pink-1" defer></script>
   </body>
 </html>

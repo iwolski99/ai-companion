@@ -400,8 +400,13 @@
         title: item.title,
         tags: item.tags || [],
         thumb: item.thumbnail || item.thumb,
+        thumbnail: item.thumbnail || item.thumb,
         url: item.url,
         embed: item.embed || null,
+        sd: item.sd || null,
+        hd: item.hd || null,
+        play: item.play || null,
+        source: item.source || '',
         ts: Date.now(),
       });
       state.bookmarks = state.bookmarks.slice(0, 400);
@@ -670,6 +675,33 @@
       .map(([tag, weight]) => ({ tag, weight }));
   }
 
+  function importTasteLines(raw) {
+    const lines = String(raw || '')
+      .split(/[\n,;]+/)
+      .map((s) => normalizeQuery(s))
+      .filter((s) => s.length >= 2);
+    if (!lines.length) return load();
+    const state = load();
+    if (!Array.isArray(state.searches)) state.searches = [];
+    if (!Array.isArray(state.performers)) state.performers = [];
+    for (const q of lines) {
+      bumpNamed(state.searches, q, 5, { source: 'import' });
+      const names = extractPerformers(q);
+      const studios = extractStudios({ title: q });
+      for (const name of names) bumpNamed(state.performers, name, 8, { source: 'import' });
+      for (const studio of studios) {
+        if (!Array.isArray(state.studios)) state.studios = [];
+        bumpNamed(state.studios, studio, 6, { source: 'import' });
+      }
+      bumpTags(state, names.length ? names : [q], 5);
+      if (studios.length) bumpTags(state, studios, 3);
+    }
+    state.searches = state.searches.slice(0, 80);
+    state.performers = state.performers.slice(0, 40);
+    if (state.studios) state.studios = state.studios.slice(0, 40);
+    return save(state);
+  }
+
   function exportBookmarks() {
     const blob = new Blob([JSON.stringify(load().bookmarks, null, 2)], {
       type: 'application/json',
@@ -785,6 +817,7 @@
     logOrgasm,
     topTags,
     exportBookmarks,
+    importTasteLines,
     titleCase,
     loadChats,
     saveChats,

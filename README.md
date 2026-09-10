@@ -1,4 +1,4 @@
-# Buddy — personal adult goon app (Netlify)
+# GoonHub — personal adult goon app (Netlify)
 
 Private, personal-use web app: multi-site **tube search**, **RedGifs** discovery, local preference learning, and a simple orgasm **calendar**. Everything is straight-only (gay / bi / trans-coded results are filtered out).
 
@@ -9,12 +9,16 @@ Private, personal-use web app: multi-site **tube search**, **RedGifs** discovery
 | Page | What it does |
 |---|---|
 | `/` Tubes | Existing AV Search across XVideos, XNXX, SpankBang, xHamster, PornHub, YouPorn, BDSMStreak (max 5 sites per query) |
-| `/redgifs.html` | RedGifs tag search, chips, infinite grid, iframe player, likes / bookmarks / skips |
-| `/foryou.html` | Ranked feed from tags you’ve reinforced + bookmark export |
+| `/redgifs.html` | RedGifs tag search, chips, infinite grid, native player, likes / bookmarks |
+| `/tease.html` | Strip tease / JOI / clothed tease gifs and tubes |
+| `/foryou.html` | Ranked tube + gif picks from likes, searches, and seeded tastes |
+| `/bookmarks.html` | Saved clips as autoplaying gif cards |
 | `/chat.html` | Horny goon buddy via DeepSeek V4 Flash (DeepSeek API or OpenRouter) |
 | `/calendar.html` | Local orgasm log by day |
 
 Preference learning is **on-device** (`localStorage`) and, when you unlock with a profile key, **synced** through `/api/vault` so your phone and desktop share likes, chats, and recommendations. The key is not baked into the site — visitors without it see a lock screen.
+
+A new Netlify site has its own empty blob store. The same profile key does **not** copy likes from an old account. If the old URL is still live, unlock with **Restore from old site** (or **Profile → From old site**). Otherwise export `buddy-profile.json` from a browser that still has the old origin, then import that file. For You also has a **Seed tastes** box if you only remember names and tags.
 
 ## Straight-only
 

@@ -169,6 +169,9 @@
 
   function cardHtml(gif) {
     if (window.BuddyPrefs?.isDisliked?.(gif.id)) return '';
+    if (!gif.thumbnail) return '';
+    const title = String(gif.title || '').trim();
+    if (!title || /^untitled$/i.test(title)) return '';
     const prefs = window.BuddyPrefs?.load() || { likes: [], bookmarks: [] };
     const liked = prefs.likes.some((x) => x.id === gif.id);
     const saved = prefs.bookmarks.some((x) => x.id === gif.id);

@@ -9,15 +9,16 @@
     <meta name="color-scheme" content="dark" />
     <meta name="theme-color" content="#0a0a0b" />
     <meta name="robots" content="noindex, nofollow" />
-    <title>Chat · Buddy</title>
+    <title>Chat · GoonHub</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=taste-5" />
-    <script src="/vault.js?v=taste-5"></script>
+    <link rel="stylesheet" href="/styles.css?v=pink-1" />
+    <script src="/vault.js?v=pink-1"></script>
+    <script src="/nav.js?v=pink-1"></script>
   </head>
   <body class="chat-page">
     <div class="bg-glow" aria-hidden="true"></div>
@@ -25,7 +26,7 @@
       <div class="top-row">
         <a class="brand" href="/">
           <span class="brand-mark" aria-hidden="true"></span>
-          <h1>Buddy</h1>
+          <h1>GoonHub</h1>
         </a>
         <nav class="nav" aria-label="Main">
           <a class="nav-link" href="/">Tubes</a>
@@ -35,7 +36,7 @@
           <a class="nav-link" href="/calendar.html">Calendar</a>
         </nav>
       </div>
-      <p class="tagline">Saved with your profile key · filthy goon buddy · straight only</p>
+      <p class="tagline">Saved with your profile key · pick a pal or a goonette</p>
     </header>
 
     <main class="chat-layout">
@@ -48,6 +49,10 @@
         <ul class="chat-list" id="chat-list"></ul>
       </aside>
       <section class="chat-main">
+        <div class="persona-row" id="persona-row">
+          <button type="button" class="chip-btn" data-persona="pal">Gooner pal</button>
+          <button type="button" class="chip-btn" data-persona="goonette">Goonette</button>
+        </div>
         <div id="chat-log" class="chat-log" aria-live="polite"></div>
         <form id="chat-form" class="chat-form" autocomplete="off">
           <label class="sr-only" for="chat-input">Message</label>
@@ -64,7 +69,7 @@
       </section>
     </main>
 
-    <script src="/prefs.js?v=taste-5"></script>
-    <script src="/chat.js?v=taste-1" defer></script>
+    <script src="/prefs.js?v=pink-1"></script>
+    <script src="/chat.js?v=pink-1" defer></script>
   </body>
 </html>

@@ -1,6 +1,9 @@
 (() => {
-  const GREETING =
-    'fuck, you came back. i’m already stroking. tell me what you’re looking at and i’ll talk you stupid.';
+  const GREETINGS = {
+    pal: 'fuck, you came back. i’m already stroking. tell me what you’re looking at and i’ll talk you stupid.',
+    goonette:
+      'mmm there you are. i already started without you. sit down. i’m going to take my time with you.',
+  };
 
   const log = document.getElementById('chat-log');
   const form = document.getElementById('chat-form');
@@ -13,6 +16,33 @@
   const menuBtn = document.getElementById('chat-menu');
 
   let activeId = null;
+
+  function personaId() {
+    try {
+      return localStorage.getItem('buddy_chat_persona') === 'goonette'
+        ? 'goonette'
+        : 'pal';
+    } catch {
+      return 'pal';
+    }
+  }
+
+  function setPersona(id) {
+    const next = id === 'goonette' ? 'goonette' : 'pal';
+    try {
+      localStorage.setItem('buddy_chat_persona', next);
+    } catch {
+      /* ignore */
+    }
+    document.querySelectorAll('[data-persona]').forEach((btn) => {
+      btn.classList.toggle('is-on', btn.dataset.persona === next);
+    });
+    return next;
+  }
+
+  function greetingFor(id) {
+    return GREETINGS[id] || GREETINGS.pal;
+  }
 
   function escapeHtml(str) {
     return String(str || '')
@@ -67,6 +97,7 @@
     if (!chat) return;
     activeId = chat.id;
     window.BuddyPrefs.setActiveChat(chat.id);
+    setPersona(chat.persona || personaId());
     renderLog(chat.messages);
     renderList();
     closeDrawer();
@@ -82,7 +113,8 @@
       loadActive(state.chats[0].id);
       return;
     }
-    const { chat } = window.BuddyPrefs.newChat(GREETING);
+    const { chat } = window.BuddyPrefs.newChat(greetingFor(personaId()));
+    window.BuddyPrefs.upsertChat(chat.id, { persona: personaId() });
     loadActive(chat.id);
   }
 
@@ -94,7 +126,8 @@
   }
 
   document.getElementById('chat-new').addEventListener('click', () => {
-    const { chat } = window.BuddyPrefs.newChat(GREETING);
+    const { chat } = window.BuddyPrefs.newChat(greetingFor(personaId()));
+    window.BuddyPrefs.upsertChat(chat.id, { persona: personaId() });
     loadActive(chat.id);
   });
 
@@ -111,7 +144,8 @@
       const state = window.BuddyPrefs.loadChats();
       if (state.activeId) loadActive(state.activeId);
       else {
-        const { chat } = window.BuddyPrefs.newChat(GREETING);
+        const { chat } = window.BuddyPrefs.newChat(greetingFor(personaId()));
+        window.BuddyPrefs.upsertChat(chat.id, { persona: personaId() });
         loadActive(chat.id);
       }
     }
@@ -159,7 +193,10 @@
       const res = await fetch('/api/buddy', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ messages: apiMessages }),
+        body: JSON.stringify({
+          messages: apiMessages,
+          persona: (chat && chat.persona) || personaId(),
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -199,5 +236,26 @@
     }
   });
 
+  document.getElementById('persona-row')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-persona]');
+    if (!btn) return;
+    const next = setPersona(btn.dataset.persona);
+    if (!activeId) return;
+    const chat = window.BuddyPrefs.getChat(activeId);
+    if (!chat) return;
+    const msgs = chat.messages || [];
+    const onlyGreeting =
+      msgs.length <= 1 && msgs.every((m) => m.role === 'assistant');
+    const patch = { persona: next };
+    if (onlyGreeting) {
+      patch.messages = [
+        { role: 'assistant', content: greetingFor(next), ts: Date.now() },
+      ];
+    }
+    window.BuddyPrefs.upsertChat(activeId, patch);
+    if (onlyGreeting) renderLog(patch.messages);
+  });
+
+  setPersona(personaId());
   ensureChat();
 })();
