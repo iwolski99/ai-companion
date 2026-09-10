@@ -1,28 +1,33 @@
 /**
- * RedGifs page — search, chips, infinite grid, modal embed, local prefs.
+ * Gifs page — multi-source search with a native <video> player (sound + controls).
+ * RedGifs / PornHub / Reddit clips go through /api/gifmedia so their CDNs
+ * see a real site Referer instead of this app.
  */
 (() => {
   const form = document.getElementById('rg-form');
   const qInput = document.getElementById('rg-q');
   const orderEl = document.getElementById('rg-order');
+  const sourceEl = document.getElementById('rg-source');
   const chipsEl = document.getElementById('rg-chips');
   const statusEl = document.getElementById('rg-status');
   const gridEl = document.getElementById('rg-grid');
   const sentinel = document.getElementById('rg-sentinel');
   const searchBtn = document.getElementById('rg-search-btn');
   const modal = document.getElementById('rg-modal');
+  const video = document.getElementById('rg-video');
   const iframe = document.getElementById('rg-iframe');
+  const likeBtnEl = document.getElementById('rg-like');
+  const saveBtnEl = document.getElementById('rg-save');
+  const dislikeBtnEl = document.getElementById('rg-dislike');
   const openExt = document.getElementById('rg-open-ext');
-  const hitEl = document.getElementById('rg-hit');
 
   const selectedTags = new Set();
   let page = 1;
   let loading = false;
   let done = false;
-  let lastQuery = '';
-  let lastOrder = 'trending';
-  let watchUrl = '';
   let landing = null;
+  let currentGifId = '';
+  let watchUrl = '';
 
   const LANDING_TAGS = [
     'pawg',
@@ -45,7 +50,7 @@
     const a = items.slice();
     for (let i = a.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
+      [a[j], a[i]] = [a[i], a[j]];
     }
     return a;
   }
@@ -69,6 +74,10 @@
     statusEl.textContent = '';
   }
 
+  function currentSource() {
+    return (sourceEl?.value || 'all').toLowerCase();
+  }
+
   function queryFromUi() {
     const typed = qInput.value.trim();
     const tags = [...selectedTags];
@@ -80,33 +89,65 @@
   }
 
   function startLandingFeed() {
-    const learned = (window.BuddyPrefs?.topTags(6) || []).map((t) => t.tag);
-    const pool = [...new Set([...learned, ...LANDING_TAGS])];
+    const learned = (window.BuddyPrefs?.topSearches(8) || []).map((t) => t.tag);
+    const tags = (window.BuddyPrefs?.topTags(4) || []).map((t) => t.tag);
+    const pool = [...new Set([...learned, ...tags, ...LANDING_TAGS])];
     landing = {
       q: pick(pool) || 'pawg',
       order: pick(['trending', 'top', 'latest']),
-      page: pick([1, 2, 3]),
+      page: 1,
     };
     orderEl.value = landing.order;
-    page = landing.page;
+    page = 1;
     qInput.placeholder = `Showing ${landing.q} · ${landing.order}`;
   }
 
-  async function loadTags() {
-    try {
-      const res = await fetch('/api/redgifs?action=tags');
-      const data = await res.json();
-      const learned = (window.BuddyPrefs?.topTags(6) || []).map((t) => t.tag);
-      const tags = [...new Set([...(data.tags || []), ...learned])].slice(0, 20);
-      chipsEl.innerHTML = tags
-        .map(
-          (tag) =>
-            `<button type="button" class="chip-btn" data-tag="${escapeHtml(tag)}">${escapeHtml(tag)}</button>`
-        )
-        .join('');
-    } catch {
-      chipsEl.innerHTML = '';
+  function thumbSrc(gif) {
+    if (!gif.thumbnail) return '';
+    const src = String(gif.source || '').toLowerCase();
+    if (src === 'redgifs' || src === 'gifreels' || gif.play === 'direct') {
+      return gif.thumbnail;
     }
+    return `/api/thumbnail?url=${encodeURIComponent(gif.thumbnail)}`;
+  }
+
+  function mediaSrc(gif) {
+    const url = gif.sd || gif.hd;
+    if (!url) return '';
+    if (gif.play === 'direct') return url;
+    return `/api/gifmedia?url=${encodeURIComponent(url)}`;
+  }
+
+  async function loadTags() {
+    const learnedSearches = window.BuddyPrefs?.recommendationQueries?.(16) ||
+      window.BuddyPrefs?.topSearches(16) ||
+      [];
+    const liked = (window.BuddyPrefs?.topTags(6) || []).map((t) => t.tag);
+    let tags = [];
+    if (learnedSearches.length) {
+      tags = [
+        ...learnedSearches.map((s) => ({ tag: s.tag, label: s.label || s.tag })),
+        ...liked
+          .filter((t) => !learnedSearches.some((s) => s.tag === t))
+          .map((t) => ({ tag: t, label: t })),
+      ].slice(0, 20);
+    } else {
+      try {
+        const res = await fetch('/api/redgifs?action=tags');
+        const data = await res.json();
+        tags = [...new Set([...(data.tags || []), ...liked])]
+          .slice(0, 20)
+          .map((t) => ({ tag: t, label: t }));
+      } catch {
+        tags = LANDING_TAGS.map((t) => ({ tag: t, label: t }));
+      }
+    }
+    chipsEl.innerHTML = tags
+      .map(
+        (t) =>
+          `<button type="button" class="chip-btn" data-tag="${escapeHtml(t.tag)}">${escapeHtml(t.label)}</button>`
+      )
+      .join('');
   }
 
   chipsEl.addEventListener('click', (e) => {
@@ -120,28 +161,39 @@
     resetAndSearch();
   });
 
+  function previewTag(gif) {
+    const src = mediaSrc(gif);
+    if (!src || gif.play === 'iframe') return '';
+    return `<video class="rg-preview" data-preview muted loop playsinline preload="none" poster="${escapeHtml(gif.thumbnail || '')}" data-src="${escapeHtml(src)}" referrerpolicy="no-referrer"></video>`;
+  }
+
   function cardHtml(gif) {
-    const prefs = window.BuddyPrefs?.load() || { likes: [], bookmarks: [], skips: {} };
-    if (prefs.skips && prefs.skips[gif.id]) return '';
+    if (window.BuddyPrefs?.isDisliked?.(gif.id)) return '';
+    const prefs = window.BuddyPrefs?.load() || { likes: [], bookmarks: [] };
     const liked = prefs.likes.some((x) => x.id === gif.id);
     const saved = prefs.bookmarks.some((x) => x.id === gif.id);
     const dur = gif.duration ? `${Math.round(gif.duration)}s` : '';
+    const srcLabel = gif.source ? `<span class="source-badge">${escapeHtml(gif.source)}</span>` : '';
+    const sound = gif.hasAudio ? `<span class="sound-badge">sound</span>` : '';
     return `
       <article class="rg-card" data-id="${escapeHtml(gif.id)}">
-        <button type="button" class="rg-thumb" data-play="${escapeHtml(gif.id)}" data-url="${escapeHtml(gif.url)}" data-embed="${escapeHtml(gif.embed)}">
+        <button type="button" class="rg-thumb" data-play="${escapeHtml(gif.id)}" data-url="${escapeHtml(gif.url)}" data-embed="${escapeHtml(gif.embed || gif.url || '')}">
           ${
             gif.thumbnail
-              ? `<img src="${escapeHtml(gif.thumbnail)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" />`
+              ? `<img src="${escapeHtml(thumbSrc(gif))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" />`
               : ''
           }
+          ${previewTag(gif)}
           ${dur ? `<span class="badge">${escapeHtml(dur)}</span>` : ''}
+          ${srcLabel}
+          ${sound}
         </button>
         <div class="rg-body">
           <p class="card-title">${escapeHtml(gif.title)}</p>
           <div class="rg-actions">
             <button type="button" class="icon-btn ${liked ? 'is-on' : ''}" data-like="${escapeHtml(gif.id)}" aria-label="Like">♥</button>
             <button type="button" class="icon-btn ${saved ? 'is-on' : ''}" data-save="${escapeHtml(gif.id)}" aria-label="Bookmark">★</button>
-            <button type="button" class="icon-btn" data-skip="${escapeHtml(gif.id)}" aria-label="Skip">✕</button>
+            <button type="button" class="icon-btn icon-btn-dislike" data-dislike="${escapeHtml(gif.id)}" aria-label="Dislike">✕</button>
           </div>
         </div>
       </article>
@@ -152,16 +204,31 @@
 
   async function fetchPage(reset) {
     if (loading || done) return;
+    const source = currentSource();
+    const q = queryFromUi();
+
+    if (source === 'fyptt') {
+      loading = false;
+      done = true;
+      sentinel.hidden = true;
+      gridEl.innerHTML = '';
+      const href = `https://fyptt.to/?s=${encodeURIComponent(q || 'amateur')}`;
+      setStatus(
+        'empty',
+        `FYPTT blocks datacenter search (Cloudflare). Open results on their site: <a href="${escapeHtml(href)}" target="_blank" rel="noopener">Search “${escapeHtml(q || 'amateur')}” on FYPTT</a>`
+      );
+      return;
+    }
+
     loading = true;
-    if (reset) setStatus('loading', '<span class="spinner"></span>Loading RedGifs…');
+    if (reset) setStatus('loading', '<span class="spinner"></span>Loading clips…');
     searchBtn.disabled = true;
 
-    const q = queryFromUi();
-    const order = orderEl.value;
     const params = new URLSearchParams({
       action: 'search',
       q,
-      order,
+      source,
+      order: orderEl.value,
       page: String(page),
       count: '40',
     });
@@ -170,15 +237,17 @@
       const res = await fetch(`/api/redgifs?${params}`);
       const data = await res.json();
       if (!res.ok) {
-        setStatus('error', escapeHtml(data.message || data.error || 'RedGifs failed'));
+        setStatus('error', escapeHtml(data.message || data.error || 'Search failed'));
         done = true;
         return;
       }
-      const gifs = shuffle(Array.isArray(data.gifs) ? data.gifs : []);
+      const gifs = shuffle(Array.isArray(data.gifs) ? data.gifs : []).filter(
+        (g) => !window.BuddyPrefs?.isDisliked?.(g.id)
+      );
       gifs.forEach((g) => gifCache.set(g.id, g));
 
       if (reset && !gifs.length) {
-        setStatus('empty', 'No straight results for that search. Try another tag.');
+        setStatus('empty', 'No straight results for that search. Try another tag or source.');
         gridEl.innerHTML = '';
         return;
       }
@@ -186,6 +255,7 @@
       const html = gifs.map(cardHtml).join('');
       if (reset) gridEl.innerHTML = html;
       else gridEl.insertAdjacentHTML('beforeend', html);
+      window.BuddyGifPreview?.scan(gridEl);
 
       if (gifs.length < 8) done = true;
       else page += 1;
@@ -200,11 +270,10 @@
   }
 
   function resetAndSearch() {
-    page = landing ? landing.page : 1;
+    page = 1;
     done = false;
-    lastQuery = queryFromUi();
-    lastOrder = orderEl.value;
     gridEl.innerHTML = '';
+    window.BuddyGifPreview?.scan(gridEl);
     sentinel.hidden = false;
     fetchPage(true);
   }
@@ -212,9 +281,18 @@
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     landing = null;
+    const typed = qInput.value.trim();
+    if (typed && window.BuddyPrefs?.trackSearch) {
+      window.BuddyPrefs.trackSearch(typed, 'gifs');
+      loadTags();
+    }
     resetAndSearch();
   });
   orderEl.addEventListener('change', () => {
+    landing = null;
+    resetAndSearch();
+  });
+  sourceEl?.addEventListener('change', () => {
     landing = null;
     resetAndSearch();
   });
@@ -223,16 +301,94 @@
     window.BuddyPrefs?.exportBookmarks();
   });
 
+  function syncPlayerActions() {
+    const gif = gifCache.get(currentGifId);
+    const prefs = window.BuddyPrefs?.load() || { likes: [], bookmarks: [] };
+    likeBtnEl?.classList.toggle(
+      'is-on',
+      Boolean(gif && prefs.likes.some((x) => x.id === gif.id))
+    );
+    saveBtnEl?.classList.toggle(
+      'is-on',
+      Boolean(gif && prefs.bookmarks.some((x) => x.id === gif.id))
+    );
+  }
+
+  function clearVideo() {
+    video.pause();
+    video.removeAttribute('src');
+    video.load();
+  }
+
+  function showNative() {
+    iframe.hidden = true;
+    iframe.src = '';
+    video.hidden = false;
+  }
+
+  function showIframe(src) {
+    clearVideo();
+    video.hidden = true;
+    iframe.hidden = false;
+    iframe.src = src;
+  }
+
+  function openPlayer(play) {
+    const id = play.dataset.play;
+    const gif = gifCache.get(id) || {};
+    const media = gif.sd || gif.hd;
+    const embed =
+      gif.embed ||
+      play.dataset.embed ||
+      (String(id).startsWith('erome-')
+        ? play.dataset.url
+        : media
+          ? ''
+          : `https://www.redgifs.com/ifr/${id}`);
+    currentGifId = id;
+    watchUrl = gif.url || play.dataset.url || embed || '';
+    openExt.href = watchUrl;
+    syncPlayerActions();
+
+    const useIframe = gif.play === 'iframe' || (!media && embed);
+    if (useIframe) {
+      if (!embed) return;
+      showIframe(embed);
+    } else if (media) {
+      showNative();
+      video.poster = gif.thumbnail || '';
+      video.referrerPolicy = 'no-referrer';
+      video.src = mediaSrc(gif);
+      video.muted = false;
+      video.defaultMuted = false;
+      video.volume = 1;
+      video.loop = true;
+      const playAttempt = video.play();
+      if (playAttempt && typeof playAttempt.catch === 'function') {
+        playAttempt.catch(() => {});
+      }
+      video.addEventListener(
+        'error',
+        () => {
+          if (gif.embed && /redgifs/i.test(String(gif.source || id))) {
+            showIframe(gif.embed);
+          }
+        },
+        { once: true }
+      );
+    } else {
+      return;
+    }
+
+    modal.showModal();
+    window.BuddyGifPreview?.pauseAll();
+    if (gif.id) window.BuddyPrefs?.like({ ...gif, thumbnail: gif.thumbnail });
+  }
+
   gridEl.addEventListener('click', (e) => {
     const play = e.target.closest('[data-play]');
     if (play) {
-      const id = play.dataset.play;
-      const gif = gifCache.get(id);
-      iframe.src = play.dataset.embed || `https://www.redgifs.com/ifr/${id}`;
-      watchUrl = play.dataset.url || `https://www.redgifs.com/watch/${id}`;
-      openExt.href = watchUrl;
-      if (gif) window.BuddyPrefs?.like({ ...gif, thumbnail: gif.thumbnail });
-      modal.showModal();
+      openPlayer(play);
       return;
     }
     const likeBtn = e.target.closest('[data-like]');
@@ -253,36 +409,62 @@
       }
       return;
     }
-    const skipBtn = e.target.closest('[data-skip]');
-    if (skipBtn) {
-      const gif = gifCache.get(skipBtn.dataset.skip);
-      if (gif) window.BuddyPrefs.skip(gif);
-      skipBtn.closest('.rg-card')?.remove();
+    const dislikeBtn = e.target.closest('[data-dislike]');
+    if (dislikeBtn) {
+      const gif = gifCache.get(dislikeBtn.dataset.dislike);
+      if (gif) window.BuddyPrefs.dislike(gif);
+      dislikeBtn.closest('.rg-card')?.remove();
+      window.BuddyGifPreview?.scan(gridEl);
     }
   });
 
   function closePlayer() {
-    if (modal.open) modal.close();
+    clearVideo();
     iframe.src = '';
+    currentGifId = '';
     watchUrl = '';
+    if (modal.open) modal.close();
+    window.BuddyGifPreview?.resume();
   }
 
-  hitEl.addEventListener('click', (e) => {
-    e.preventDefault();
+  likeBtnEl?.addEventListener('click', (e) => {
     e.stopPropagation();
-    const url = watchUrl;
+    const gif = gifCache.get(currentGifId);
+    if (!gif) return;
+    window.BuddyPrefs.like(gif);
+    likeBtnEl.classList.add('is-on');
+  });
+  saveBtnEl?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const gif = gifCache.get(currentGifId);
+    if (!gif) return;
+    window.BuddyPrefs.bookmark(gif);
+    saveBtnEl.classList.add('is-on');
+  });
+  dislikeBtnEl?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const gif = gifCache.get(currentGifId);
+    if (!gif) return;
+    window.BuddyPrefs.dislike(gif);
+    document.querySelectorAll('.rg-card').forEach((el) => {
+      if (el.dataset.id === gif.id) el.remove();
+    });
+    window.BuddyGifPreview?.scan(gridEl);
     closePlayer();
-    if (url) window.open(url, '_blank', 'noopener,noreferrer');
   });
 
-  document.getElementById('rg-close').addEventListener('click', closePlayer);
-  modal.addEventListener('close', () => {
-    iframe.src = '';
+  document.getElementById('rg-close').addEventListener('click', (e) => {
+    e.stopPropagation();
+    closePlayer();
   });
-  // Click the dimmed backdrop or anywhere that isn't the video stage to close.
+  modal.addEventListener('close', () => {
+    clearVideo();
+    iframe.src = '';
+    currentGifId = '';
+    window.BuddyGifPreview?.resume();
+  });
   modal.addEventListener('click', (e) => {
-    // Anything outside the iframe (backdrop, chrome, empty padding) closes.
-    if (!e.target.closest('.player-frame-wrap')) closePlayer();
+    if (!e.target.closest('.player-stage')) closePlayer();
   });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && modal.open) closePlayer();

@@ -87,6 +87,7 @@
   }
 
   function prefsBlurb() {
+    if (window.BuddyPrefs?.tasteBlurb) return window.BuddyPrefs.tasteBlurb();
     const tags = (window.BuddyPrefs.topTags(8) || []).map((t) => t.tag).join(', ');
     if (!tags) return '';
     return `(liked tags: ${tags}. stay straight / cis-female only.)`;

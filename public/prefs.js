@@ -1,6 +1,6 @@
 /**
- * Local preference store — likes, bookmarks, skips, tag weights, calendar.
- * Privacy-first: everything stays in this browser's localStorage.
+ * Preference store — likes, bookmarks, chats, calendar.
+ * Cached in this browser; synced to /api/vault when a profile key is unlocked.
  */
 (function (global) {
   const KEY = 'buddy_prefs_v1';
@@ -10,9 +10,321 @@
     likes: [],
     bookmarks: [],
     skips: {},
+    dislikes: {},
+    searches: [],
+    performers: [],
+    studios: [],
     avClicks: [],
     calendar: {},
   });
+
+  const SEARCH_STOP = new Set(
+    [
+      'a',
+      'an',
+      'the',
+      'and',
+      'or',
+      'of',
+      'in',
+      'on',
+      'with',
+      'for',
+      'to',
+      'vs',
+      'pov',
+      'xxx',
+      'porn',
+      'sex',
+      'video',
+      'videos',
+      'gif',
+      'gifs',
+      'clip',
+      'free',
+      'hd',
+      'amateur',
+      'milf',
+      'pawg',
+      'blonde',
+      'brunette',
+      'redhead',
+      'asian',
+      'latina',
+      'ebony',
+      'teen',
+      'anal',
+      'oral',
+      'blowjob',
+      'creampie',
+      'cumshot',
+      'doggystyle',
+      'missionary',
+      'riding',
+      'onlyfans',
+      'homemade',
+      'hardcore',
+      'threesome',
+      'gangbang',
+      'big',
+      'ass',
+      'tits',
+      'boobs',
+      'booty',
+      'pussy',
+      'cock',
+      'dick',
+      'bbc',
+      'bwc',
+      'hot',
+      'sexy',
+      'slut',
+      'wife',
+      'mom',
+      'step',
+      'new',
+      'best',
+      'top',
+      'scene',
+      'scenes',
+      'official',
+      'compilation',
+      'starring',
+      'presents',
+      'gets',
+      'wrecked',
+    ].map((s) => s.toLowerCase())
+  );
+
+  /** Longest-first so "blacked raw" wins over "blacked". */
+  const KNOWN_STUDIOS = [
+    'naughty america',
+    'digital playground',
+    'reality kings',
+    'new sensations',
+    'elegant angel',
+    'jules jordan',
+    'evil angel',
+    'property sex',
+    'passion hd',
+    'nubile films',
+    'fake taxi',
+    'fake hostel',
+    'fake agent',
+    'public agent',
+    'blacked raw',
+    'tushy raw',
+    'true anal',
+    'hookup hotshot',
+    'pure taboo',
+    'adult time',
+    'bellesa films',
+    'sis loves me',
+    'family strokes',
+    'my pervy family',
+    'freeuse fantasy',
+    'nuru massage',
+    'fantasy massage',
+    'kinky spa',
+    'dirty masseur',
+    'massage rooms',
+    'dane jones',
+    'bangbros',
+    'brazzers',
+    'teamskeet',
+    'blacked',
+    'tushy',
+    'vixen',
+    'deeper',
+    'mofos',
+    'fakehub',
+    'nubiles',
+    'swallowed',
+    'hardx',
+    'darkx',
+    'erotica x',
+    'xempire',
+    'mylf',
+    'pervmom',
+    'filthy kings',
+    'shoplyfter',
+    'legalporno',
+    'analized',
+    'penthouse',
+    'twistys',
+    'sexyhub',
+    'milehigh',
+    'sweet sinner',
+    'zero tolerance',
+    'burning angel',
+    'pornfidelity',
+    'netvideogirls',
+    'culioneros',
+    'ass parade',
+    'rk prime',
+    'nympho',
+    'allanal',
+  ].sort((a, b) => b.length - a.length);
+
+  const STUDIO_ALIASES = {
+    'naughtyamerica': 'naughty america',
+    'realitykings': 'reality kings',
+    'team skeet': 'teamskeet',
+    'bang bros': 'bangbros',
+    'bang brothers': 'bangbros',
+    'fake hub': 'fakehub',
+    'passion-hd': 'passion hd',
+    'passionhd': 'passion hd',
+    'trueanal': 'true anal',
+    'blackedraw': 'blacked raw',
+    'tushyraw': 'tushy raw',
+    'hookuphotshot': 'hookup hotshot',
+    'familystrokes': 'family strokes',
+    'danejones': 'dane jones',
+    'puretaboo': 'pure taboo',
+    'adulttime': 'adult time',
+    'bellesa': 'bellesa films',
+    'sislovesme': 'sis loves me',
+    'perv mom': 'pervmom',
+    'gotmylf': 'mylf',
+    'momlover': 'mylf',
+    'newsensations': 'new sensations',
+    'julesjordan': 'jules jordan',
+    'evilangel': 'evil angel',
+    'digitalplayground': 'digital playground',
+    'propertysex': 'property sex',
+    'faketaxi': 'fake taxi',
+    'publicagent': 'public agent',
+  };
+
+  function canonicalizeStudio(name) {
+    const key = normalizeQuery(name)
+      .replace(/official$/i, '')
+      .replace(/\b(channel|tv|studios?|productions?)\b/g, '')
+      .replace(/\.com$/i, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (!key || key.length < 3) return '';
+    return STUDIO_ALIASES[key] || key;
+  }
+
+  function normalizeQuery(q) {
+    return String(q || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[_]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .slice(0, 80);
+  }
+
+  function titleCase(q) {
+    return String(q || '')
+      .split(' ')
+      .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w))
+      .join(' ');
+  }
+
+  function extractPerformers(query) {
+    const words = normalizeQuery(query)
+      .replace(/[^a-z0-9\s-]/g, ' ')
+      .split(/\s+/)
+      .filter(Boolean);
+    const names = [];
+    for (let i = 0; i < words.length - 1; i++) {
+      const a = words[i];
+      const b = words[i + 1];
+      if (SEARCH_STOP.has(a) || SEARCH_STOP.has(b)) continue;
+      if (a.length < 3 || b.length < 2) continue;
+      if (/^\d+$/.test(a) || /^\d+$/.test(b)) continue;
+      names.push(`${a} ${b}`);
+      if (i + 2 < words.length) {
+        const c = words[i + 2];
+        if (!SEARCH_STOP.has(c) && c.length >= 2 && !/^\d+$/.test(c)) {
+          names.push(`${a} ${b} ${c}`);
+        }
+      }
+    }
+    if (
+      words.length >= 2 &&
+      words.length <= 3 &&
+      words.every((w) => !SEARCH_STOP.has(w) && w.length >= 2)
+    ) {
+      names.unshift(words.join(' '));
+    }
+    const blob = words.join(' ');
+    const studioWords = new Set(
+      KNOWN_STUDIOS.filter((s) => blob.includes(s))
+        .join(' ')
+        .split(' ')
+        .filter((w) => w.length > 2)
+    );
+    return [...new Set(names)].filter((n) => {
+      if (KNOWN_STUDIOS.includes(canonicalizeStudio(n))) return false;
+      if (!studioWords.size) return true;
+      return n.split(' ').every((w) => !studioWords.has(w));
+    });
+  }
+
+  function namesFromItem(item) {
+    const blobs = [item?.title, ...(item?.tags || [])].filter(Boolean);
+    const names = [];
+    for (const blob of blobs) names.push(...extractPerformers(blob));
+    return [...new Set(names)];
+  }
+
+  function extractStudios(item) {
+    const found = [];
+    const explicit = canonicalizeStudio(
+      item?.studio || item?.channel || item?.uploader || ''
+    );
+    if (explicit) found.push(explicit);
+
+    const blob = normalizeQuery(
+      [item?.title, item?.url, ...(item?.tags || [])].filter(Boolean).join(' ')
+    );
+    for (const name of KNOWN_STUDIOS) {
+      const pattern = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '[\\s._-]+');
+      const re = new RegExp(`(?:^|[^a-z0-9])${pattern}(?:[^a-z0-9]|$)`);
+      if (re.test(blob)) found.push(canonicalizeStudio(name));
+    }
+    return [...new Set(found.filter(Boolean))];
+  }
+
+  function learnStudios(state, names, weight, source) {
+    if (!names.length) return;
+    if (!Array.isArray(state.studios)) state.studios = [];
+    for (const name of names) {
+      bumpNamed(state.studios, name, weight, { source });
+    }
+    state.studios = state.studios.slice(0, 40);
+  }
+
+  function learnPerformers(state, names, weight, source) {
+    if (!names.length) return;
+    if (!Array.isArray(state.performers)) state.performers = [];
+    for (const name of names) {
+      bumpNamed(state.performers, name, weight, { source });
+    }
+    state.performers = state.performers.slice(0, 40);
+  }
+
+  function bumpNamed(list, key, weight, extra) {
+    const found = list.find((x) => x.q === key);
+    if (found) {
+      found.count = (found.count || 1) + 1;
+      found.ts = Date.now();
+      found.weight = (found.weight || 0) + weight;
+      Object.assign(found, extra || {});
+    } else {
+      list.unshift({
+        q: key,
+        count: 1,
+        ts: Date.now(),
+        weight,
+        ...(extra || {}),
+      });
+    }
+  }
 
   function load() {
     try {
@@ -29,6 +341,13 @@
       localStorage.setItem(KEY, JSON.stringify(state));
     } catch {
       /* quota — ignore */
+    }
+    try {
+      if (global.BuddyVault && typeof global.BuddyVault.schedulePush === 'function') {
+        global.BuddyVault.schedulePush();
+      }
+    } catch {
+      /* ignore */
     }
     return state;
   }
@@ -58,7 +377,10 @@
       state.likes = state.likes.slice(0, 200);
     }
     bumpTags(state, item.tags, 2);
+    learnPerformers(state, namesFromItem(item), 4, 'like');
+    learnStudios(state, extractStudios(item), 3, 'like');
     delete state.skips[item.id];
+    if (state.dislikes) delete state.dislikes[item.id];
     return save(state);
   }
 
@@ -85,6 +407,8 @@
       state.bookmarks = state.bookmarks.slice(0, 400);
     }
     bumpTags(state, item.tags, 3);
+    learnPerformers(state, namesFromItem(item), 5, 'bookmark');
+    learnStudios(state, extractStudios(item), 4, 'bookmark');
     return save(state);
   }
 
@@ -103,20 +427,230 @@
     return save(state);
   }
 
+  /** Fresh dislike store — does not reuse old accidental skips. */
+  function dislike(item) {
+    const state = load();
+    if (!state.dislikes) state.dislikes = {};
+    state.dislikes[item.id] = {
+      ts: Date.now(),
+      tags: item.tags || [],
+      title: item.title || '',
+    };
+    bumpTags(state, item.tags, -4);
+    const words = String(item.title || '')
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter((w) => w.length > 3 && w.length < 24 && !SEARCH_STOP.has(w));
+    bumpTags(state, words.slice(0, 5), -2);
+    state.likes = state.likes.filter((x) => x.id !== item.id);
+    return save(state);
+  }
+
+  function isDisliked(id) {
+    const state = load();
+    return Boolean(state.dislikes && state.dislikes[id]);
+  }
+
+  function trackSearch(query, source = 'tubes') {
+    const key = normalizeQuery(query);
+    if (!key || key.length < 2) return load();
+    const state = load();
+    if (!Array.isArray(state.searches)) state.searches = [];
+    if (!Array.isArray(state.performers)) state.performers = [];
+    const weight = source === 'tubes' ? 5 : 2;
+    bumpNamed(state.searches, key, weight, { source });
+    state.searches = state.searches.slice(0, 80);
+    const performers = extractPerformers(key);
+    for (const name of performers) {
+      bumpNamed(state.performers, name, weight + 3, { source });
+    }
+    state.performers = state.performers.slice(0, 40);
+    bumpTags(state, performers.length ? performers : [key], weight);
+    return save(state);
+  }
+
+  function topSearches(n = 12) {
+    const state = load();
+    const scored = [];
+    for (const p of state.performers || []) {
+      scored.push({
+        tag: p.q,
+        label: titleCase(p.q),
+        weight: (p.weight || 0) + (p.count || 1) * 3,
+        kind: 'performer',
+        ts: p.ts || 0,
+      });
+    }
+    for (const s of state.searches || []) {
+      if (scored.some((x) => x.tag === s.q)) continue;
+      scored.push({
+        tag: s.q,
+        label: titleCase(s.q),
+        weight: s.weight || s.count || 1,
+        kind: 'search',
+        ts: s.ts || 0,
+      });
+    }
+    return scored
+      .filter((x) => x.weight > 0)
+      .sort((a, b) => b.weight - a.weight || b.ts - a.ts)
+      .slice(0, n);
+  }
+
+  /**
+   * Unified search phrases for cross-feed recs: tube searches, gif
+   * likes/bookmarks, clicked titles, minus disliked names.
+   */
+  function recommendationQueries(n = 4) {
+    const seen = new Map();
+    const now = Date.now();
+
+    function add(q, weight, kind, ts) {
+      const key = normalizeQuery(q);
+      if (!key || key.length < 2) return;
+      if (
+        ['a', 'an', 'the', 'and', 'or', 'of', 'porn', 'sex', 'video', 'videos', 'gif', 'gifs'].includes(
+          key
+        )
+      ) {
+        return;
+      }
+      const studioName = canonicalizeStudio(key);
+      if (KNOWN_STUDIOS.includes(studioName)) kind = 'studio';
+      if (kind === 'performer' && SEARCH_STOP.has(key)) return;
+      const prev = seen.get(key);
+      if (prev) {
+        prev.weight += weight;
+        prev.ts = Math.max(prev.ts || 0, ts || 0);
+        if (kind === 'studio') prev.kind = 'studio';
+        return;
+      }
+      seen.set(key, {
+        tag: key,
+        label: titleCase(studioName || key),
+        weight,
+        kind: kind || 'search',
+        ts: ts || now,
+      });
+    }
+
+    for (const s of topSearches(12)) {
+      add(s.tag, s.weight || 1, s.kind, s.ts);
+    }
+    for (const t of topTags(8)) {
+      add(t.tag, t.weight || 1, 'tag');
+    }
+    for (const studio of load().studios || []) {
+      add(studio.q, (studio.weight || 0) + (studio.count || 1) * 2, 'studio', studio.ts);
+    }
+
+    const state = load();
+    for (const item of [...(state.likes || []), ...(state.bookmarks || [])]) {
+      for (const name of namesFromItem(item)) add(name, 6, 'performer', item.ts);
+      for (const t of (item.tags || []).slice(0, 4)) {
+        const tag = normalizeQuery(t);
+        if (!tag || tag.length < 3) continue;
+        if (tag.split(' ').length >= 2) add(tag, 4, 'tag', item.ts);
+        else add(tag, 2, 'tag', item.ts);
+      }
+    }
+    for (const click of (state.avClicks || []).slice(0, 24)) {
+      for (const name of extractPerformers(click.title)) {
+        add(name, 3, 'performer', click.ts);
+      }
+      for (const studio of extractStudios(click)) {
+        add(studio, 4, 'studio', click.ts);
+      }
+    }
+    for (const d of Object.values(state.dislikes || {})) {
+      for (const name of namesFromItem(d)) add(name, -10, 'dislike', d.ts);
+    }
+
+    const ranked = [...seen.values()]
+      .filter((x) => x.weight > 0)
+      .sort((a, b) => b.weight - a.weight || (b.ts || 0) - (a.ts || 0));
+
+    const picked = [];
+    const used = new Set();
+    function take(pred, count) {
+      for (const r of ranked) {
+        if (picked.length >= n || count <= 0) return;
+        if (used.has(r.tag) || !pred(r)) continue;
+        picked.push(r);
+        used.add(r.tag);
+        count -= 1;
+      }
+    }
+    take((r) => r.kind === 'performer', 2);
+    take((r) => r.kind === 'studio', 1);
+    take(() => true, n);
+    return picked;
+  }
+
+  function tasteBlurb() {
+    const searches = topSearches(10);
+    const stars = searches.filter((s) => s.kind === 'performer').slice(0, 8);
+    const tags = topTags(8);
+    const clicks = (load().avClicks || []).slice(0, 8);
+    const likes = (load().likes || []).slice(0, 6);
+    const studios = (load().studios || [])
+      .slice()
+      .sort((a, b) => (b.weight || 0) - (a.weight || 0))
+      .slice(0, 6);
+    const lines = [];
+    if (stars.length) {
+      lines.push(`stars he searches: ${stars.map((s) => s.label).join(', ')}`);
+    }
+    if (searches.length) {
+      lines.push(`recent tube/gif searches: ${searches.map((s) => s.tag).join(', ')}`);
+    }
+    if (studios.length) {
+      lines.push(
+        `studios/companies he clicks: ${studios.map((s) => titleCase(s.q)).join(', ')}`
+      );
+    }
+    if (tags.length) {
+      lines.push(`liked tags: ${tags.map((t) => t.tag).join(', ')}`);
+    }
+    const titles = [
+      ...clicks.map((c) => c.title).filter(Boolean),
+      ...likes.map((l) => l.title).filter(Boolean),
+    ].slice(0, 10);
+    if (titles.length) {
+      lines.push(
+        `real titles he opened/liked (quote these, do not invent others): ${titles.join(' | ')}`
+      );
+    }
+    if (!lines.length) return '';
+    return `(${lines.join('. ')}. stay straight / cis-female only.)`;
+  }
+
   function trackAvClick(item) {
     const state = load();
+    const studios = extractStudios(item);
     state.avClicks.unshift({
       title: item.title,
       source: item.source,
       url: item.url,
+      studio: studios[0] || item.studio || null,
       ts: Date.now(),
     });
     state.avClicks = state.avClicks.slice(0, 150);
     const words = String(item.title || '')
       .toLowerCase()
       .split(/[^a-z0-9]+/)
-      .filter((w) => w.length > 3 && w.length < 24);
+      .filter((w) => w.length > 3 && w.length < 24 && !SEARCH_STOP.has(w));
     bumpTags(state, words.slice(0, 6), 1);
+    const names = extractPerformers(item.title);
+    if (names.length) {
+      if (!Array.isArray(state.performers)) state.performers = [];
+      for (const name of names) bumpNamed(state.performers, name, 2, { source: 'click' });
+      state.performers = state.performers.slice(0, 40);
+    }
+    if (studios.length) {
+      learnStudios(state, studios, 4, 'click');
+      bumpTags(state, studios, 2);
+    }
     return save(state);
   }
 
@@ -173,6 +707,13 @@
       localStorage.setItem(CHAT_KEY, JSON.stringify(state));
     } catch {
       /* quota */
+    }
+    try {
+      if (global.BuddyVault && typeof global.BuddyVault.schedulePush === 'function') {
+        global.BuddyVault.schedulePush();
+      }
+    } catch {
+      /* ignore */
     }
     return state;
   }
@@ -232,10 +773,19 @@
     bookmark,
     unbookmark,
     skip,
+    dislike,
+    isDisliked,
+    trackSearch,
+    topSearches,
+    extractPerformers,
+    extractStudios,
+    recommendationQueries,
+    tasteBlurb,
     trackAvClick,
     logOrgasm,
     topTags,
     exportBookmarks,
+    titleCase,
     loadChats,
     saveChats,
     newChat,

@@ -16,7 +16,8 @@
       href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/styles.css?v=taste-5" />
+    <script src="/vault.js?v=taste-5"></script>
   </head>
   <body>
     <div class="bg-glow" aria-hidden="true"></div>
@@ -29,7 +30,7 @@
         </a>
         <nav class="nav" aria-label="Main">
           <a class="nav-link is-active" href="/">Tubes</a>
-          <a class="nav-link" href="/redgifs.html">RedGifs</a>
+          <a class="nav-link" href="/redgifs.html">Gifs</a>
           <a class="nav-link" href="/foryou.html">For You</a>
           <a class="nav-link" href="/chat.html">Chat</a>
           <a class="nav-link" href="/calendar.html">Calendar</a>
@@ -49,8 +50,10 @@
             enterkeyhint="search"
             placeholder="Search videos…"
             maxlength="200"
+            list="q-history"
             autofocus
           />
+          <datalist id="q-history"></datalist>
           <button type="submit" id="search-btn" class="btn-primary">
             Search
           </button>
@@ -113,7 +116,7 @@
       <p>Personal use only. Clicks train your For You tags. Results open on original hosts.</p>
     </footer>
 
-    <script src="/prefs.js"></script>
-    <script src="/app.js" defer></script>
+    <script src="/prefs.js?v=taste-5"></script>
+    <script src="/app.js?v=taste-5" defer></script>
   </body>
 </html>

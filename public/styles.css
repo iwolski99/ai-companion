@@ -708,6 +708,135 @@ body {
   background: var(--accent-dim);
 }
 
+.taste-chip {
+  display: inline-flex;
+  align-items: stretch;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  background: var(--bg-elevated);
+}
+
+.taste-chip-label {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.taste-chip a {
+  display: flex;
+  align-items: center;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  color: var(--text-muted);
+  border-left: 1px solid var(--border-soft);
+}
+
+.taste-chip a:hover {
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.fy-picks {
+  margin-top: 0.8rem;
+}
+
+.fy-why {
+  margin: 0.2rem 0 0;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+body.fy-chips-hidden #taste-tags,
+body.fy-chips-hidden #fy-picks-queries {
+  display: none;
+}
+
+html.vault-pending body,
+html.vault-locked body {
+  overflow: hidden;
+}
+
+html.vault-pending body > *:not(#vault-gate),
+html.vault-locked body > *:not(#vault-gate) {
+  display: none !important;
+}
+
+#vault-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background:
+    radial-gradient(900px 420px at 50% -10%, rgba(61, 214, 198, 0.12), transparent 60%),
+    #0a0a0b;
+}
+
+.vault-card {
+  width: min(420px, 100%);
+  display: grid;
+  gap: 0.75rem;
+  padding: 1.4rem 1.25rem 1.3rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow);
+}
+
+.vault-kicker {
+  margin: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.vault-card h1 {
+  margin: 0;
+  font-size: 1.45rem;
+}
+
+.vault-copy {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+}
+
+.vault-card input {
+  min-height: var(--tap);
+  padding: 0 0.8rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.vault-status {
+  margin: 0;
+  min-height: 1.2em;
+  color: var(--warn);
+  font-size: 0.85rem;
+}
+
+button.vault-lock {
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 0.2rem 0.35rem;
+}
+
+button.vault-lock:hover {
+  color: var(--danger);
+}
+
 .rg-grid {
   margin-top: 1rem;
   display: grid;
@@ -750,6 +879,27 @@ body {
   display: block;
 }
 
+.rg-thumb .rg-preview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #0e0e10;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.rg-thumb.is-playing .rg-preview {
+  opacity: 1;
+}
+
+.rg-thumb .badge,
+.rg-thumb .source-badge,
+.rg-thumb .sound-badge {
+  z-index: 2;
+}
+
 .rg-body {
   padding: 0.55rem 0.65rem 0.7rem;
   display: grid;
@@ -775,6 +925,12 @@ body {
 .icon-btn.is-on {
   color: var(--accent);
   border-color: rgba(61, 214, 198, 0.4);
+}
+
+.icon-btn-dislike:hover,
+.icon-btn-dislike:focus {
+  color: var(--danger);
+  border-color: rgba(255, 107, 122, 0.45);
 }
 
 .sentinel {
@@ -806,32 +962,54 @@ body {
 .player-bar {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 0.5rem;
   padding: 0.6rem 0;
 }
 
+.player-actions {
+  flex: 1;
+  justify-content: center;
+}
+
 .player-frame-wrap {
   position: relative;
-  aspect-ratio: 16 / 9;
+  width: 100%;
+  height: min(78vh, 720px);
   background: #000;
   border-radius: var(--radius);
   overflow: hidden;
   border: 1px solid var(--border);
 }
 
-.player-frame-wrap iframe {
+.player-frame-wrap iframe,
+.player-frame-wrap video {
+  display: block;
   width: 100%;
   height: 100%;
   border: 0;
+  background: #000;
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
 }
 
-.player-hit {
+.player-frame-wrap iframe[hidden],
+.player-frame-wrap video[hidden] {
+  display: none;
+}
+
+.sound-badge {
   position: absolute;
-  inset: 0;
-  border: 0;
-  padding: 0;
-  background: transparent;
-  cursor: pointer;
+  right: 0.45rem;
+  bottom: 0.45rem;
+  padding: 0.12rem 0.4rem;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: rgba(10, 10, 12, 0.78);
+  color: var(--accent);
 }
 
 .panel {

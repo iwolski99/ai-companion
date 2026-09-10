@@ -16,7 +16,8 @@
       href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/styles.css?v=taste-5" />
+    <script src="/vault.js?v=taste-5"></script>
   </head>
   <body class="chat-page">
     <div class="bg-glow" aria-hidden="true"></div>
@@ -28,13 +29,13 @@
         </a>
         <nav class="nav" aria-label="Main">
           <a class="nav-link" href="/">Tubes</a>
-          <a class="nav-link" href="/redgifs.html">RedGifs</a>
+          <a class="nav-link" href="/redgifs.html">Gifs</a>
           <a class="nav-link" href="/foryou.html">For You</a>
           <a class="nav-link is-active" href="/chat.html">Chat</a>
           <a class="nav-link" href="/calendar.html">Calendar</a>
         </nav>
       </div>
-      <p class="tagline">Saved locally · filthy goon buddy · straight only</p>
+      <p class="tagline">Saved with your profile key · filthy goon buddy · straight only</p>
     </header>
 
     <main class="chat-layout">
@@ -59,11 +60,11 @@
           ></textarea>
           <button type="submit" class="btn-primary" id="chat-send">Send</button>
         </form>
-        <p class="muted chat-hint" id="chat-hint">Chats stay on this device until you delete them.</p>
+        <p class="muted chat-hint" id="chat-hint">Chats sync with your profile key across devices.</p>
       </section>
     </main>
 
-    <script src="/prefs.js"></script>
-    <script src="/chat.js" defer></script>
+    <script src="/prefs.js?v=taste-5"></script>
+    <script src="/chat.js?v=taste-1" defer></script>
   </body>
 </html>
