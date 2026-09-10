@@ -19,7 +19,9 @@
   const siteInputs = [...form.querySelectorAll('input[name="site"]')];
 
   const PAGE_SIZE = 32;
-  const SOURCE_PAGES = 8;
+  const FIRST_PAGES = 1;
+  const FILL_PAGES = 2;
+  const TARGET_SOURCE_END = 9;
   const PER_SITE_LIMIT = 360;
   /** @type {any[]} */
   let lastResults = [];
@@ -308,12 +310,20 @@
       : {};
   }
 
-  function searchParams(query, startPage) {
+  function usableVideo(item) {
+    if (!item || !item.url) return false;
+    const title = String(item.title || '').trim();
+    if (!title || /^untitled$/i.test(title)) return false;
+    if (!item.thumbnail) return false;
+    return true;
+  }
+
+  function searchParams(query, startPage, pages) {
     const params = new URLSearchParams({
       q: query,
       sites: selectedSites().join(','),
       limit: String(PER_SITE_LIMIT),
-      pages: String(SOURCE_PAGES),
+      pages: String(pages || FIRST_PAGES),
       startPage: String(startPage),
     });
     if (passwordInput.value) params.set('password', passwordInput.value);
@@ -322,12 +332,14 @@
 
   function mergeUnique(existing, incoming) {
     const seen = new Set(existing.map((v) => v.url));
-    const extra = (incoming || []).filter((v) => v.url && !seen.has(v.url));
+    const extra = (incoming || [])
+      .filter(usableVideo)
+      .filter((v) => v.url && !seen.has(v.url));
     return existing.concat(extra);
   }
 
-  async function fetchBatch(query, startPage) {
-    const res = await fetch(`/api/search?${searchParams(query, startPage)}`, {
+  async function fetchBatch(query, startPage, pages) {
+    const res = await fetch(`/api/search?${searchParams(query, startPage, pages)}`, {
       method: 'GET',
       headers: authHeaders(),
     });
@@ -335,19 +347,24 @@
     return { res, data };
   }
 
-  async function loadMore() {
-    if (moreLoading || !hasMore || !lastQuery) return false;
+  async function loadMore({ silent = false, pages = FILL_PAGES } = {}) {
+    if (moreLoading || !lastQuery) return false;
+    if (!hasMore && nextStartPage >= TARGET_SOURCE_END) return false;
     moreLoading = true;
     renderPager(lastResults.length, currentPage);
-    setStatus('loading', '<span class="spinner"></span>Loading more videos…');
+    if (!silent) {
+      setStatus('loading', '<span class="spinner"></span>Loading more videos…');
+    }
     try {
-      const { res, data } = await fetchBatch(lastQuery, nextStartPage);
+      const { res, data } = await fetchBatch(lastQuery, nextStartPage, pages);
       if (!res.ok) {
         hasMore = false;
-        setStatus(
-          'error',
-          escapeHtml(data.message || data.error || `Request failed (${res.status})`)
-        );
+        if (!silent) {
+          setStatus(
+            'error',
+            escapeHtml(data.message || data.error || `Request failed (${res.status})`)
+          );
+        }
         return false;
       }
       const incoming = Array.isArray(data.results) ? data.results : [];
@@ -355,21 +372,29 @@
       lastResults = mergeUnique(lastResults, incoming);
       lastMeta = mergeSiteMeta(lastMeta, data.meta);
       lastTookMs = data.tookMs || lastTookMs;
-      nextStartPage = Number(data.nextStartPage) || nextStartPage + SOURCE_PAGES;
-      hasMore =
-        lastResults.length > before && Boolean(data.hasMore);
+      nextStartPage = Number(data.nextStartPage) || nextStartPage + pages;
+      hasMore = lastResults.length > before && nextStartPage < TARGET_SOURCE_END;
       renderMeta(lastMeta, lastTookMs, data.cached);
-      clearStatus();
-      return true;
+      if (!silent) clearStatus();
+      return lastResults.length > before;
     } catch (err) {
-      setStatus(
-        'error',
-        `Network error: ${escapeHtml(err.message || String(err))}`
-      );
+      if (!silent) {
+        setStatus(
+          'error',
+          `Network error: ${escapeHtml(err.message || String(err))}`
+        );
+      }
       return false;
     } finally {
       moreLoading = false;
       showPage();
+    }
+  }
+
+  async function prefetchRest(query) {
+    while (lastQuery === query && nextStartPage < TARGET_SOURCE_END) {
+      const added = await loadMore({ silent: true, pages: FILL_PAGES });
+      if (!added) break;
     }
   }
 
@@ -380,8 +405,13 @@
     if (!Number.isFinite(next) || next < 1) return;
     const loadedPages = Math.max(1, Math.ceil(lastResults.length / PAGE_SIZE));
     if (next > loadedPages) {
-      const ok = await loadMore();
-      if (!ok) return;
+      while (moreLoading) {
+        await new Promise((r) => setTimeout(r, 40));
+      }
+      if (Math.ceil(lastResults.length / PAGE_SIZE) < next) {
+        const ok = await loadMore({ silent: false, pages: FILL_PAGES });
+        if (!ok) return;
+      }
     }
     currentPage = next;
     showPage();
@@ -392,12 +422,13 @@
   pagerBottom?.addEventListener('click', onPagerClick);
 
   function renderResults(items) {
-    if (!items.length) {
+    const visible = items.filter(usableVideo);
+    if (!visible.length) {
       resultsEl.innerHTML = '';
       return;
     }
 
-    resultsEl.innerHTML = items
+    resultsEl.innerHTML = visible
       .map((item) => {
         const views = formatViews(item.views);
         const rating = item.rating ? escapeHtml(item.rating) : null;
@@ -412,7 +443,8 @@
 
         const img = item.thumbnail
           ? `<img src="${escapeHtml(thumbUrl(item.thumbnail))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" />`
-          : `<img alt="" />`;
+          : '';
+        if (!img) return '';
 
         return `
           <a class="card" href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">
@@ -452,7 +484,7 @@
     }
 
     searchBtn.disabled = true;
-    setStatus('loading', '<span class="spinner"></span>Searching selected sites…');
+    setStatus('loading', '<span class="spinner"></span>First page…');
     metaEl.hidden = true;
     resultsEl.innerHTML = '';
     lastResults = [];
@@ -467,7 +499,7 @@
     pagerBottom && (pagerBottom.hidden = true);
 
     try {
-      const { res, data } = await fetchBatch(query, 1);
+      const { res, data } = await fetchBatch(query, 1, FIRST_PAGES);
 
       if (res.status === 401) {
         setStatus(
@@ -485,11 +517,11 @@
         return;
       }
 
-      lastResults = Array.isArray(data.results) ? data.results : [];
+      lastResults = (Array.isArray(data.results) ? data.results : []).filter(usableVideo);
       lastMeta = data.meta || null;
       lastTookMs = data.tookMs || 0;
-      hasMore = Boolean(data.hasMore);
-      nextStartPage = Number(data.nextStartPage) || 1 + SOURCE_PAGES;
+      nextStartPage = Number(data.nextStartPage) || 1 + FIRST_PAGES;
+      hasMore = nextStartPage < TARGET_SOURCE_END;
       renderMeta(lastMeta, lastTookMs, data.cached);
 
       if (!lastResults.length) {
@@ -505,6 +537,7 @@
       clearStatus();
       currentPage = 1;
       showPage();
+      prefetchRest(query);
     } catch (err) {
       setStatus(
         'error',
@@ -532,6 +565,16 @@
   });
 
   fillSearchHistory();
+
+  resultsEl.addEventListener(
+    'error',
+    (e) => {
+      if (e.target && e.target.tagName === 'IMG') {
+        e.target.closest('a.card')?.remove();
+      }
+    },
+    true
+  );
 
   const bootQ = new URLSearchParams(location.search).get('q');
   if (bootQ) {

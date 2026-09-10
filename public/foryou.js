@@ -3,7 +3,6 @@
   const emptyEl = document.getElementById('taste-empty');
   const statusEl = document.getElementById('fy-status');
   const gridEl = document.getElementById('fy-grid');
-  const bmEl = document.getElementById('bm-list');
   const picksEl = document.getElementById('fy-picks');
   const picksStatusEl = document.getElementById('fy-picks-status');
   const picksQueriesEl = document.getElementById('fy-picks-queries');
@@ -167,7 +166,10 @@
           .join('');
         const img = item.thumbnail
           ? `<img src="${escapeHtml(thumbUrl(item.thumbnail))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" />`
-          : `<img alt="" />`;
+          : '';
+        if (!img) return '';
+        const title = String(item.title || '').trim();
+        if (!title || /^untitled$/i.test(title)) return '';
         const why = item._recQuery
           ? `<p class="fy-why">Because you liked ${escapeHtml(item._recQuery)}</p>`
           : '';
@@ -305,6 +307,9 @@
 
   function cardHtml(gif) {
     if (window.BuddyPrefs?.isDisliked?.(gif.id)) return '';
+    if (!gif.thumbnail) return '';
+    const title = String(gif.title || '').trim();
+    if (!title || /^untitled$/i.test(title)) return '';
     const prefs = window.BuddyPrefs?.load() || { likes: [], bookmarks: [] };
     const liked = prefs.likes.some((x) => x.id === gif.id);
     const saved = prefs.bookmarks.some((x) => x.id === gif.id);
@@ -550,21 +555,6 @@
       statusEl.textContent = err.message || String(err);
     }
   }
-
-  const bms = window.BuddyPrefs.load().bookmarks || [];
-  bmEl.innerHTML = bms.length
-    ? bms
-        .slice(0, 40)
-        .map(
-          (b) =>
-            `<a class="bm-row" href="${escapeHtml(b.url)}" target="_blank" rel="noopener">${escapeHtml(b.title || b.id)}</a>`
-        )
-        .join('')
-    : '<p class="muted">No bookmarks yet.</p>';
-
-  document.getElementById('export-bm').addEventListener('click', () => {
-    window.BuddyPrefs.exportBookmarks();
-  });
 
   const seedInput = document.getElementById('fy-seed-input');
   const seedBtn = document.getElementById('fy-seed-btn');

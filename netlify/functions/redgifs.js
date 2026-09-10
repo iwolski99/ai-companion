@@ -157,6 +157,17 @@ exports.handler = async (event) => {
       });
     }
 
+    if (action === 'gif') {
+      const id = String(qs.id || '').trim();
+      if (!id) return json(400, { error: 'Missing id' });
+      const token = await getToken();
+      const data = await rgFetch(`/v2/gifs/${encodeURIComponent(id)}`, token);
+      const gif = data.gif || data;
+      if (!gif || !gif.id) return json(404, { error: 'Not found' });
+      if (!isStraightGif(gif)) return json(200, { gif: null });
+      return json(200, { gif: normalizeGif(gif) });
+    }
+
     const source = String(qs.source || 'all').toLowerCase();
 
     const q = (qs.q || qs.query || qs.tags || '').trim();

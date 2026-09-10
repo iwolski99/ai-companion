@@ -1,4 +1,4 @@
-# Buddy — personal adult goon app (Netlify)
+# GoonHub — personal adult goon app (Netlify)
 
 Private, personal-use web app: multi-site **tube search**, **RedGifs** discovery, local preference learning, and a simple orgasm **calendar**. Everything is straight-only (gay / bi / trans-coded results are filtered out).
 
@@ -9,8 +9,10 @@ Private, personal-use web app: multi-site **tube search**, **RedGifs** discovery
 | Page | What it does |
 |---|---|
 | `/` Tubes | Existing AV Search across XVideos, XNXX, SpankBang, xHamster, PornHub, YouPorn, BDSMStreak (max 5 sites per query) |
-| `/redgifs.html` | RedGifs tag search, chips, infinite grid, iframe player, likes / bookmarks / skips |
-| `/foryou.html` | Ranked feed from tags you’ve reinforced + bookmark export |
+| `/redgifs.html` | RedGifs tag search, chips, infinite grid, native player, likes / bookmarks |
+| `/tease.html` | Strip tease / JOI / clothed tease gifs and tubes |
+| `/foryou.html` | Ranked tube + gif picks from likes, searches, and seeded tastes |
+| `/bookmarks.html` | Saved clips as autoplaying gif cards |
 | `/chat.html` | Horny goon buddy via DeepSeek V4 Flash (DeepSeek API or OpenRouter) |
 | `/calendar.html` | Local orgasm log by day |
 

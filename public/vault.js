@@ -12,6 +12,7 @@
     'av_selected_sites',
     'av_proxy_thumbs',
     'buddy_fy_hide_chips',
+    'buddy_chat_persona',
   ];
 
   document.documentElement.classList.add('vault-pending');
@@ -296,7 +297,7 @@
     gate.id = 'vault-gate';
     gate.innerHTML = `
       <form id="vault-form" class="vault-card" autocomplete="off">
-        <p class="vault-kicker">Buddy</p>
+        <p class="vault-kicker">GoonHub</p>
         <h1>Profile key</h1>
         <p class="vault-copy">
           Type the key for this profile. A new Netlify account starts with an empty vault —
@@ -367,26 +368,23 @@
   function injectLockButton() {
     if (document.getElementById('vault-profile-menu')) return;
     const host =
-      document.querySelector('header .top-row') ||
-      document.querySelector('header .nav');
+      document.getElementById('drawer-account') ||
+      document.querySelector('header .top-row');
     if (!host) return;
-    const wrap = document.createElement('details');
+    const wrap = document.createElement('div');
     wrap.id = 'vault-profile-menu';
-    wrap.className = 'vault-menu';
+    wrap.className = 'drawer-account-box';
     wrap.innerHTML = `
-      <summary class="nav-link">Profile</summary>
-      <div class="vault-menu-pop">
-        <button type="button" id="vault-export-btn">Export profile</button>
-        <label class="vault-menu-file">Import JSON<input id="vault-import-file" type="file" accept="application/json,.json" /></label>
-        <button type="button" id="vault-from-old-btn">From old site…</button>
-        <button type="button" id="vault-lock-btn">Lock</button>
-      </div>
+      <p class="drawer-kicker">Profile</p>
+      <button type="button" id="vault-export-btn">Export profile</button>
+      <label class="vault-menu-file">Import JSON<input id="vault-import-file" type="file" accept="application/json,.json" /></label>
+      <button type="button" id="vault-from-old-btn">From old site…</button>
+      <button type="button" id="vault-lock-btn">Lock</button>
     `;
     host.appendChild(wrap);
     document.getElementById('vault-export-btn')?.addEventListener('click', (e) => {
       e.preventDefault();
       exportProfile();
-      wrap.open = false;
     });
     document.getElementById('vault-import-file')?.addEventListener('change', async (e) => {
       const file = e.target.files && e.target.files[0];
@@ -575,6 +573,7 @@
     exportProfile,
     restoreFromOldSite,
     applyIncoming,
+    injectProfileMenu: injectLockButton,
     lock() {
       wipeLocalProfile();
       location.reload();

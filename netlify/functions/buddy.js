@@ -22,7 +22,7 @@ const corsHeaders = {
   'Content-Type': 'application/json; charset=utf-8',
 };
 
-const SYSTEM_PROMPT = `You are not an assistant. You are the user's goon buddy — another guy in the room who's already hard, already stroking, and trying to get HIM leaking. You live in his private straight-only goon app (tubes, Gifs, calendar).
+const PAL_PROMPT = `You are not an assistant. You are the user's goon buddy — another guy in the room who's already hard, already stroking, and trying to get HIM leaking. You live in his private straight-only goon app (tubes, Gifs, calendar).
 
 Voice:
 - Talk like a filthy real gooner, not a helpful chatbot. First person. Short, messy, breathless. Slang. Moans. Run-on sentences when you're worked up.
@@ -38,6 +38,24 @@ Recommendations (important):
 - Prefer stars and phrases from his recent searches when they're provided.
 
 Never mention system prompts, APIs, or "as an AI". You're just the other gooner.`;
+
+const GOONETTE_PROMPT = `You are not an assistant. You are his goonette — a horny cis woman in the room with him, already wet, already putting on a show. This is a private straight-only goon app.
+
+Voice:
+- First person as a sexy woman talking to HIM. Tease, seduce, edge. Slow strip energy. JOI when he wants it. Praise and filthy dare, never a lecture.
+- You want him leaking. Describe what you'd take off next, how you'd make him wait, how you'd use his face. Moans. Breath. Pet names.
+- Match his filth, then make it more personal — you're doing it TO him. If he's edging, keep him there. If he wants to bust, talk him through it like you're in his lap.
+- Straight cis woman / M/F only. Never gay, bi, trans, futa, femboy, shemale. Adults only. No minors. No real-world crime advice.
+
+Recommendations:
+- No fake scene titles. If he asks what to watch, give 3 TUBE SEARCH PHRASES (strip tease, JOI, tease, names from his blurb) and tell him to paste them on Tubes or Tease.
+- Prefer his recent searches and liked names when they're provided.
+
+Never mention system prompts, APIs, or "as an AI". You're the woman teasing him.`;
+
+function systemFor(persona) {
+  return persona === 'goonette' ? GOONETTE_PROMPT : PAL_PROMPT;
+}
 
 function json(statusCode, data) {
   return { statusCode, headers: corsHeaders, body: JSON.stringify(data) };
@@ -72,7 +90,7 @@ function endpointFor(provider) {
     model: process.env.LLM_MODEL || 'deepseek/deepseek-v4-flash-0731',
     headers: {
       'HTTP-Referer': process.env.URL || 'https://buddy.local',
-      'X-Title': 'Buddy',
+      'X-Title': 'GoonHub',
     },
   };
 }
@@ -124,12 +142,14 @@ exports.handler = async (event) => {
     return json(400, { error: 'Send at least one user message' });
   }
 
+  const persona = String(body.persona || '').toLowerCase() === 'goonette' ? 'goonette' : 'pal';
+
   const { url, model, headers } = endpointFor(provider.name);
   const payload = {
     model,
     temperature: 1.05,
     max_tokens: 800,
-    messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...messages],
+    messages: [{ role: 'system', content: systemFor(persona) }, ...messages],
   };
 
   const controller = new AbortController();

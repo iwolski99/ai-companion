@@ -400,8 +400,13 @@
         title: item.title,
         tags: item.tags || [],
         thumb: item.thumbnail || item.thumb,
+        thumbnail: item.thumbnail || item.thumb,
         url: item.url,
         embed: item.embed || null,
+        sd: item.sd || null,
+        hd: item.hd || null,
+        play: item.play || null,
+        source: item.source || '',
         ts: Date.now(),
       });
       state.bookmarks = state.bookmarks.slice(0, 400);
