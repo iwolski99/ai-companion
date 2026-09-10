@@ -25,7 +25,9 @@
   ];
 
   const HARDCORE =
-    /\b(creampie|gangbang|bukkake|double penetration|\bdp\b|anal pounding|internal cumshot)\b/i;
+    /\b(creampie|gangbang|bukkake|double penetration|\bdp\b|anal pounding|internal cumshot|wild sex|fingering|riding cock)\b/i;
+  const TEASE_KEEP =
+    /\b(tease|teasing|strip|joi|jerk.?off|instruction|clothed|undress|try.?on|seduc|non.?nude|dance)\b/i;
 
   const gifCache = new Map();
   let currentGifId = '';
@@ -243,7 +245,7 @@
       const params = new URLSearchParams({
         action: 'search',
         q: mood.gif,
-        source: 'redgifs',
+        source: 'all',
         order: 'trending',
         page: '1',
         count: '24',
@@ -290,7 +292,8 @@
           v.url &&
           v.thumbnail &&
           usableTitle(v.title) &&
-          !HARDCORE.test(v.title || '')
+          !HARDCORE.test(v.title || '') &&
+          TEASE_KEEP.test(v.title || '')
       );
       if (!items.length) {
         tubeStatus.className = 'status empty';
