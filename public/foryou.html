@@ -17,7 +17,7 @@
       href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=pink-1" />
+    <link rel="stylesheet" href="/styles.css?v=scroll-1" />
     <script src="/vault.js?v=pink-1"></script>
     <script src="/nav.js?v=pink-1"></script>
   </head>
@@ -82,6 +82,10 @@
         <div id="fy-picks-queries" class="chip-row"></div>
         <div id="fy-picks-status" class="status" hidden></div>
         <div id="fy-picks" class="results fy-picks"></div>
+        <div class="load-more-wrap">
+          <button type="button" class="btn-primary" id="fy-more-tubes" hidden>Load more videos</button>
+        </div>
+        <div id="fy-tube-sentinel" class="sentinel" hidden></div>
       </section>
 
       <section class="panel">
@@ -91,6 +95,10 @@
         </p>
         <div id="fy-status" class="status" hidden></div>
         <div id="fy-grid" class="rg-grid"></div>
+        <div class="load-more-wrap">
+          <button type="button" class="btn-primary" id="fy-more-gifs" hidden>Load more gifs</button>
+        </div>
+        <div id="fy-gif-sentinel" class="sentinel" hidden></div>
       </section>
 
       <section class="panel">
@@ -129,6 +137,8 @@
             allow="autoplay; fullscreen; encrypted-media"
             allowfullscreen
           ></iframe>
+          <div class="player-swipe-layer" id="rg-swipe" aria-hidden="true"></div>
+          <p class="player-swipe-hint">Swipe down for next</p>
         </div>
       </div>
     </dialog>
@@ -136,8 +146,9 @@
     <footer class="foot">
       <p>Preferences sync with your profile key. Lock this device when you are done.</p>
     </footer>
-    <script src="/prefs.js?v=pink-1"></script>
-    <script src="/gif-preview.js?v=pink-1"></script>
-    <script src="/foryou.js?v=pink-1" defer></script>
+    <script src="/prefs.js?v=scroll-1"></script>
+    <script src="/gif-preview.js?v=scroll-1"></script>
+    <script src="/gif-swipe.js?v=scroll-1"></script>
+    <script src="/foryou.js?v=scroll-1" defer></script>
   </body>
 </html>

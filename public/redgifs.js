@@ -260,8 +260,8 @@
       else gridEl.insertAdjacentHTML('beforeend', html);
       window.BuddyGifPreview?.scan(gridEl);
 
-      if (gifs.length < 8) done = true;
-      else page += 1;
+      page += 1;
+      done = gifs.length === 0;
       sentinel.hidden = done;
     } catch (err) {
       setStatus('error', `Network error: ${escapeHtml(err.message || err)}`);
@@ -477,6 +477,34 @@
     if (entries.some((e) => e.isIntersecting)) fetchPage(false);
   });
   io.observe(sentinel);
+
+  function playlistIds() {
+    return [...gridEl.querySelectorAll('.rg-card[data-id]')].map((el) => el.dataset.id);
+  }
+
+  async function openAdjacent(dir) {
+    const ids = playlistIds();
+    if (!ids.length) return;
+    let idx = ids.indexOf(currentGifId);
+    if (idx < 0) idx = 0;
+    if (dir > 0 && idx >= ids.length - 2) {
+      done = false;
+      await fetchPage(false);
+    }
+    const nextIds = playlistIds();
+    let next = idx + dir;
+    if (next >= nextIds.length) next = 0;
+    if (next < 0) next = nextIds.length - 1;
+    const btn = gridEl.querySelector(`[data-play="${CSS.escape(nextIds[next])}"]`);
+    if (btn) openPlayer(btn);
+  }
+
+  window.BuddyGifSwipe?.bind({
+    layer: document.getElementById('rg-swipe'),
+    modal,
+    next: () => openAdjacent(1),
+    prev: () => openAdjacent(-1),
+  });
 
   const bootQ = new URLSearchParams(location.search).get('q');
   if (bootQ) {

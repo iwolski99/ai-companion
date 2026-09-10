@@ -17,7 +17,7 @@
       href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=pink-1" />
+    <link rel="stylesheet" href="/styles.css?v=scroll-1" />
     <script src="/vault.js?v=pink-1"></script>
     <script src="/nav.js?v=pink-1"></script>
   </head>
@@ -78,6 +78,8 @@
             allow="autoplay; fullscreen; encrypted-media"
             allowfullscreen
           ></iframe>
+          <div class="player-swipe-layer" id="rg-swipe" aria-hidden="true"></div>
+          <p class="player-swipe-hint">Swipe down for next</p>
         </div>
       </div>
     </dialog>
@@ -85,8 +87,9 @@
     <footer class="foot">
       <p>Saved clips sync with your profile key.</p>
     </footer>
-    <script src="/prefs.js?v=pink-1"></script>
-    <script src="/gif-preview.js?v=pink-1"></script>
-    <script src="/bookmarks.js?v=pink-1" defer></script>
+    <script src="/prefs.js?v=scroll-1"></script>
+    <script src="/gif-preview.js?v=scroll-1"></script>
+    <script src="/gif-swipe.js?v=scroll-1"></script>
+    <script src="/bookmarks.js?v=scroll-1" defer></script>
   </body>
 </html>

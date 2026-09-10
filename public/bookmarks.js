@@ -173,5 +173,27 @@
     window.BuddyPrefs.exportBookmarks();
   });
 
+  function playlistIds() {
+    return [...grid.querySelectorAll('.rg-card[data-id]')].map((el) => el.dataset.id);
+  }
+
+  function openAdjacent(dir) {
+    const ids = playlistIds();
+    if (!ids.length) return;
+    let idx = ids.indexOf(currentId);
+    if (idx < 0) idx = 0;
+    let next = idx + dir;
+    if (next >= ids.length) next = 0;
+    if (next < 0) next = ids.length - 1;
+    openPlayer(cache.get(ids[next]));
+  }
+
+  window.BuddyGifSwipe?.bind({
+    layer: document.getElementById('rg-swipe'),
+    modal,
+    next: () => openAdjacent(1),
+    prev: () => openAdjacent(-1),
+  });
+
   render();
 })();

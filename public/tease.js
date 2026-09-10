@@ -1,5 +1,5 @@
 /**
- * Tease — strip / JOI / clothed feeds. First tube page shows immediately.
+ * Tease — endless mood feeds (gifs + tubes) with swipe-to-next in the player.
  */
 (() => {
   const chipsEl = document.getElementById('tease-chips');
@@ -7,6 +7,10 @@
   const gifGrid = document.getElementById('tease-gifs');
   const tubeStatus = document.getElementById('tease-tube-status');
   const tubeGrid = document.getElementById('tease-tubes');
+  const moreGifsBtn = document.getElementById('tease-more-gifs');
+  const moreTubesBtn = document.getElementById('tease-more-tubes');
+  const gifSentinel = document.getElementById('tease-gif-sentinel');
+  const tubeSentinel = document.getElementById('tease-tube-sentinel');
   const modal = document.getElementById('rg-modal');
   const video = document.getElementById('rg-video');
   const iframe = document.getElementById('rg-iframe');
@@ -27,10 +31,22 @@
   const HARDCORE =
     /\b(creampie|gangbang|bukkake|double penetration|\bdp\b|anal pounding|internal cumshot)\b/i;
 
+  const GIF_ORDERS = ['trending', 'top', 'latest'];
   const gifCache = new Map();
   let currentGifId = '';
   let watchUrl = '';
   let mood = MOODS[0];
+
+  let gifPage = 1;
+  let gifOrderIndex = 0;
+  let gifTasteIndex = 0;
+  let gifLoading = false;
+  const gifSeen = new Set();
+
+  let tubePage = 1;
+  let tubeTasteIndex = 0;
+  let tubeLoading = false;
+  const tubeSeen = new Set();
 
   function escapeHtml(str) {
     return String(str || '')
@@ -38,6 +54,15 @@
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
+  }
+
+  function shuffle(items) {
+    const a = (items || []).slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[j], a[i]] = [a[i], a[j]];
+    }
+    return a;
   }
 
   function usableTitle(title) {
@@ -65,6 +90,28 @@
     } catch {
       return ['xvideos', 'xnxx', 'xhamster', 'pornhub', 'youporn'];
     }
+  }
+
+  function tasteTags() {
+    const recs = window.BuddyPrefs?.recommendationQueries?.(12) || [];
+    const tags = window.BuddyPrefs?.topTags?.(8) || [];
+    const seen = new Set();
+    const out = [];
+    for (const x of [...recs, ...tags]) {
+      const tag = String(x.tag || x || '').trim();
+      const key = tag.toLowerCase();
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      out.push(tag);
+    }
+    return out;
+  }
+
+  function mixQuery(base, index) {
+    const extras = tasteTags();
+    if (!extras.length || index === 0) return base;
+    const pick = extras[(index - 1) % extras.length];
+    return `${base} ${pick}`.trim();
   }
 
   function mediaSrc(gif) {
@@ -125,6 +172,7 @@
     if (!btn) return;
     mood = MOODS.find((m) => m.id === btn.dataset.mood) || MOODS[0];
     paintChips();
+    resetFeeds();
     loadAll();
   });
 
@@ -166,6 +214,26 @@
     likeBtn?.classList.toggle('is-on', prefs.likes.some((x) => x.id === gif.id));
     saveBtn?.classList.toggle('is-on', prefs.bookmarks.some((x) => x.id === gif.id));
     modal.showModal();
+  }
+
+  function playlistIds() {
+    return [...gifGrid.querySelectorAll('.rg-card[data-id]')].map((el) => el.dataset.id);
+  }
+
+  async function openAdjacent(dir) {
+    const ids = playlistIds();
+    if (!ids.length) return;
+    let idx = ids.indexOf(currentGifId);
+    if (idx < 0) idx = 0;
+    if (dir > 0 && idx >= ids.length - 2) {
+      await loadMoreGifs();
+    }
+    const nextIds = playlistIds();
+    let next = idx + dir;
+    if (next >= nextIds.length) next = 0;
+    if (next < 0) next = nextIds.length - 1;
+    const gif = gifCache.get(nextIds[next]);
+    if (gif) openPlayer(gif);
   }
 
   gifGrid.addEventListener('click', (e) => {
@@ -234,97 +302,207 @@
     true
   );
 
-  async function loadGifs() {
-    gifStatus.hidden = false;
-    gifStatus.className = 'status loading';
-    gifStatus.innerHTML = '<span class="spinner"></span>Loading tease clips…';
+  function resetFeeds() {
+    gifPage = 1;
+    gifOrderIndex = 0;
+    gifTasteIndex = 0;
+    gifSeen.clear();
+    tubePage = 1;
+    tubeTasteIndex = 0;
+    tubeSeen.clear();
     gifGrid.innerHTML = '';
+    tubeGrid.innerHTML = '';
+  }
+
+  async function loadMoreGifs() {
+    if (gifLoading) return false;
+    gifLoading = true;
+    if (moreGifsBtn) {
+      moreGifsBtn.hidden = false;
+      moreGifsBtn.disabled = true;
+    }
+    const first = !gifGrid.querySelector('.rg-card');
+    if (first) {
+      gifStatus.hidden = false;
+      gifStatus.className = 'status loading';
+      gifStatus.innerHTML = '<span class="spinner"></span>Loading tease clips…';
+    }
     try {
-      const params = new URLSearchParams({
-        action: 'search',
-        q: mood.gif,
-        source: 'redgifs',
-        order: 'trending',
-        page: '1',
-        count: '24',
-      });
-      const res = await fetch(`/api/redgifs?${params}`);
-      const data = await res.json().catch(() => ({}));
-      const gifs = (data.gifs || []).filter(
-        (g) => g.id && usableTitle(g.title) && g.thumbnail && !window.BuddyPrefs?.isDisliked?.(g.id)
-      );
-      gifs.forEach((g) => gifCache.set(g.id, g));
-      if (!gifs.length) {
+      let added = 0;
+      for (let attempt = 0; attempt < 8 && added < 8; attempt++) {
+        const q = mixQuery(mood.gif, gifTasteIndex);
+        const order = GIF_ORDERS[gifOrderIndex % GIF_ORDERS.length];
+        const params = new URLSearchParams({
+          action: 'search',
+          q,
+          source: 'all',
+          order,
+          page: String(gifPage),
+          count: '24',
+        });
+        const res = await fetch(`/api/redgifs?${params}`);
+        const data = await res.json().catch(() => ({}));
+        const gifs = shuffle(data.gifs || []).filter((g) => {
+          if (!g.id || gifSeen.has(g.id) || window.BuddyPrefs?.isDisliked?.(g.id)) return false;
+          if (!usableTitle(g.title) || !g.thumbnail) return false;
+          gifSeen.add(g.id);
+          gifCache.set(g.id, g);
+          return true;
+        });
+        gifPage += 1;
+        gifTasteIndex += 1;
+        if (gifPage % 3 === 0) gifOrderIndex += 1;
+        if (!gifs.length) continue;
+        gifGrid.insertAdjacentHTML('beforeend', gifs.map(cardHtml).join(''));
+        window.BuddyGifPreview?.scan(gifGrid);
+        added += gifs.length;
+      }
+      if (!gifGrid.querySelector('.rg-card')) {
+        gifStatus.hidden = false;
         gifStatus.className = 'status empty';
         gifStatus.textContent = 'No tease clips for that mood. Try another chip.';
-        return;
+        return false;
       }
       gifStatus.hidden = true;
-      gifGrid.innerHTML = gifs.map(cardHtml).join('');
-      window.BuddyGifPreview?.scan(gifGrid);
+      return added > 0;
     } catch (err) {
-      gifStatus.className = 'status error';
-      gifStatus.textContent = err.message || String(err);
+      if (!gifGrid.querySelector('.rg-card')) {
+        gifStatus.className = 'status error';
+        gifStatus.textContent = err.message || String(err);
+      }
+      return false;
+    } finally {
+      gifLoading = false;
+      if (moreGifsBtn) {
+        moreGifsBtn.disabled = false;
+        moreGifsBtn.hidden = false;
+      }
+      if (gifSentinel) gifSentinel.hidden = false;
     }
   }
 
-  async function loadTubes() {
-    tubeStatus.hidden = false;
-    tubeStatus.className = 'status loading';
-    tubeStatus.innerHTML = '<span class="spinner"></span>First page of tease tubes…';
-    tubeGrid.innerHTML = '';
+  function tubeCardHtml(item) {
+    const img = `<img src="${escapeHtml(item.thumbnail)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" />`;
+    return `
+      <a class="card" href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">
+        <div class="thumb-wrap">
+          ${img}
+          ${item.duration ? `<span class="badge">${escapeHtml(item.duration)}</span>` : ''}
+          <span class="source-badge">${escapeHtml(item.source || '')}</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">${escapeHtml(item.title)}</h2>
+        </div>
+      </a>`;
+  }
+
+  async function loadMoreTubes() {
+    if (tubeLoading) return false;
+    tubeLoading = true;
+    if (moreTubesBtn) {
+      moreTubesBtn.hidden = false;
+      moreTubesBtn.disabled = true;
+    }
+    const first = !tubeGrid.querySelector('a.card');
+    if (first) {
+      tubeStatus.hidden = false;
+      tubeStatus.className = 'status loading';
+      tubeStatus.innerHTML = '<span class="spinner"></span>Loading tease tubes…';
+    }
     try {
-      const params = new URLSearchParams({
-        q: mood.tube,
-        sites: selectedSites().join(','),
-        limit: '40',
-        pages: '1',
-        startPage: '1',
-      });
-      const pw = searchPassword();
-      const headers = pw ? { 'X-Search-Password': pw } : {};
-      const res = await fetch(`/api/search?${params}`, { headers });
-      const data = await res.json().catch(() => ({}));
-      const items = (data.results || []).filter(
-        (v) =>
-          v.url &&
-          v.thumbnail &&
-          usableTitle(v.title) &&
-          !HARDCORE.test(v.title || '')
-      );
-      if (!items.length) {
+      let added = 0;
+      for (let attempt = 0; attempt < 6 && added < 8; attempt++) {
+        const q = mixQuery(mood.tube, tubeTasteIndex);
+        const params = new URLSearchParams({
+          q,
+          sites: selectedSites().join(','),
+          limit: '40',
+          pages: '1',
+          startPage: String(tubePage),
+        });
+        const pw = searchPassword();
+        const headers = pw ? { 'X-Search-Password': pw } : {};
+        const res = await fetch(`/api/search?${params}`, { headers });
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 401) {
+          tubeStatus.hidden = false;
+          tubeStatus.className = 'status error';
+          tubeStatus.innerHTML =
+            'Enter the search password on <a href="/">Tubes</a> once, then come back.';
+          return false;
+        }
+        const items = shuffle(data.results || []).filter((v) => {
+          const key = String(v.url || '').toLowerCase();
+          if (!key || tubeSeen.has(key)) return false;
+          if (!v.thumbnail || !usableTitle(v.title) || HARDCORE.test(v.title || '')) return false;
+          tubeSeen.add(key);
+          return true;
+        });
+        tubePage += 1;
+        tubeTasteIndex += 1;
+        if (!items.length) continue;
+        tubeGrid.insertAdjacentHTML('beforeend', items.slice(0, 24).map(tubeCardHtml).join(''));
+        added += items.length;
+      }
+      if (!tubeGrid.querySelector('a.card')) {
+        tubeStatus.hidden = false;
         tubeStatus.className = 'status empty';
         tubeStatus.textContent = 'No tease tubes for that search.';
-        return;
+        return false;
       }
       tubeStatus.hidden = true;
-      tubeGrid.innerHTML = items
-        .slice(0, 24)
-        .map((item) => {
-          const img = `<img src="${escapeHtml(item.thumbnail)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" />`;
-          return `
-            <a class="card" href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">
-              <div class="thumb-wrap">
-                ${img}
-                ${item.duration ? `<span class="badge">${escapeHtml(item.duration)}</span>` : ''}
-                <span class="source-badge">${escapeHtml(item.source || '')}</span>
-              </div>
-              <div class="card-body">
-                <h2 class="card-title">${escapeHtml(item.title)}</h2>
-              </div>
-            </a>`;
-        })
-        .join('');
+      return added > 0;
     } catch (err) {
-      tubeStatus.className = 'status error';
-      tubeStatus.textContent = err.message || String(err);
+      if (!tubeGrid.querySelector('a.card')) {
+        tubeStatus.className = 'status error';
+        tubeStatus.textContent = err.message || String(err);
+      }
+      return false;
+    } finally {
+      tubeLoading = false;
+      if (moreTubesBtn) {
+        moreTubesBtn.disabled = false;
+        moreTubesBtn.hidden = false;
+      }
+      if (tubeSentinel) tubeSentinel.hidden = false;
     }
   }
 
   function loadAll() {
-    loadGifs();
-    loadTubes();
+    loadMoreGifs();
+    loadMoreTubes();
   }
+
+  moreGifsBtn?.addEventListener('click', () => loadMoreGifs());
+  moreTubesBtn?.addEventListener('click', () => loadMoreTubes());
+
+  if (gifSentinel && 'IntersectionObserver' in window) {
+    new IntersectionObserver(
+      (entries) => {
+        if (entries.some((en) => en.isIntersecting) && gifGrid.querySelector('.rg-card')) {
+          loadMoreGifs();
+        }
+      },
+      { rootMargin: '900px' }
+    ).observe(gifSentinel);
+  }
+  if (tubeSentinel && 'IntersectionObserver' in window) {
+    new IntersectionObserver(
+      (entries) => {
+        if (entries.some((en) => en.isIntersecting) && tubeGrid.querySelector('a.card')) {
+          loadMoreTubes();
+        }
+      },
+      { rootMargin: '900px' }
+    ).observe(tubeSentinel);
+  }
+
+  window.BuddyGifSwipe?.bind({
+    layer: document.getElementById('rg-swipe'),
+    modal,
+    next: () => openAdjacent(1),
+    prev: () => openAdjacent(-1),
+  });
 
   paintChips();
   loadAll();
