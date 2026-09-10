@@ -21,19 +21,7 @@
     { id: 'fyptt', label: 'FYPTT' },
   ];
 
-  const TUBE_SOURCES = [
-    { id: 'xvideos', label: 'XVideos' },
-    { id: 'xnxx', label: 'XNXX' },
-    { id: 'xhamster', label: 'xHamster' },
-    { id: 'pornhub', label: 'PornHub' },
-    { id: 'youporn', label: 'YouPorn' },
-    { id: 'spankbang', label: 'SpankBang' },
-    { id: 'bdsmstreak', label: 'BDSMStreak' },
-  ];
-
-  const DEFAULT_TUBE_IDS = ['xvideos', 'xnxx', 'xhamster', 'pornhub', 'youporn'];
   const GIF_EXCLUDE_KEY = 'av_exclude_gif_sources';
-  const TUBE_EXCLUDE_KEY = 'av_exclude_tube_sources';
   const FY_GIFS_FIRST_KEY = 'buddy_fy_gifs_first';
   const PERSONA_KEY = 'buddy_chat_persona';
   const DEFAULT_GIF_EXCLUDE = ['erome'];
@@ -69,10 +57,6 @@
     return readList(GIF_EXCLUDE_KEY, DEFAULT_GIF_EXCLUDE);
   }
 
-  function tubeExclude() {
-    return readList(TUBE_EXCLUDE_KEY, []);
-  }
-
   function fyGifsFirst() {
     try {
       return localStorage.getItem(FY_GIFS_FIRST_KEY) === '1';
@@ -105,16 +89,6 @@
     const ex = gifExclude();
     if (ex.length) params.set('exclude', ex.join(','));
     return params;
-  }
-
-  function filterTubeSites(ids) {
-    const incoming = (ids || []).map((s) => String(s).trim()).filter(Boolean);
-    const ex = new Set(tubeExclude());
-    let out = incoming.filter((id) => !ex.has(id));
-    if (!out.length) {
-      out = DEFAULT_TUBE_IDS.filter((id) => !ex.has(id));
-    }
-    return out.slice(0, 5);
   }
 
   function emitSettings() {
@@ -164,9 +138,7 @@
 
   function paintSettings() {
     const gifs = document.getElementById('settings-gif-ex');
-    const tubes = document.getElementById('settings-tube-ex');
     if (gifs) gifs.innerHTML = checks(GIF_SOURCES, gifExclude());
-    if (tubes) tubes.innerHTML = checks(TUBE_SOURCES, tubeExclude());
     const gifsFirst = fyGifsFirst();
     document.getElementById('fy-order-videos')?.classList.toggle('is-on', !gifsFirst);
     document.getElementById('fy-order-gifs')?.classList.toggle('is-on', gifsFirst);
@@ -184,7 +156,6 @@
       const input = e.target.closest('input[data-ex]');
       if (!input) return;
       const gifRoot = document.getElementById('settings-gif-ex');
-      const tubeRoot = document.getElementById('settings-tube-ex');
       if (gifRoot?.contains(input)) {
         let ids = readChecks(gifRoot);
         if (ids.length >= GIF_SOURCES.length) {
@@ -192,13 +163,6 @@
           ids = readChecks(gifRoot);
         }
         writeList(GIF_EXCLUDE_KEY, ids);
-      } else if (tubeRoot?.contains(input)) {
-        let ids = readChecks(tubeRoot);
-        if (ids.length >= TUBE_SOURCES.length) {
-          input.checked = false;
-          ids = readChecks(tubeRoot);
-        }
-        writeList(TUBE_EXCLUDE_KEY, ids);
       }
       emitSettings();
     });
@@ -332,11 +296,6 @@
           <p class="muted">Left out of All / For You / Tease. Erome is off by default. You can still pick a skipped source on the Gifs page for a one-off search.</p>
           <div class="settings-checks" id="settings-gif-ex"></div>
         </section>
-        <section class="settings-block">
-          <h2 class="settings-title">Skip tube sources</h2>
-          <p class="muted">Left out of Tubes, For You, and Tease searches.</p>
-          <div class="settings-checks" id="settings-tube-ex"></div>
-        </section>
       `;
       document.body.appendChild(panel);
       panel.querySelector('#settings-close')?.addEventListener('click', closeSettings);
@@ -354,14 +313,11 @@
 
   global.BuddySettings = {
     gifExclude,
-    tubeExclude,
     fyGifsFirst,
     chatPersona,
     filterGifs,
-    filterTubeSites,
     applyGifExcludeParams,
     GIF_SOURCES,
-    TUBE_SOURCES,
   };
 
   if (document.readyState === 'loading') {

@@ -16,9 +16,9 @@
       href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=settings-1" />
+    <link rel="stylesheet" href="/styles.css?v=chat-1" />
     <script src="/vault.js?v=settings-1"></script>
-    <script src="/nav.js?v=settings-1"></script>
+    <script src="/nav.js?v=chat-1"></script>
   </head>
   <body class="chat-page">
     <div class="bg-glow" aria-hidden="true"></div>
@@ -36,40 +36,35 @@
           <a class="nav-link" href="/calendar.html">Calendar</a>
         </nav>
       </div>
-      <p class="tagline">Saved with your profile key · pick a pal or a goonette</p>
     </header>
 
     <main class="chat-layout">
-      <button type="button" class="btn-ghost chat-menu-btn" id="chat-menu" aria-label="Open chats">
-        Chats
-      </button>
       <div class="chat-scrim" id="chat-scrim" hidden></div>
       <aside class="chat-sidebar" id="chat-sidebar">
         <button type="button" class="btn-primary chat-new" id="chat-new">New chat</button>
         <ul class="chat-list" id="chat-list"></ul>
       </aside>
       <section class="chat-main">
-        <div class="persona-row" id="persona-row">
-          <button type="button" class="chip-btn" data-persona="pal">Gooner pal</button>
-          <button type="button" class="chip-btn" data-persona="goonette">Goonette</button>
+        <div class="chat-toolbar">
+          <button type="button" class="chat-menu-btn" id="chat-menu">Chats</button>
         </div>
         <div id="chat-log" class="chat-log" aria-live="polite"></div>
         <form id="chat-form" class="chat-form" autocomplete="off">
           <label class="sr-only" for="chat-input">Message</label>
           <textarea
             id="chat-input"
-            rows="2"
+            rows="1"
             maxlength="4000"
             placeholder="Talk filthy…"
             required
           ></textarea>
           <button type="submit" class="btn-primary" id="chat-send">Send</button>
         </form>
-        <p class="muted chat-hint" id="chat-hint">Chats sync with your profile key across devices.</p>
+        <p class="muted chat-hint" id="chat-hint" hidden></p>
       </section>
     </main>
 
     <script src="/prefs.js?v=pink-1"></script>
-    <script src="/chat.js?v=settings-1" defer></script>
+    <script src="/chat.js?v=chat-1" defer></script>
   </body>
 </html>
