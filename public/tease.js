@@ -243,7 +243,7 @@
       const params = new URLSearchParams({
         action: 'search',
         q: mood.gif,
-        source: 'redgifs',
+        source: 'all',
         order: 'trending',
         page: '1',
         count: '24',
