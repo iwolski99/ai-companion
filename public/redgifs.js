@@ -235,6 +235,7 @@
       page: String(page),
       count: '40',
     });
+    if (source === 'all') window.BuddySettings?.applyGifExcludeParams?.(params);
 
     try {
       const res = await fetch(`/api/redgifs?${params}`);
@@ -244,9 +245,11 @@
         done = true;
         return;
       }
-      const gifs = shuffle(Array.isArray(data.gifs) ? data.gifs : []).filter(
-        (g) => !window.BuddyPrefs?.isDisliked?.(g.id)
-      );
+      const raw = shuffle(Array.isArray(data.gifs) ? data.gifs : []);
+      const gifs = (source === 'all' && window.BuddySettings?.filterGifs
+        ? window.BuddySettings.filterGifs(raw)
+        : raw
+      ).filter((g) => !window.BuddyPrefs?.isDisliked?.(g.id));
       gifs.forEach((g) => gifCache.set(g.id, g));
 
       if (reset && !gifs.length) {

@@ -13,6 +13,9 @@
     'av_proxy_thumbs',
     'buddy_fy_hide_chips',
     'buddy_chat_persona',
+    'av_exclude_gif_sources',
+    'av_exclude_tube_sources',
+    'buddy_fy_gifs_first',
   ];
 
   document.documentElement.classList.add('vault-pending');
@@ -561,7 +564,8 @@
         el.id === 'password' ||
         el.id === 'proxy-thumbs' ||
         el.id === 'fy-toggle-chips' ||
-        el.name === 'site'
+        el.name === 'site' ||
+        el.closest('#app-settings')
       ) {
         schedulePush();
       }
