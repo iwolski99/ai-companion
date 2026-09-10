@@ -127,6 +127,105 @@ header.top .nav {
   display: none !important;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.settings-toggle {
+  display: grid;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  color: var(--text);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.settings-toggle:hover,
+.settings-toggle:focus-visible {
+  border-color: var(--accent-border);
+  color: var(--accent);
+  outline: none;
+}
+
+.app-settings {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 93;
+  width: min(22rem, 92vw);
+  padding: 1.15rem 1rem 1.75rem;
+  background: var(--bg-elevated);
+  border-left: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  transform: translateX(110%);
+  transition: transform 0.2s ease;
+  overflow-y: auto;
+}
+
+html.settings-open .app-settings {
+  transform: none;
+}
+
+html.settings-open .app-scrim {
+  display: block;
+}
+
+html.settings-open {
+  overflow: hidden;
+}
+
+.settings-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+}
+
+.settings-block {
+  margin-bottom: 1.15rem;
+}
+
+.settings-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+}
+
+.settings-checks {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+}
+
+.settings-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: var(--tap);
+  padding: 0 0.55rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.92rem;
+}
+
+.settings-check input {
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: var(--accent);
+}
+
 .menu-toggle {
   display: grid;
   gap: 5px;

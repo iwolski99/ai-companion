@@ -86,9 +86,15 @@
         .map((s) => s.trim())
         .filter(Boolean)
         .slice(0, 5);
-      return ids.length ? ids : ['xvideos', 'xnxx', 'xhamster', 'pornhub', 'youporn'];
+      const picked = ids.length ? ids : ['xvideos', 'xnxx', 'xhamster', 'pornhub', 'youporn'];
+      return window.BuddySettings?.filterTubeSites
+        ? window.BuddySettings.filterTubeSites(picked)
+        : picked;
     } catch {
-      return ['xvideos', 'xnxx', 'xhamster', 'pornhub', 'youporn'];
+      const fallback = ['xvideos', 'xnxx', 'xhamster', 'pornhub', 'youporn'];
+      return window.BuddySettings?.filterTubeSites
+        ? window.BuddySettings.filterTubeSites(fallback)
+        : fallback;
     }
   }
 
@@ -340,9 +346,12 @@
           page: String(gifPage),
           count: '24',
         });
+        window.BuddySettings?.applyGifExcludeParams?.(params);
         const res = await fetch(`/api/redgifs?${params}`);
         const data = await res.json().catch(() => ({}));
-        const gifs = shuffle(data.gifs || []).filter((g) => {
+        const gifs = shuffle(
+          window.BuddySettings?.filterGifs?.(data.gifs || []) || data.gifs || []
+        ).filter((g) => {
           if (!g.id || gifSeen.has(g.id) || window.BuddyPrefs?.isDisliked?.(g.id)) return false;
           if (!usableTitle(g.title) || !g.thumbnail) return false;
           gifSeen.add(g.id);

@@ -282,15 +282,39 @@ exports.handler = async (event) => {
     }
 
     if (source === 'all') {
-      const [rg, ph, gr, nm, er] = await Promise.all([
-        settled('redgifs', async () => (await searchRedgifs()).gifs.slice(0, 24)),
-        settled('pornhub', async () => (await pornhubGifs.search(q || 'amateur', page)).slice(0, 24)),
-        settled('gifreels', async () => (await gifreels.search(q || 'amateur', page)).slice(0, 24)),
-        settled('nsfwmonster', async () => (await nsfwmonster.search(q || 'amateur', page)).slice(0, 24)),
-        settled('erome', async () => (await erome.search(q || 'amateur', page)).slice(0, 24)),
-      ]);
-      const gifs = interleave([rg.gifs, ph.gifs, gr.gifs, nm.gifs, er.gifs]);
-      const errors = [rg, ph, gr, nm, er]
+      const exclude = new Set(
+        String(qs.exclude || '')
+          .split(',')
+          .map((s) => s.trim().toLowerCase())
+          .filter(Boolean)
+      );
+      const jobs = [];
+      if (!exclude.has('redgifs')) {
+        jobs.push(settled('redgifs', async () => (await searchRedgifs()).gifs.slice(0, 24)));
+      }
+      if (!exclude.has('pornhub')) {
+        jobs.push(
+          settled('pornhub', async () => (await pornhubGifs.search(q || 'amateur', page)).slice(0, 24))
+        );
+      }
+      if (!exclude.has('gifreels')) {
+        jobs.push(
+          settled('gifreels', async () => (await gifreels.search(q || 'amateur', page)).slice(0, 24))
+        );
+      }
+      if (!exclude.has('nsfwmonster')) {
+        jobs.push(
+          settled('nsfwmonster', async () => (await nsfwmonster.search(q || 'amateur', page)).slice(0, 24))
+        );
+      }
+      if (!exclude.has('erome')) {
+        jobs.push(settled('erome', async () => (await erome.search(q || 'amateur', page)).slice(0, 24)));
+      }
+      const groups = jobs.length
+        ? await Promise.all(jobs)
+        : [];
+      const gifs = interleave(groups.map((r) => r.gifs));
+      const errors = groups
         .filter((r) => r.error)
         .map((r) => ({ source: r.label, message: r.error }));
       return json(200, {

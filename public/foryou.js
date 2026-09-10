@@ -59,9 +59,14 @@
         .map((s) => s.trim())
         .filter(Boolean)
         .slice(0, 5);
-      return ids.length ? ids : DEFAULT_SITES;
+      const picked = ids.length ? ids : DEFAULT_SITES;
+      return window.BuddySettings?.filterTubeSites
+        ? window.BuddySettings.filterTubeSites(picked)
+        : picked;
     } catch {
-      return DEFAULT_SITES;
+      return window.BuddySettings?.filterTubeSites
+        ? window.BuddySettings.filterTubeSites(DEFAULT_SITES)
+        : DEFAULT_SITES;
     }
   }
 
@@ -90,6 +95,19 @@
   chipsToggle?.addEventListener('click', () => {
     applyChipsHidden(!document.body.classList.contains('fy-chips-hidden'));
   });
+
+  function applyFyOrder() {
+    const tubes = document.getElementById('fy-tubes-panel');
+    const gifs = document.getElementById('fy-gifs-panel');
+    if (!tubes || !gifs || !tubes.parentElement) return;
+    if (window.BuddySettings?.fyGifsFirst?.()) {
+      tubes.parentElement.insertBefore(gifs, tubes);
+    } else {
+      tubes.parentElement.insertBefore(tubes, gifs);
+    }
+  }
+  applyFyOrder();
+  window.addEventListener('buddy-settings', applyFyOrder);
 
   function thumbUrl(url) {
     if (!url) return '';
@@ -657,10 +675,11 @@
               page: String(page),
               count: '24',
             });
+            window.BuddySettings?.applyGifExcludeParams?.(params);
             try {
               const res = await fetch(`/api/redgifs?${params}`);
               const data = await res.json().catch(() => ({}));
-              return { q, gifs: data.gifs || [] };
+              return { q, gifs: window.BuddySettings?.filterGifs?.(data.gifs || []) || data.gifs || [] };
             } catch {
               return { q, gifs: [] };
             }

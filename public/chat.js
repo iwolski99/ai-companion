@@ -257,5 +257,6 @@
   });
 
   setPersona(personaId());
+  window.addEventListener('buddy-settings', () => setPersona(personaId()));
   ensureChat();
 })();
