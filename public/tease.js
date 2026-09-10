@@ -292,7 +292,8 @@
           v.url &&
           v.thumbnail &&
           usableTitle(v.title) &&
-          !HARDCORE.test(v.title || '')
+          !HARDCORE.test(v.title || '') &&
+          TEASE_KEEP.test(v.title || '')
       );
       if (!items.length) {
         tubeStatus.className = 'status empty';
