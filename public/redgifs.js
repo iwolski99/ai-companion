@@ -499,11 +499,11 @@
     if (btn) openPlayer(btn);
   }
 
-  window.BuddyGifSwipe?.bind({
-    layer: document.getElementById('rg-swipe'),
-    modal,
-    next: () => openAdjacent(1),
+  window.BuddyGifSkip?.bind({
+    prevBtn: document.getElementById('rg-prev'),
+    nextBtn: document.getElementById('rg-next'),
     prev: () => openAdjacent(-1),
+    next: () => openAdjacent(1),
   });
 
   const bootQ = new URLSearchParams(location.search).get('q');

@@ -17,7 +17,7 @@
       href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=mix-1" />
+    <link rel="stylesheet" href="/styles.css?v=skip-1" />
     <script src="/vault.js?v=pink-1"></script>
     <script src="/nav.js?v=pink-1"></script>
   </head>
@@ -137,8 +137,10 @@
             allow="autoplay; fullscreen; encrypted-media"
             allowfullscreen
           ></iframe>
-          <div class="player-swipe-layer" id="rg-swipe" aria-hidden="true"></div>
-          <p class="player-swipe-hint">Swipe down for next</p>
+        </div>
+        <div class="player-skip">
+          <button type="button" class="player-skip-btn" id="rg-prev" aria-label="Previous clip">↑</button>
+          <button type="button" class="player-skip-btn" id="rg-next" aria-label="Next clip">↓</button>
         </div>
       </div>
     </dialog>
@@ -148,7 +150,7 @@
     </footer>
     <script src="/prefs.js?v=mix-1"></script>
     <script src="/gif-preview.js?v=mix-1"></script>
-    <script src="/gif-swipe.js?v=mix-1"></script>
-    <script src="/foryou.js?v=mix-1" defer></script>
+    <script src="/gif-skip.js?v=skip-1"></script>
+    <script src="/foryou.js?v=skip-1" defer></script>
   </body>
 </html>
