@@ -1232,6 +1232,33 @@ button.vault-lock:hover {
   display: none;
 }
 
+.player-swipe-layer {
+  position: absolute;
+  inset: 0 0 88px 0;
+  z-index: 3;
+  touch-action: pan-y;
+}
+
+.player-swipe-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 96px;
+  z-index: 4;
+  margin: 0;
+  transform: translateX(-50%);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.55);
+  pointer-events: none;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
+}
+
+.load-more-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 1rem 0 0.25rem;
+}
+
 /* Production main still ships this overlay; it steals every click from the player. */
 .player-hit,
 #rg-hit {

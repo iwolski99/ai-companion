@@ -16,11 +16,15 @@
   const openExt = document.getElementById('rg-open-ext');
 
   const DEFAULT_SITES = ['xvideos', 'xnxx', 'xhamster', 'pornhub', 'youporn'];
-  const PICK_COUNT = 12;
+  const FALLBACKS = ['pawg', 'amateur', 'blonde', 'milf', 'onlyfans', 'creampie'];
   const CHIPS_KEY = 'buddy_fy_hide_chips';
   const gifCache = new Map();
   let currentGifId = '';
   let watchUrl = '';
+  const moreTubesBtn = document.getElementById('fy-more-tubes');
+  const moreGifsBtn = document.getElementById('fy-more-gifs');
+  const tubeSentinel = document.getElementById('fy-tube-sentinel');
+  const gifSentinel = document.getElementById('fy-gif-sentinel');
 
   function escapeHtml(str) {
     return String(str || '')
@@ -109,6 +113,54 @@
     return `/api/gifmedia?url=${encodeURIComponent(url)}`;
   }
 
+  function shuffle(items) {
+    const a = (items || []).slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[j], a[i]] = [a[i], a[j]];
+    }
+    return a;
+  }
+
+  function usableVideo(item) {
+    const title = String(item?.title || '').trim();
+    return Boolean(
+      item &&
+        item.url &&
+        item.thumbnail &&
+        title &&
+        !/^untitled$/i.test(title)
+    );
+  }
+
+  function tastePool() {
+    const recs =
+      window.BuddyPrefs.recommendationQueries?.(16) ||
+      window.BuddyPrefs.topSearches(16) ||
+      [];
+    const tags = window.BuddyPrefs.topTags(16) || [];
+    const seen = new Set();
+    const pool = [];
+    for (const x of [...recs, ...tags]) {
+      const tag = String(x.tag || '').trim();
+      const key = tag.toLowerCase();
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      pool.push({
+        tag,
+        label: x.label || tag,
+        kind: x.kind,
+        weight: x.weight,
+      });
+    }
+    for (const tag of FALLBACKS) {
+      if (seen.has(tag)) continue;
+      seen.add(tag);
+      pool.push({ tag, label: tag, kind: 'search' });
+    }
+    return shuffle(pool);
+  }
+
   const recs =
     window.BuddyPrefs.recommendationQueries?.(6) ||
     window.BuddyPrefs.topSearches(6) ||
@@ -143,16 +195,8 @@
       .join('');
   }
 
-  function recScore(video, queryIndex) {
-    const views = Number(video.views) || 0;
-    const viewPart = Math.log10(views + 1);
-    const queryBoost = queryIndex === 0 ? 1.6 : queryIndex === 1 ? 1.25 : 1;
-    const rankPart = 1 / (1 + (Number(video.rank) || 0) / 18);
-    return viewPart * queryBoost + rankPart * 2;
-  }
-
-  function renderTubeCards(items) {
-    picksEl.innerHTML = items
+  function renderTubeCards(items, append) {
+    const html = items
       .map((item) => {
         const views = formatViews(item.views);
         const metaBits = [
@@ -192,15 +236,17 @@
           </a>`;
       })
       .join('');
+    if (append) picksEl.insertAdjacentHTML('beforeend', html);
+    else picksEl.innerHTML = html;
   }
 
-  async function searchTubes(query) {
+  async function searchTubes(query, startPage) {
     const params = new URLSearchParams({
       q: query,
       sites: selectedSites().join(','),
-      limit: '24',
+      limit: '40',
       pages: '1',
-      startPage: '1',
+      startPage: String(startPage || 1),
     });
     const headers = {};
     const pw = searchPassword();
@@ -218,9 +264,56 @@
     return Array.isArray(data.results) ? data.results : [];
   }
 
+  let tubePool = tastePool();
+  let tubeCursor = 0;
+  let tubePage = 1;
+  const tubeSeen = new Set();
+  let tubeItems = [];
+  let tubeLoading = false;
+
+  async function loadMoreTubes() {
+    if (tubeLoading) return false;
+    tubeLoading = true;
+    moreTubesBtn.hidden = false;
+    moreTubesBtn.disabled = true;
+    try {
+      let added = 0;
+      for (let attempt = 0; attempt < Math.max(3, tubePool.length); attempt++) {
+        const q = tubePool[tubeCursor % tubePool.length];
+        const results = await searchTubes(q.tag, tubePage);
+        const fresh = shuffle(results.filter(usableVideo)).filter((v) => {
+          const key = String(v.url).toLowerCase();
+          if (tubeSeen.has(key)) return false;
+          tubeSeen.add(key);
+          return true;
+        });
+        const batch = fresh.map((v) => ({
+          ...v,
+          _recQuery: q.label || q.tag,
+          _queryIndex: tubeCursor % tubePool.length,
+        }));
+        tubeCursor += 1;
+        if (tubeCursor % tubePool.length === 0) {
+          tubePage += 1;
+          tubePool = shuffle(tubePool);
+        }
+        if (!batch.length) continue;
+        tubeItems = tubeItems.concat(batch);
+        renderTubeCards(batch, true);
+        added += batch.length;
+        if (added >= 8) break;
+      }
+      return added > 0;
+    } finally {
+      tubeLoading = false;
+      moreTubesBtn.disabled = false;
+      moreTubesBtn.hidden = false;
+      if (tubeSentinel) tubeSentinel.hidden = false;
+    }
+  }
+
   async function loadTubePicks() {
-    const queries = recs.slice(0, 3);
-    if (!queries.length) {
+    if (!tubePool.length) {
       picksStatusEl.hidden = false;
       picksStatusEl.className = 'status empty';
       picksStatusEl.textContent =
@@ -228,7 +321,8 @@
       return;
     }
 
-    picksQueriesEl.innerHTML = queries
+    picksQueriesEl.innerHTML = tubePool
+      .slice(0, 8)
       .map(
         (q) =>
           `<a class="chip-btn is-on" href="/?q=${encodeURIComponent(q.tag)}">${escapeHtml(
@@ -240,54 +334,17 @@
     picksStatusEl.hidden = false;
     picksStatusEl.className = 'status loading';
     picksStatusEl.innerHTML =
-      '<span class="spinner"></span>Finding high-view tube picks for your names…';
+      '<span class="spinner"></span>Finding tube picks for your names…';
+    picksEl.innerHTML = '';
 
     try {
-      const batches = await Promise.all(
-        queries.map(async (q, i) => {
-          const results = await searchTubes(q.tag);
-          return results.map((v) => ({
-            ...v,
-            _recQuery: q.label || q.tag,
-            _queryIndex: i,
-          }));
-        })
-      );
-      const seen = new Set();
-      const merged = [];
-      for (const batch of batches) {
-        const ranked = batch
-          .slice()
-          .sort(
-            (a, b) => recScore(b, b._queryIndex) - recScore(a, a._queryIndex)
-          );
-        for (const videoItem of ranked.slice(0, 8)) {
-          const key = String(videoItem.url || '').toLowerCase();
-          if (!key || seen.has(key)) continue;
-          seen.add(key);
-          merged.push(videoItem);
-        }
-      }
-      merged.sort(
-        (a, b) => recScore(b, b._queryIndex) - recScore(a, a._queryIndex)
-      );
-      const picks = merged.slice(0, PICK_COUNT);
-      if (!picks.length) {
+      const ok = await loadMoreTubes();
+      if (!ok && !tubeItems.length) {
         picksStatusEl.className = 'status empty';
         picksStatusEl.textContent = 'No tube picks yet — try a search on Tubes, then refresh.';
         return;
       }
       picksStatusEl.hidden = true;
-      renderTubeCards(picks);
-      picksEl.addEventListener('click', (e) => {
-        const card = e.target.closest('a.card');
-        if (!card) return;
-        const url = card.getAttribute('href');
-        const item = picks.find((r) => r.url === url);
-        if (item && window.BuddyPrefs?.trackAvClick) {
-          window.BuddyPrefs.trackAvClick(item);
-        }
-      });
     } catch (err) {
       picksStatusEl.className = 'status error';
       if (err.code === 'password') {
@@ -298,6 +355,17 @@
       }
     }
   }
+
+  picksEl.addEventListener('click', (e) => {
+    const card = e.target.closest('a.card');
+    if (!card) return;
+    const url = card.getAttribute('href');
+    const item = tubeItems.find((r) => r.url === url);
+    if (item && window.BuddyPrefs?.trackAvClick) {
+      window.BuddyPrefs.trackAvClick(item);
+    }
+  });
+  moreTubesBtn?.addEventListener('click', () => loadMoreTubes());
 
   function previewTag(gif) {
     const src = mediaSrc(gif);
@@ -511,50 +579,128 @@
     if (e.key === 'Escape' && modal?.open) closePlayer();
   });
 
+  function playlistIds() {
+    return [...gridEl.querySelectorAll('.rg-card[data-id]')].map((el) => el.dataset.id);
+  }
+
+  async function openAdjacent(dir) {
+    const ids = playlistIds();
+    if (!ids.length) return;
+    let idx = ids.indexOf(currentGifId);
+    if (idx < 0) idx = 0;
+    if (dir > 0 && idx >= ids.length - 2) {
+      await loadMoreGifs();
+    }
+    const nextIds = playlistIds();
+    let next = idx + dir;
+    if (next >= nextIds.length) next = 0;
+    if (next < 0) next = nextIds.length - 1;
+    const id = nextIds[next];
+    const btn = gridEl.querySelector(`[data-play="${id}"]`);
+    if (btn) openPlayer(btn);
+  }
+
+  let gifPool = tastePool();
+  let gifCursor = 0;
+  let gifPage = 1;
+  const gifOrders = shuffle(['trending', 'top', 'latest']);
+  let gifLoading = false;
+
+  async function loadMoreGifs() {
+    if (gifLoading) return false;
+    gifLoading = true;
+    moreGifsBtn.hidden = false;
+    moreGifsBtn.disabled = true;
+    try {
+      let added = 0;
+      for (let attempt = 0; attempt < Math.max(3, gifPool.length); attempt++) {
+        const q = gifPool[gifCursor % gifPool.length] || { tag: '' };
+        const order = gifOrders[gifCursor % gifOrders.length] || 'trending';
+        const params = new URLSearchParams({
+          action: 'search',
+          q: q.tag || '',
+          source: 'all',
+          order,
+          page: String(gifPage),
+          count: '24',
+        });
+        const res = await fetch(`/api/redgifs?${params}`);
+        const data = await res.json().catch(() => ({}));
+        const batch = shuffle(data.gifs || []).filter((g) => {
+          if (!g.id || gifCache.has(g.id) || window.BuddyPrefs.isDisliked?.(g.id)) {
+            return false;
+          }
+          const title = String(g.title || '').trim();
+          if (!g.thumbnail || !title || /^untitled$/i.test(title)) return false;
+          gifCache.set(g.id, g);
+          return true;
+        });
+        gifCursor += 1;
+        if (gifCursor % gifPool.length === 0) {
+          gifPage += 1;
+          gifPool = shuffle(gifPool);
+        }
+        if (!batch.length) continue;
+        gridEl.insertAdjacentHTML('beforeend', batch.map(cardHtml).join(''));
+        window.BuddyGifPreview?.scan(gridEl);
+        added += batch.length;
+        if (added >= 8) break;
+      }
+      return added > 0;
+    } finally {
+      gifLoading = false;
+      moreGifsBtn.disabled = false;
+      moreGifsBtn.hidden = false;
+      if (gifSentinel) gifSentinel.hidden = false;
+    }
+  }
+
   async function loadGifFeed() {
-    const queries = (recs.length ? recs : fallbackTags).slice(0, 2);
     statusEl.hidden = false;
     statusEl.className = 'status loading';
     statusEl.innerHTML = '<span class="spinner"></span>Building a gif feed from your tags…';
+    gridEl.innerHTML = '';
     try {
-      const batches = await Promise.all(
-        (queries.length ? queries : [{ tag: '' }]).map(async (q) => {
-          const params = new URLSearchParams({
-            action: 'search',
-            q: q.tag || '',
-            source: 'redgifs',
-            order: 'trending',
-            page: '1',
-            count: '16',
-          });
-          const res = await fetch(`/api/redgifs?${params}`);
-          const data = await res.json();
-          return data.gifs || [];
-        })
-      );
-      const seen = new Set();
-      const gifs = [];
-      for (const batch of batches) {
-        for (const g of batch) {
-          if (!g.id || seen.has(g.id) || window.BuddyPrefs.isDisliked?.(g.id)) continue;
-          seen.add(g.id);
-          gifCache.set(g.id, g);
-          gifs.push(g);
-        }
-      }
-      if (!gifs.length) {
+      const ok = await loadMoreGifs();
+      if (!ok && !gridEl.querySelector('.rg-card')) {
         statusEl.className = 'status empty';
         statusEl.textContent = 'No feed yet — like a few clips on Gifs first.';
         return;
       }
       statusEl.hidden = true;
-      gridEl.innerHTML = gifs.slice(0, 24).map(cardHtml).join('');
-      window.BuddyGifPreview?.scan(gridEl);
     } catch (err) {
       statusEl.className = 'status error';
       statusEl.textContent = err.message || String(err);
     }
   }
+
+  moreGifsBtn?.addEventListener('click', () => loadMoreGifs());
+
+  if (tubeSentinel && 'IntersectionObserver' in window) {
+    new IntersectionObserver(
+      (entries) => {
+        if (entries.some((en) => en.isIntersecting) && tubeItems.length) loadMoreTubes();
+      },
+      { rootMargin: '900px' }
+    ).observe(tubeSentinel);
+  }
+  if (gifSentinel && 'IntersectionObserver' in window) {
+    new IntersectionObserver(
+      (entries) => {
+        if (entries.some((en) => en.isIntersecting) && gridEl.querySelector('.rg-card')) {
+          loadMoreGifs();
+        }
+      },
+      { rootMargin: '900px' }
+    ).observe(gifSentinel);
+  }
+
+  window.BuddyGifSwipe?.bind({
+    layer: document.getElementById('rg-swipe'),
+    modal,
+    next: () => openAdjacent(1),
+    prev: () => openAdjacent(-1),
+  });
 
   const seedInput = document.getElementById('fy-seed-input');
   const seedBtn = document.getElementById('fy-seed-btn');
